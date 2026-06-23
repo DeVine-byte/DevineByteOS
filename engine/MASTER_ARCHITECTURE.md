@@ -1304,4 +1304,729 @@ Reporting is event-driven and read-model based, ensuring operational workloads r
 **End of MASTER_ARCHITECTURE.md — Part 2**
 
 The remaining sections—API contracts, database architecture, multi-tenancy, authentication and authorization architecture, infrastructure, deployment topology, technology stack, repository structure, and engineering standards—are delivered in Part 3.
+# MASTER_ARCHITECTURE.md (Part 3)
+
+**Project:** DevineByte OS
+
+**Version:** 1.0
+
+**Status:** Phase 1 — Architecture
+
+---
+
+# 17. API Architecture
+
+## API Philosophy
+
+DevineByte OS is **API-first**. Every platform capability is exposed through stable, versioned interfaces. Internal services interact through service contracts rather than direct database access.
+
+### API Types
+
+* REST APIs (external/public)
+* gRPC APIs (internal high-performance service communication)
+* GraphQL Gateway (optional client aggregation)
+* Webhooks (event notifications)
+* Event Streams (asynchronous integration)
+
+---
+
+## API Versioning
+
+Versioning strategy:
+
+* URI versioning for public APIs: `/api/v1/...`
+* Semantic versioning for service contracts
+* Backward compatibility within major versions
+* Deprecation policy with published migration guides
+
+---
+
+## Standard API Contract
+
+Every API request includes:
+
+* Tenant ID (resolved from identity/context)
+* Correlation ID
+* Authentication token
+* Request timestamp
+* API version
+
+Every response includes:
+
+* Status
+* Data
+* Metadata
+* Pagination (where applicable)
+* Trace ID
+* Error object (if applicable)
+
+---
+
+## Core API Domains
+
+### Identity API
+
+Operations:
+
+* Register user
+* Authenticate
+* Refresh token
+* Logout
+* MFA management
+* Password reset
+* Session management
+
+---
+
+### Tenant API
+
+Operations:
+
+* Create tenant
+* Update organization
+* Configure features
+* Manage environments
+
+---
+
+### Blueprint API
+
+Operations:
+
+* Create blueprint
+* Validate blueprint
+* Publish blueprint
+* Compare versions
+* Clone blueprint
+* Archive blueprint
+
+---
+
+### Compiler API
+
+Operations:
+
+* Compile
+* Validate
+* Retrieve diagnostics
+* Retrieve artifacts
+* Download package
+
+---
+
+### Deployment API
+
+Operations:
+
+* Deploy package
+* Rollback deployment
+* List deployments
+* Deployment health
+* Deployment history
+
+---
+
+### Runtime API
+
+Operations:
+
+* Start workflow
+* Complete task
+* Cancel workflow
+* Query state
+* Execute automation
+
+---
+
+### Analytics API
+
+Operations:
+
+* KPI retrieval
+* Dashboard queries
+* Event metrics
+* Operational reports
+
+---
+
+# 18. Database Architecture
+
+## Design Principles
+
+* Database-per-service where practical.
+* Services own their persistence.
+* Cross-service communication occurs through APIs or events, not shared tables.
+* Read models may be optimized independently from transactional models.
+
+---
+
+## Storage Technologies
+
+### Relational Storage
+
+Primary transactional database:
+
+* PostgreSQL
+
+Used for:
+
+* Identity
+* Tenants
+* Blueprints
+* Runtime metadata
+* Workflow state
+* Billing
+
+---
+
+### Document Storage
+
+Primary document database:
+
+* MongoDB
+
+Used for:
+
+* Audit outputs
+* Blueprint drafts
+* Dynamic forms
+* JSON artifacts
+* Plugin metadata
+
+---
+
+### Cache
+
+Primary cache:
+
+* Redis
+
+Used for:
+
+* Sessions
+* Tokens
+* Rate limiting
+* Distributed locks
+* Frequently accessed metadata
+
+---
+
+### Object Storage
+
+Used for:
+
+* Deployment packages
+* Attachments
+* Documents
+* Reports
+* Media
+* Compiler artifacts
+
+Examples:
+
+* S3-compatible storage
+* Azure Blob
+* Google Cloud Storage
+
+---
+
+### Event Store
+
+Append-only event persistence.
+
+Stores:
+
+* Domain events
+* Compiler events
+* Runtime events
+* Audit events
+
+Supports:
+
+* Replay
+* Audit
+* Analytics
+* Debugging
+
+---
+
+### Search Engine
+
+OpenSearch / Elasticsearch
+
+Supports:
+
+* Global search
+* Audit search
+* Workflow search
+* Full-text search
+* Log indexing
+
+---
+
+# 19. Multi-Tenancy Architecture
+
+## Isolation Model
+
+Tenant isolation is enforced across:
+
+* Identity
+* Data
+* Events
+* Storage
+* Caching
+* APIs
+* Authorization
+* Observability
+
+---
+
+## Tenant Modes
+
+### Shared Infrastructure
+
+* Shared compute
+* Shared databases with tenant partitioning
+* Shared cache
+* Shared messaging
+
+Best suited for small and medium organizations.
+
+---
+
+### Dedicated Infrastructure
+
+* Dedicated databases
+* Dedicated object storage
+* Dedicated cache
+* Dedicated compute
+* Dedicated networking
+
+Best suited for enterprise deployments.
+
+---
+
+## Tenant Resolution
+
+Tenant context may be resolved through:
+
+* Custom domains
+* Subdomains
+* JWT claims
+* API headers
+* Organization identifiers
+
+---
+
+# 20. Authentication Architecture
+
+## Identity Standards
+
+Supported protocols:
+
+* OAuth 2.1
+* OpenID Connect (OIDC)
+* SAML 2.0 (enterprise federation)
+* JWT access tokens
+* Refresh tokens
+
+---
+
+## Authentication Methods
+
+* Username/password
+* Passkeys (WebAuthn)
+* Multi-factor authentication
+* Social identity providers
+* Enterprise identity providers
+* API keys (service accounts)
+
+---
+
+## Session Management
+
+Features:
+
+* Token rotation
+* Session revocation
+* Device tracking
+* Concurrent session controls
+* Idle timeout
+* Absolute session lifetime
+
+---
+
+# 21. Authorization Architecture
+
+## Hybrid Authorization Model
+
+DevineByte OS combines:
+
+* Role-Based Access Control (RBAC)
+* Attribute-Based Access Control (ABAC)
+* Policy-Based Access Control (PBAC)
+
+---
+
+### RBAC
+
+Examples:
+
+* Owner
+* Administrator
+* Manager
+* Auditor
+* Employee
+* External User
+
+---
+
+### ABAC
+
+Policy attributes include:
+
+* Tenant
+* Department
+* Team
+* Location
+* Time
+* Resource classification
+* Workflow state
+
+---
+
+### PBAC
+
+Policies are defined declaratively within Blueprints and evaluated by the Rule Engine, allowing authorization logic to evolve without changing application code.
+
+---
+
+# 22. Security Architecture
+
+## Core Principles
+
+* Zero Trust
+* Least Privilege
+* Defense in Depth
+* Secure by Default
+
+---
+
+## Data Protection
+
+* TLS for all network communication
+* Encryption at rest
+* Secrets stored in a dedicated secrets manager
+* Key rotation
+* Data masking
+* Audit logging
+
+---
+
+## Application Security
+
+* Input validation
+* Output encoding
+* CSRF protection
+* Rate limiting
+* API throttling
+* Secure headers
+* Dependency scanning
+* Static analysis
+* Dynamic analysis
+
+---
+
+## Operational Security
+
+* Immutable audit logs
+* Security event monitoring
+* Vulnerability management
+* Automated patching
+* Incident response integration
+
+---
+
+# 23. Infrastructure Architecture
+
+## Cloud-Native Principles
+
+* Containerized workloads
+* Stateless services where practical
+* Immutable deployments
+* Infrastructure as Code
+* Automated scaling
+
+---
+
+## Core Components
+
+* API Gateway
+* Kubernetes cluster
+* Service mesh
+* Event broker
+* PostgreSQL
+* MongoDB
+* Redis
+* Object storage
+* Search cluster
+* Monitoring stack
+* Logging stack
+
+---
+
+## Messaging Backbone
+
+Primary responsibilities:
+
+* Event distribution
+* Asynchronous processing
+* Retry management
+* Dead-letter queues
+* Event replay
+
+---
+
+# 24. Deployment Architecture
+
+## Environment Strategy
+
+* Local Development
+* Integration
+* QA
+* Staging
+* Production
+* Disaster Recovery
+
+---
+
+## CI/CD Pipeline
+
+Stages:
+
+1. Source validation
+2. Static analysis
+3. Unit testing
+4. Integration testing
+5. Security scanning
+6. Artifact creation
+7. Container publishing
+8. Infrastructure validation
+9. Deployment
+10. Smoke testing
+11. Production promotion
+
+---
+
+## Release Strategies
+
+Supported deployment patterns:
+
+* Rolling deployment
+* Blue/Green deployment
+* Canary deployment
+* Feature flags
+* Automated rollback
+
+---
+
+# 25. Technology Stack
+
+## Frontend
+
+* React
+* Next.js
+* TypeScript
+* Tailwind CSS
+* TanStack Query
+* React Hook Form
+
+---
+
+## Backend
+
+* Java 21
+* Spring Boot
+* Spring Cloud
+* Spring Security
+* Spring Data
+
+---
+
+## Workflow & Rules
+
+* Custom DevineByte Workflow Engine
+* Custom Rule Engine
+* Compiler-generated execution metadata
+
+---
+
+## Data
+
+* PostgreSQL
+* MongoDB
+* Redis
+* OpenSearch
+* Object Storage
+
+---
+
+## Messaging
+
+* Apache Kafka (primary event backbone)
+
+---
+
+## Infrastructure
+
+* Docker
+* Kubernetes
+* Helm
+* Terraform
+
+---
+
+## Observability
+
+* OpenTelemetry
+* Prometheus
+* Grafana
+* Loki
+* Tempo
+
+---
+
+## Quality
+
+* JUnit
+* Testcontainers
+* Pact
+* SonarQube
+* OWASP Dependency Check
+
+---
+
+# 26. Repository & Folder Structure
+
+```text
+devinebyte-os/
+├── docs/
+│   ├── architecture/
+│   ├── decisions/
+│   ├── roadmap/
+│   ├── api/
+│   └── security/
+├── compiler/
+│   ├── lexer/
+│   ├── parser/
+│   ├── semantic-analyzer/
+│   ├── optimizer/
+│   ├── artifact-generator/
+│   └── package-manager/
+├── runtime/
+│   ├── workflow-engine/
+│   ├── rule-engine/
+│   ├── event-engine/
+│   ├── scheduler/
+│   └── automation-engine/
+├── services/
+│   ├── identity-service/
+│   ├── tenant-service/
+│   ├── blueprint-service/
+│   ├── compiler-service/
+│   ├── deployment-service/
+│   ├── notification-service/
+│   ├── analytics-service/
+│   ├── marketplace-service/
+│   └── integration-service/
+├── domain-packages/
+│   ├── healthcare/
+│   ├── logistics/
+│   ├── education/
+│   ├── crm/
+│   ├── hr/
+│   ├── finance/
+│   └── manufacturing/
+├── shared/
+│   ├── contracts/
+│   ├── events/
+│   ├── sdk/
+│   └── libraries/
+├── infrastructure/
+│   ├── terraform/
+│   ├── kubernetes/
+│   ├── helm/
+│   ├── monitoring/
+│   └── ci-cd/
+├── tests/
+│   ├── integration/
+│   ├── contract/
+│   ├── performance/
+│   └── security/
+└── tools/
+    ├── cli/
+    ├── generators/
+    └── developer-tools/
+```
+
+---
+
+# 27. Engineering Standards
+
+## Coding Standards
+
+* Clean Architecture
+* SOLID principles
+* Domain-Driven Design
+* Semantic Versioning
+* Twelve-Factor App methodology
+
+---
+
+## Testing Strategy
+
+Every service shall include:
+
+* Unit tests
+* Integration tests
+* Contract tests
+* End-to-end tests
+* Performance tests
+* Security tests
+
+---
+
+## Documentation Standards
+
+Every component shall include:
+
+* Architecture overview
+* API specification
+* Configuration guide
+* Deployment guide
+* Operational runbook
+* ADR references
+* Change history
+
+---
+
+## 28. Architectural Summary
+
+DevineByte OS is architected as a **compiler-driven, event-oriented Business Operating System platform**. Organizations are modeled as executable blueprints rather than configured through rigid application modules. A deterministic compiler validates and transforms these blueprints into immutable deployment packages, which are executed by a specialized runtime composed of workflow, rule, event, scheduling, and automation engines.
+
+The architecture emphasizes:
+
+* Domain-Driven Design with clear bounded contexts.
+* API-first integration and contract-driven communication.
+* Event sourcing principles for observability and replayability.
+* Cloud-native microservices with independent deployment.
+* Strong tenant isolation for secure multi-tenant operation.
+* Extensibility through plugins and installable domain packages.
+* Declarative business logic expressed in the DevineByte DSL instead of hard-coded workflows.
+
+This foundation enables the platform to evolve by extending blueprints, compiler capabilities, and domain packages while preserving the stability of the core runtime.
+
+---
+
+**End of MASTER_ARCHITECTURE.md**
 
