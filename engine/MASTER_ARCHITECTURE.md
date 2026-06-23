@@ -624,3 +624,684 @@ The principal dependencies are:
 **End of MASTER_ARCHITECTURE.md — Part 1**
 
 The remaining sections (microservices, event model, compiler architecture, DSL specification, blueprint schema, runtime architecture, API contracts, database design, security, infrastructure, deployment, technology stack, and repository structure) are delivered in Parts 2 and 3.
+# MASTER_ARCHITECTURE.md (Part 2)
+
+**Project:** DevineByte OS
+
+**Version:** 1.0
+
+**Status:** Phase 1 — Architecture
+
+---
+
+# 11. Microservice Architecture
+
+## Overview
+
+DevineByte OS adopts a **domain-driven microservice architecture** where each service owns its domain model, persistence, APIs, and events. Services communicate asynchronously through an event bus by default and synchronously through versioned APIs only when required.
+
+### Service Categories
+
+```
+                    Client Applications
+                            │
+                    API Gateway / BFF
+                            │
+      ┌─────────────────────────────────────────┐
+      │             Platform Layer              │
+      └─────────────────────────────────────────┘
+          │            │              │
+      Identity     Tenant        Marketplace
+          │            │              │
+      Notification Billing    Integration Hub
+
+────────────────────────────────────────────────────
+
+                Compiler Platform
+
+ Audit → Blueprint → Parser → Semantic
+                     │
+                Optimizer
+                     │
+              Artifact Generator
+                     │
+             Deployment Manager
+
+────────────────────────────────────────────────────
+
+                Runtime Platform
+
+ Workflow Engine
+ Rule Engine
+ Event Engine
+ Scheduler
+ Automation Engine
+ Analytics
+ Reporting
+
+────────────────────────────────────────────────────
+
+           Business Domain Packages
+
+ Healthcare
+ Logistics
+ Education
+ CRM
+ HR
+ Finance
+ Manufacturing
+```
+
+---
+
+## Core Platform Services
+
+### Identity Service
+
+Responsibilities
+
+* Authentication
+* User lifecycle
+* MFA
+* Password policies
+* Session management
+* OAuth2/OIDC
+* JWT issuance
+
+Owns
+
+* Users
+* Credentials
+* Sessions
+
+---
+
+### Tenant Service
+
+Responsibilities
+
+* Organization provisioning
+* Tenant configuration
+* Feature flags
+* Regional settings
+* Isolation policies
+
+Owns
+
+* Organizations
+* Plans
+* Domains
+* Tenant metadata
+
+---
+
+### Subscription Service
+
+Responsibilities
+
+* Plans
+* Usage limits
+* Licensing
+* Billing integration
+
+---
+
+### Notification Service
+
+Supports
+
+* Email
+* SMS
+* Push
+* WhatsApp
+* Webhooks
+* In-app notifications
+
+---
+
+### Integration Hub
+
+Provides
+
+* REST connectors
+* GraphQL connectors
+* ERP connectors
+* CRM connectors
+* Accounting connectors
+* Webhook management
+* Event subscriptions
+
+---
+
+### Marketplace Service
+
+Manages
+
+* Extensions
+* Industry packages
+* Templates
+* Plugins
+* Version compatibility
+
+---
+
+# 12. Compiler Platform
+
+The compiler transforms business blueprints into executable runtime artifacts.
+
+Compilation is deterministic.
+
+```
+Blueprint
+     │
+Lexer
+     │
+Parser
+     │
+AST
+     │
+Semantic Analysis
+     │
+Validation
+     │
+Optimization
+     │
+Artifact Generation
+     │
+Deployment Package
+```
+
+---
+
+## Compiler Components
+
+### Lexer
+
+Responsibilities
+
+* Tokenization
+* Syntax normalization
+* Version detection
+* Error localization
+
+Output
+
+Token stream
+
+---
+
+### Parser
+
+Responsibilities
+
+* Parse DSL
+* Build Abstract Syntax Tree (AST)
+* Validate syntax
+
+Output
+
+AST
+
+---
+
+### Semantic Analyzer
+
+Responsibilities
+
+* Dependency resolution
+* Rule validation
+* Workflow verification
+* Reference validation
+* Type checking
+
+Output
+
+Validated AST
+
+---
+
+### Optimizer
+
+Responsibilities
+
+* Remove redundant transitions
+* Merge duplicate rules
+* Optimize workflow graphs
+* Optimize event routing
+
+Output
+
+Optimized execution graph
+
+---
+
+### Artifact Generator
+
+Produces
+
+* Workflow metadata
+* Rule definitions
+* Runtime manifests
+* Event contracts
+* Database migration plans
+* API metadata
+* Deployment package
+
+---
+
+### Package Manager
+
+Creates immutable deployment bundles containing:
+
+* Blueprint manifest
+* Runtime metadata
+* Version information
+* Checksums
+* Migration scripts
+* Deployment descriptors
+
+---
+
+# 13. Event Model
+
+## Principles
+
+Events are immutable, append-only records of business activity.
+
+Characteristics
+
+* Immutable
+* Versioned
+* Time-stamped
+* Tenant-scoped
+* Replayable
+* Idempotent
+
+---
+
+## Event Structure
+
+Each event contains:
+
+* Event ID
+* Event Type
+* Event Version
+* Tenant ID
+* Aggregate ID
+* Aggregate Type
+* Correlation ID
+* Causation ID
+* Timestamp
+* Actor
+* Payload
+* Metadata
+
+---
+
+## Event Categories
+
+### Platform Events
+
+Examples
+
+* TenantCreated
+* TenantUpdated
+* UserCreated
+* UserAuthenticated
+* SubscriptionActivated
+* PluginInstalled
+
+---
+
+### Compiler Events
+
+Examples
+
+* BlueprintCreated
+* BlueprintValidated
+* CompilationStarted
+* CompilationCompleted
+* CompilationFailed
+* PackageGenerated
+
+---
+
+### Runtime Events
+
+Examples
+
+* WorkflowStarted
+* WorkflowCompleted
+* WorkflowCancelled
+* RuleEvaluated
+* AutomationExecuted
+* TaskAssigned
+* ApprovalGranted
+* ApprovalRejected
+
+---
+
+### Business Events
+
+Examples
+
+* CustomerRegistered
+* OrderCreated
+* InvoiceIssued
+* PatientCheckedIn
+* StudentEnrolled
+* InventoryReserved
+
+---
+
+# 14. DSL Specification
+
+## Purpose
+
+The DevineByte DSL provides a declarative language for defining business operating systems independently of implementation code.
+
+The language must be:
+
+* Human-readable
+* Machine-compilable
+* Deterministic
+* Versioned
+* Extensible
+
+---
+
+## Primary Constructs
+
+The DSL defines:
+
+* Organization
+* Department
+* Team
+* Role
+* Workflow
+* State
+* Transition
+* Rule
+* Policy
+* SLA
+* KPI
+* Form
+* Entity
+* Event
+* Integration
+* Automation
+* Schedule
+* Report
+* Dashboard
+
+---
+
+## Language Characteristics
+
+The DSL supports:
+
+* Namespaces
+* Imports
+* Modules
+* Type definitions
+* References
+* Expressions
+* Constraints
+* Enumerations
+* Metadata
+* Documentation annotations
+
+---
+
+## Validation Rules
+
+The compiler validates:
+
+* Unique identifiers
+* Circular dependencies
+* Missing references
+* Invalid transitions
+* Invalid state graphs
+* Permission conflicts
+* Event consistency
+* Type compatibility
+* Version compatibility
+
+---
+
+# 15. Blueprint Architecture
+
+A Blueprint is the canonical source of business behavior.
+
+It is immutable once published.
+
+New revisions create new blueprint versions.
+
+---
+
+## Blueprint Sections
+
+Every blueprint contains:
+
+### Metadata
+
+* Name
+* Version
+* Author
+* Organization
+* Compiler version
+* Target runtime
+
+---
+
+### Organization Model
+
+* Departments
+* Teams
+* Roles
+* Reporting structure
+
+---
+
+### Data Model
+
+* Business entities
+* Relationships
+* Validation rules
+
+---
+
+### Process Model
+
+* Workflows
+* States
+* Activities
+* SLAs
+* Escalations
+
+---
+
+### Business Rules
+
+* Constraints
+* Policies
+* Decision tables
+* Routing logic
+
+---
+
+### Event Definitions
+
+* Domain events
+* Integration events
+* Trigger events
+
+---
+
+### Automation Definitions
+
+* Scheduled jobs
+* Event handlers
+* Notifications
+* External actions
+
+---
+
+### Reporting Model
+
+* KPIs
+* Metrics
+* Dashboards
+* Reports
+
+---
+
+### Security Model
+
+* Roles
+* Permissions
+* Policies
+* Resource scopes
+
+---
+
+### Integration Model
+
+* External APIs
+* Webhooks
+* Message queues
+* Connectors
+
+---
+
+# 16. Runtime Architecture
+
+The runtime executes compiled business operating systems without interpreting raw blueprint definitions.
+
+```
+Deployment Package
+         │
+ Runtime Loader
+         │
+ Metadata Registry
+         │
+──────────────────────────
+ Workflow Engine
+ Rule Engine
+ Event Engine
+ Scheduler
+ Automation Engine
+──────────────────────────
+         │
+ Domain Packages
+         │
+ Storage
+         │
+ Event Bus
+```
+
+---
+
+## Runtime Loader
+
+Responsibilities
+
+* Load deployment packages
+* Validate signatures
+* Register metadata
+* Activate services
+
+---
+
+## Metadata Registry
+
+Maintains executable metadata for:
+
+* Workflows
+* Rules
+* Permissions
+* Forms
+* Events
+* KPIs
+* Integrations
+
+---
+
+## Workflow Engine
+
+Responsible for:
+
+* State transitions
+* Process execution
+* SLA tracking
+* Escalations
+* Human tasks
+
+---
+
+## Rule Engine
+
+Evaluates:
+
+* Policies
+* Decision tables
+* Constraints
+* Expressions
+* Routing logic
+
+---
+
+## Event Engine
+
+Responsible for:
+
+* Publishing events
+* Event routing
+* Replay
+* Dead-letter handling
+* Event subscriptions
+
+---
+
+## Scheduler
+
+Executes:
+
+* Timers
+* Cron jobs
+* Delayed workflows
+* SLA deadlines
+* Maintenance jobs
+
+---
+
+## Automation Engine
+
+Coordinates:
+
+* Notifications
+* API calls
+* Data synchronization
+* External integrations
+* AI actions
+* Workflow triggers
+
+---
+
+## Reporting Runtime
+
+Consumes runtime events to produce:
+
+* Operational dashboards
+* KPI calculations
+* Trend analysis
+* Executive reports
+
+Reporting is event-driven and read-model based, ensuring operational workloads remain isolated from analytical queries.
+
+---
+
+**End of MASTER_ARCHITECTURE.md — Part 2**
+
+The remaining sections—API contracts, database architecture, multi-tenancy, authentication and authorization architecture, infrastructure, deployment topology, technology stack, repository structure, and engineering standards—are delivered in Part 3.
+
