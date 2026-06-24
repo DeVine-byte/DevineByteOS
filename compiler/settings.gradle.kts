@@ -1,0 +1,8 @@
+rootProject.name = "devinebyte-compiler"
+
+include(
+    "compiler-api",
+    "compiler-core",
+    "compiler-diagnostics",
+    "compiler-testing"
+)
