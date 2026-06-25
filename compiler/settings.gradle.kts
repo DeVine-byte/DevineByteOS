@@ -4,5 +4,6 @@ include(
     "compiler-api",
     "compiler-core",
     "compiler-diagnostics",
-    "compiler-testing"
+    "compiler-testing",
+    "compiler-parser"
 )
