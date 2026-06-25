@@ -5,5 +5,6 @@ include(
     "compiler-core",
     "compiler-diagnostics",
     "compiler-testing",
-    "compiler-parser"
+    "compiler-parser",
+    "compiler-blueprint"
 )
