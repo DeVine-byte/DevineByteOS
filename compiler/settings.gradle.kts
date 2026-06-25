@@ -6,5 +6,6 @@ include(
     "compiler-diagnostics",
     "compiler-testing",
     "compiler-parser",
-    "compiler-blueprint"
+    "compiler-blueprint",
+    "compiler-generator
 )
