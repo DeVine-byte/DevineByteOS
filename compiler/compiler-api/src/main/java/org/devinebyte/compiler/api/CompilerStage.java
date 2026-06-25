@@ -1,4 +1,4 @@
-package com.devinebyte.compiler.api;
+package org.devinebyte.compiler.api;
 
 import com.devinebyte.compiler.core.CompilationContext;
 
