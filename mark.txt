@@ -1,0 +1,182 @@
+.
+├── README.md
+├── compiler
+│   ├── build.gradle.kts
+│   ├── compiler-api
+│   │   └── src
+│   │       └── main
+│   │           └── java
+│   │               ├── com
+│   │               └── org
+│   │                   └── devinebyte
+│   │                       └── compiler
+│   │                           └── api
+│   │                               ├── Compiler.java
+│   │                               └── CompilerStage.java
+│   ├── compiler-blueprint
+│   │   └── src
+│   │       └── main
+│   │           └── java
+│   │               ├── com
+│   │               └── org
+│   │                   └── devinebyte
+│   │                       └── compiler
+│   │                           ├── blueprint
+│   │                           │   ├── compiler
+│   │                           │   │   ├── BlueprintCompilationResult.java
+│   │                           │   │   ├── BlueprintCompiler.java
+│   │                           │   │   └── BlueprintCompilerImpl.java
+│   │                           │   ├── loader
+│   │                           │   │   ├── BlueprintFile.java
+│   │                           │   │   └── BlueprintLoader.java
+│   │                           │   ├── mapper
+│   │                           │   │   └── AstToBlueprintMapper.java
+│   │                           │   ├── model
+│   │                           │   │   ├── ApiDefinition.java
+│   │                           │   │   ├── BlueprintModel.java
+│   │                           │   │   ├── CommandDefinition.java
+│   │                           │   │   ├── EntityDefinition.java
+│   │                           │   │   ├── EventDefinition.java
+│   │                           │   │   ├── PolicyDefinition.java
+│   │                           │   │   ├── PropertyDefinition.java
+│   │                           │   │   └── WorkflowDefinition.java
+│   │                           │   └── validator
+│   │                           │       ├── BlueprintValidator.java
+│   │                           │       └── ValidationResult.java
+│   │                           └── parser
+│   ├── compiler-core
+│   │   └── src
+│   │       └── main
+│   │           └── java
+│   │               ├── com
+│   │               └── org
+│   │                   └── devinebyte
+│   │                       └── compiler
+│   │                           └── core
+│   │                               ├── CompilationContext.java
+│   │                               ├── CompilerConfiguration.java
+│   │                               ├── CompilerEngine.java
+│   │                               └── ProjectModel.java
+│   ├── compiler-diagnostics
+│   │   └── src
+│   │       └── main
+│   │           └── java
+│   │               ├── com
+│   │               └── org
+│   │                   └── devinebyte
+│   │                       └── compiler
+│   │                           └── diagnostics
+│   │                               ├── Diagnostic.java
+│   │                               ├── DiagnosticCollector.java
+│   │                               └── Severity.java
+│   ├── compiler-generator
+│   │   └── src
+│   │       └── main
+│   │           └── java
+│   │               ├── com
+│   │               └── org
+│   │                   └── devinebyte
+│   │                       └── compiler
+│   │                           └── generator
+│   │                               ├── api
+│   │                               │   ├── OpenApiGenerator.java
+│   │                               │   └── RestGenerator.java
+│   │                               ├── database
+│   │                               │   ├── MigrationGenerator.java
+│   │                               │   └── SchemaGenerator.java
+│   │                               ├── engine
+│   │                               │   ├── CodeGenerator.java
+│   │                               │   ├── GenerationContext.java
+│   │                               │   ├── GenerationResult.java
+│   │                               │   └── GeneratorException.java
+│   │                               ├── java
+│   │                               │   ├── ControllerGenerator.java
+│   │                               │   ├── DtoGenerator.java
+│   │                               │   ├── EntityGenerator.java
+│   │                               │   ├── JavaGenerator.java
+│   │                               │   ├── RepositoryGenerator.java
+│   │                               │   └── ServiceGenerator.java
+│   │                               ├── templates
+│   │                               │   ├── TemplateEngine.java
+│   │                               │   ├── TemplateLoader.java
+│   │                               │   └── TemplateRenderer.java
+│   │                               ├── utils
+│   │                               └── writer
+│   │                                   ├── FileEmitter.java
+│   │                                   └── SourceWriter.java
+│   ├── compiler-parser
+│   │   └── src
+│   │       └── main
+│   │           └── java
+│   │               └── org
+│   │                   └── devinebyte
+│   │                       └── compiler
+│   │                           └── parser
+│   │                               ├── ast
+│   │                               │   ├── AstNode.java
+│   │                               │   ├── EntityNode.java
+│   │                               │   ├── ProgramNode.java
+│   │                               │   ├── PropertyNode.java
+│   │                               │   └── WorkflowNode.java
+│   │                               ├── lexer
+│   │                               │   ├── Lexer.java
+│   │                               │   ├── LexerException.java
+│   │                               │   ├── Token.java
+│   │                               │   └── TokenType.java
+│   │                               ├── parser
+│   │                               │   ├── ParseResult.java
+│   │                               │   ├── Parser.java
+│   │                               │   └── ParserException.java
+│   │                               ├── semantic
+│   │                               │   ├── SemanticAnalyzer.java
+│   │                               │   ├── SemanticException.java
+│   │                               │   └── SymbolTable.java
+│   │                               └── util
+│   ├── compiler-sdk
+│   │   ├── build.gradle.kts
+│   │   ├── compiler-sdk-real
+│   │   │   └── src
+│   │   │       └── main
+│   │   │           └── java
+│   │   │               └── org
+│   │   │                   └── devinebyte
+│   │   │                       └── sdk
+│   │   │                           └── service
+│   │   └── src
+│   │       └── main
+│   │           └── java
+│   │               └── org
+│   │                   └── devinebyte
+│   │                       └── sdk
+│   │                           ├── Builder.java
+│   │                           ├── CompilerSDK.java
+│   │                           ├── Real.md
+│   │                           ├── Request.java
+│   │                           ├── Result.java
+│   │                           ├── Session.java
+│   │                           └── service
+│   │                               ├── ArtifactService.java
+│   │                               ├── CompilationService.java
+│   │                               ├── ParsingService.java
+│   │                               └── ValidationService.java
+│   ├── compiler-testing
+│   │   └── src
+│   │       └── test
+│   │           └── java
+│   │               └── org
+│   │                   └── devinebyte
+│   │                       └── compiler
+│   │                           └── testing
+│   │                               └── CompilerEngineTest.java
+│   ├── gradle.properties
+│   └── settings.gradle.kts
+├── docs
+│   ├── CHANGELOG.md
+│   ├── DECISIONS.md
+│   ├── MASTER_ARCHITECTURE.md
+│   ├── PROJECT_STATE.md
+│   └── ROADMAP.md
+├── mark.txt
+└── track.txt
+
+98 directories, 82 files
