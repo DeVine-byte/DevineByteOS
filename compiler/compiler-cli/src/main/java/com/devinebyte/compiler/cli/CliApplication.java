@@ -1,5 +1,12 @@
 package com.devinebyte.compiler.cli;
 
+import com.devinebyte.compiler.cli.commands.BuildCommand;
+import com.devinebyte.compiler.cli.commands.Command;
+import com.devinebyte.compiler.cli.commands.CompileCommand;
+import com.devinebyte.compiler.cli.commands.HelpCommand;
+import com.devinebyte.compiler.cli.commands.ParseCommand;
+import com.devinebyte.compiler.cli.commands.ValidateCommand;
+import com.devinebyte.compiler.cli.commands.VersionCommand;
 import com.devinebyte.compiler.cli.util.ExitCodes;
 
 public final class CliApplication {
@@ -11,28 +18,24 @@ public final class CliApplication {
     public static int run(String[] args) {
 
         if (args == null || args.length == 0) {
-            System.out.println("DevineByte Compiler CLI");
-            System.out.println("Use 'db help' for available commands.");
-            return ExitCodes.SUCCESS;
+            return new HelpCommand().execute();
         }
 
-        String command = args[0];
+        Command command = switch (args[0].toLowerCase()) {
+            case "compile" -> new CompileCommand();
+            case "build" -> new BuildCommand();
+            case "parse" -> new ParseCommand();
+            case "validate" -> new ValidateCommand();
+            case "version" -> new VersionCommand();
+            case "help" -> new HelpCommand();
+            default -> null;
+        };
 
-        switch (command.toLowerCase()) {
-
-            case "help":
-                System.out.println("Help command is not implemented yet.");
-                return ExitCodes.SUCCESS;
-
-            case "version":
-                System.out.println("DevineByte Compiler");
-                return ExitCodes.SUCCESS;
-
-            default:
-                System.err.println("Unknown command: " + command);
-                return ExitCodes.INVALID_ARGUMENT;
+        if (command == null) {
+            System.err.println("Unknown command: " + args[0]);
+            return ExitCodes.INVALID_ARGUMENT;
         }
 
+        return command.execute();
     }
-
 }
