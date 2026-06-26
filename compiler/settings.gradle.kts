@@ -8,5 +8,6 @@ include(
     "compiler-parser",
     "compiler-blueprint",
     "compiler-generator",
-    "compiler-sdk"
+    "compiler-sdk",
+    "compiler-cli"
 )
