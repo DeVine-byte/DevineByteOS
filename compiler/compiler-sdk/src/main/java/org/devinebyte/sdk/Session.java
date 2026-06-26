@@ -1,6 +1,7 @@
 package org.devinebyte.sdk;
 
 import java.nio.file.Path;
+import org.devinebyte.sdk.internal.CompilerFacade;
 
 public final class Session {
 
@@ -25,10 +26,8 @@ public final class Session {
     }
 
     public Result compile(Request request) {
-
-        // implemented later
-
-        return Result.success();
+        CompilerFacade facade = new CompilerFacade();
+        return facade.compile(this, request);
     }
 
     public Path getProjectRoot() {
