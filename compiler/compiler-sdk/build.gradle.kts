@@ -9,9 +9,15 @@ java {
 }
 
 dependencies {
-    api(project(":compiler-core"))
-    api(project(":compiler-diagnostics")) 
-    testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
+
+    implementation(project(":compiler-diagnostics"))
+
+    testImplementation(project(":compiler-testing"))
+
+    testImplementation(platform("org.junit:junit-bom:5.10.2"))
+
+    testImplementation("org.junit.jupiter:junit-jupiter")
+
 }
 
 tasks.test {
