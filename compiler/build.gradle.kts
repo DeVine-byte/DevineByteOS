@@ -4,7 +4,7 @@ plugins {
     jacoco
 }
 
-group = "com.devinebyte"
+group = "org.devinebyte"
 version = "0.1.0"
 
 repositories {
