@@ -26,6 +26,8 @@ subprojects {
 
     dependencies {
         testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
+        implementation(project(":compiler-diagnostics"))
+        testImplementation(testFixtures(project(":compiler-testing")))
     }
 
     tasks.test {
