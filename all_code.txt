@@ -1,0 +1,2736 @@
+==== FILE: ./compiler/compiler-api/src/main/java/org/devinebyte/compiler/api/Compiler.java ====
+package org.devinebyte.compiler.api;
+
+public interface Compiler {
+
+    CompilationResult compile();
+}
+
+==== FILE: ./compiler/compiler-api/src/main/java/org/devinebyte/compiler/api/CompilerStage.java ====
+package org.devinebyte.compiler.api;
+
+import org.devinebyte.compiler.core.CompilationContext;
+
+public interface CompilerStage {
+
+    String name();
+
+    void execute(CompilationContext context);
+}
+
+==== FILE: ./compiler/compiler-blueprint/src/main/java/org/devinebyte/compiler/blueprint/compiler/BlueprintCompilationResult.java ====
+package org.devinebyte.compiler.blueprint.compiler;
+
+import org.devinebyte.compiler.blueprint.model.BlueprintModel;
+
+public record BlueprintCompilationResult(
+
+        BlueprintModel blueprint,
+
+        boolean success
+
+) {}
+
+==== FILE: ./compiler/compiler-blueprint/src/main/java/org/devinebyte/compiler/blueprint/compiler/BlueprintCompiler.java ====
+package org.devinebyte.compiler.blueprint.compiler;
+
+import org.devinebyte.compiler.parser.ast.ProgramNode;
+
+public interface BlueprintCompiler {
+
+    BlueprintCompilationResult compile(ProgramNode program);
+
+}
+
+==== FILE: ./compiler/compiler-blueprint/src/main/java/org/devinebyte/compiler/blueprint/compiler/BlueprintCompilerImpl.java ====
+package org.devinebyte.compiler.blueprint.compiler;
+
+import org.devinebyte.compiler.parser.ast.ProgramNode;
+
+public class BlueprintCompilerImpl implements BlueprintCompiler {
+
+    @Override
+    public BlueprintCompilationResult compile(ProgramNode program) {
+
+        BlueprintModel model = new BlueprintModel();
+
+        return new BlueprintCompilationResult(model, true);
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-blueprint/src/main/java/org/devinebyte/compiler/blueprint/loader/BlueprintFile.java ====
+package org.devinebyte.compiler.blueprint.loader;
+
+public record BlueprintFile(
+
+        String fileName,
+
+        String content
+
+) {}
+
+==== FILE: ./compiler/compiler-blueprint/src/main/java/org/devinebyte/compiler/blueprint/loader/BlueprintLoader.java ====
+package org.devinebyte.compiler.blueprint.loader;
+
+import java.nio.file.Path;
+
+public interface BlueprintLoader {
+
+    BlueprintFile load(Path file);
+
+}
+
+==== FILE: ./compiler/compiler-blueprint/src/main/java/org/devinebyte/compiler/blueprint/mapper/AstToBlueprintMapper.java ====
+package org.devinebyte.compiler.blueprint.mapper;
+
+import org.devinebyte.compiler.blueprint.model.BlueprintModel;
+import org.devinebyte.compiler.parser.ast.ProgramNode;
+
+public class AstToBlueprintMapper {
+
+    public BlueprintModel map(ProgramNode program) {
+
+        return new BlueprintModel();
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-blueprint/src/main/java/org/devinebyte/compiler/blueprint/model/ApiDefinition.java ====
+package org.devinebyte.compiler.blueprint.model;
+
+public class ApiDefinition {
+
+    private String basePath;
+
+    public String getBasePath() {
+        return basePath;
+    }
+
+    public void setBasePath(String basePath) {
+        this.basePath = basePath;
+    }
+
+}
+
+==== FILE: ./compiler/compiler-blueprint/src/main/java/org/devinebyte/compiler/blueprint/model/BlueprintModel.java ====
+package org.devinebyte.compiler.blueprint.model;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class BlueprintModel {
+
+    private final List<EntityDefinition> entities = new ArrayList<>();
+
+    private final List<WorkflowDefinition> workflows = new ArrayList<>();
+
+    public List<EntityDefinition> getEntities() {
+        return entities;
+    }
+
+    public List<WorkflowDefinition> getWorkflows() {
+        return workflows;
+    }
+
+}
+
+==== FILE: ./compiler/compiler-blueprint/src/main/java/org/devinebyte/compiler/blueprint/model/CommandDefinition.java ====
+package org.devinebyte.compiler.blueprint.model;
+
+public class CommandDefinition {
+
+    private String name;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+}
+
+==== FILE: ./compiler/compiler-blueprint/src/main/java/org/devinebyte/compiler/blueprint/model/EntityDefinition.java ====
+package org.devinebyte.compiler.blueprint.model;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class EntityDefinition {
+
+    private String name;
+
+    private final List<PropertyDefinition> properties = new ArrayList<>();
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public List<PropertyDefinition> getProperties() {
+        return properties;
+    }
+
+}
+
+==== FILE: ./compiler/compiler-blueprint/src/main/java/org/devinebyte/compiler/blueprint/model/EventDefinition.java ====
+package org.devinebyte.compiler.blueprint.model;
+
+public class EventDefinition {
+
+    private String name;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+}
+
+==== FILE: ./compiler/compiler-blueprint/src/main/java/org/devinebyte/compiler/blueprint/model/PolicyDefinition.java ====
+package org.devinebyte.compiler.blueprint.model;
+
+public class PolicyDefinition {
+
+    private String name;
+
+    private String expression;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getExpression() {
+        return expression;
+    }
+
+    public void setExpression(String expression) {
+        this.expression = expression;
+    }
+
+}
+
+==== FILE: ./compiler/compiler-blueprint/src/main/java/org/devinebyte/compiler/blueprint/model/PropertyDefinition.java ====
+package org.devinebyte.compiler.blueprint.model;
+
+public class PropertyDefinition {
+
+    private String name;
+
+    private String type;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+}
+
+==== FILE: ./compiler/compiler-blueprint/src/main/java/org/devinebyte/compiler/blueprint/model/WorkflowDefinition.java ====
+package org.devinebyte.compiler.blueprint.model;
+
+public class WorkflowDefinition {
+
+    private String name;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+}
+
+==== FILE: ./compiler/compiler-blueprint/src/main/java/org/devinebyte/compiler/blueprint/validator/BlueprintValidator.java ====
+package org.devinebyte.compiler.blueprint.validator;
+
+import org.devinebyte.compiler.blueprint.model.BlueprintModel;
+
+public interface BlueprintValidator {
+
+    ValidationResult validate(BlueprintModel model);
+
+}
+
+==== FILE: ./compiler/compiler-blueprint/src/main/java/org/devinebyte/compiler/blueprint/validator/ValidationResult.java ====
+package org.devinebyte.compiler.blueprint.validator;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class ValidationResult {
+
+    private final List<String> errors = new ArrayList<>();
+
+    public boolean isValid() {
+        return errors.isEmpty();
+    }
+
+    public List<String> getErrors() {
+        return errors;
+    }
+
+}
+
+==== FILE: ./compiler/compiler-cli/src/main/java/com/devinebyte/compiler/cli/CliApplication.java ====
+package org.devinebyte.compiler.cli;
+
+import org.devinebyte.compiler.cli.commands.BuildCommand;
+import org.devinebyte.compiler.cli.commands.Command;
+import org.devinebyte.compiler.cli.commands.CompileCommand;
+import org.devinebyte.compiler.cli.commands.HelpCommand;
+import org.devinebyte.compiler.cli.commands.ParseCommand;
+import org.devinebyte.compiler.cli.commands.ValidateCommand;
+import org.devinebyte.compiler.cli.commands.VersionCommand;
+import org.devinebyte.compiler.cli.util.ExitCodes;
+
+public final class CliApplication {
+
+    private CliApplication() {
+        throw new AssertionError("Utility class");
+    }
+
+    public static int run(String[] args) {
+
+        if (args == null || args.length == 0) {
+            return new HelpCommand().execute();
+        }
+
+        Command command = switch (args[0].toLowerCase()) {
+            case "compile" -> new CompileCommand();
+            case "build" -> new BuildCommand();
+            case "parse" -> new ParseCommand();
+            case "validate" -> new ValidateCommand();
+            case "version" -> new VersionCommand();
+            case "help" -> new HelpCommand();
+            default -> null;
+        };
+
+        if (command == null) {
+            System.err.println("Unknown command: " + args[0]);
+            return ExitCodes.INVALID_ARGUMENT;
+        }
+
+        return command.execute();
+    }
+}
+
+==== FILE: ./compiler/compiler-cli/src/main/java/com/devinebyte/compiler/cli/Main.java ====
+package org.devinebyte.compiler.cli;
+
+public final class Main {
+
+    private Main() {
+        throw new AssertionError("Utility class");
+    }
+
+    public static void main(String[] args) {
+        int exitCode = CliApplication.run(args);
+        System.exit(exitCode);
+    }
+
+}
+
+==== FILE: ./compiler/compiler-cli/src/main/java/com/devinebyte/compiler/cli/commands/BuildCommand.java ====
+package org.devinebyte.compiler.cli.commands;
+
+import org.devinebyte.compiler.cli.util.ExitCodes;
+
+public final class BuildCommand implements Command {
+
+    @Override
+    public int execute() {
+
+        System.out.println("Build command");
+
+        return ExitCodes.SUCCESS;
+    }
+
+}
+
+==== FILE: ./compiler/compiler-cli/src/main/java/com/devinebyte/compiler/cli/commands/Command.java ====
+package org.devinebyte.compiler.cli.commands;
+
+public interface Command {
+
+    /**
+     * Executes the command.
+     *
+     * @return process exit code
+     */
+    int execute();
+
+}
+
+==== FILE: ./compiler/compiler-cli/src/main/java/com/devinebyte/compiler/cli/commands/CompileCommand.java ====
+package org.devinebyte.compiler.cli.commands;
+
+import org.devinebyte.compiler.cli.options.CliOptions;
+import org.devinebyte.compiler.cli.options.OptionParser;
+import org.devinebyte.compiler.cli.sdk.RequestMapper;
+import org.devinebyte.compiler.cli.sdk.SessionFactory;
+import org.devinebyte.compiler.cli.sdk.ResultPrinter;
+import org.devinebyte.compiler.cli.util.ExitCodes;
+import org.devinebyte.compiler.sdk.service.CompilationService;
+import org.devinebyte.compiler.sdk.session.BuildSession;
+import org.devinebyte.compiler.sdk.request.CompilerRequest;
+import org.devinebyte.compiler.sdk.result.CompilerResult;
+
+public final class CompileCommand implements Command {
+
+    private final CompilationService compilationService;
+    private final SessionFactory sessionFactory;
+    private final RequestMapper mapper;
+    private final OptionParser parser;
+    private final ResultPrinter resultPrinter;
+
+    public CompileCommand(
+            CompilationService compilationService,
+            SessionFactory sessionFactory,
+            RequestMapper mapper,
+            OptionParser parser,
+            ResultPrinter resultPrinter) {
+        this.compilationService = compilationService;
+        this.sessionFactory = sessionFactory;
+        this.mapper = mapper;
+        this.parser = parser;
+        this.resultPrinter = resultPrinter;
+    }
+
+    @Override
+    public int execute(String[] args) {
+        CliOptions options = parser.parse(args);
+
+        BuildSession session = sessionFactory.create();
+
+        CompilerRequest request = mapper.compileRequest(options);
+
+        CompilerResult result = compilationService.compile(session, request);
+
+        resultPrinter.print(result);
+
+        return result.success() ? ExitCodes.SUCCESS : ExitCodes.COMPILATION_ERROR;
+    }
+}
+
+==== FILE: ./compiler/compiler-cli/src/main/java/com/devinebyte/compiler/cli/commands/HelpCommand.java ====
+package org.devinebyte.compiler.cli.commands;
+
+import org.devinebyte.compiler.cli.util.ExitCodes;
+
+public final class HelpCommand implements Command {
+
+    @Override
+    public int execute() {
+
+        System.out.println("""
+                DevineByte Compiler
+
+                Usage:
+                  db <command>
+
+                Commands:
+                  compile    Compile source files
+                  build      Build a project
+                  parse      Parse source files
+                  validate   Validate source files
+                  version    Display compiler version
+                  help       Display this help
+                """);
+
+        return ExitCodes.SUCCESS;
+    }
+
+}
+
+==== FILE: ./compiler/compiler-cli/src/main/java/com/devinebyte/compiler/cli/commands/ParseCommand.java ====
+package org.devinebyte.compiler.cli.commands;
+
+import org.devinebyte.compiler.cli.util.ExitCodes;
+
+public final class ParseCommand implements Command {
+
+    @Override
+    public int execute() {
+
+        System.out.println("Parse command");
+
+        return ExitCodes.SUCCESS;
+    }
+
+}
+
+==== FILE: ./compiler/compiler-cli/src/main/java/com/devinebyte/compiler/cli/commands/ValidateCommand.java ====
+package org.devinebyte.compiler.cli.commands;
+
+import org.devinebyte.compiler.cli.util.ExitCodes;
+
+public final class ValidateCommand implements Command {
+
+    @Override
+    public int execute() {
+
+        System.out.println("Validate command");
+
+        return ExitCodes.SUCCESS;
+    }
+
+}
+
+==== FILE: ./compiler/compiler-cli/src/main/java/com/devinebyte/compiler/cli/commands/VersionCommand.java ====
+package org.devinebyte.compiler.cli.commands;
+
+import org.devinebyte.compiler.cli.util.ExitCodes;
+
+public final class VersionCommand implements Command {
+
+    private static final String VERSION = "0.1.0";
+
+    @Override
+    public int execute() {
+
+        System.out.println("DevineByte Compiler");
+        System.out.println("Version " + VERSION);
+
+        return ExitCodes.SUCCESS;
+    }
+
+}
+
+==== FILE: ./compiler/compiler-cli/src/main/java/com/devinebyte/compiler/cli/console/AnsiConsole.java ====
+package org.devinebyte.compiler.cli.console;
+
+public class AnsiConsole implements Console {
+
+    private final boolean colorsEnabled;
+
+    public AnsiConsole() {
+        this.colorsEnabled = System.console() != null;
+    }
+
+    @Override
+    public void info(String message) {
+        printColored(message, ConsoleColor.BLUE);
+    }
+
+    @Override
+    public void success(String message) {
+        printColored(message, ConsoleColor.GREEN);
+    }
+
+    @Override
+    public void warning(String message) {
+        printColored(message, ConsoleColor.YELLOW);
+    }
+
+    @Override
+    public void error(String message) {
+        printColored(message, ConsoleColor.RED);
+    }
+
+    @Override
+    public void print(String message) {
+        System.out.println(message);
+    }
+
+    private void printColored(String message, ConsoleColor color) {
+
+        if (colorsEnabled) {
+            System.out.println(color.ansi() + message + ConsoleColor.RESET.ansi());
+        } else {
+            System.out.println(message);
+        }
+    }
+}
+
+==== FILE: ./compiler/compiler-cli/src/main/java/com/devinebyte/compiler/cli/console/Console.java ====
+package org.devinebyte.compiler.cli.console;
+
+public interface Console {
+
+    void info(String message);
+
+    void success(String message);
+
+    void warning(String message);
+
+    void error(String message);
+
+    void print(String message);
+}
+
+==== FILE: ./compiler/compiler-cli/src/main/java/com/devinebyte/compiler/cli/console/ConsoleColor.java ====
+package org.devinebyte.compiler.cli.console;
+
+public enum ConsoleColor {
+
+    RESET("\u001B[0m"),
+
+    RED("\u001B[31m"),
+
+    GREEN("\u001B[32m"),
+
+    YELLOW("\u001B[33m"),
+
+    BLUE("\u001B[34m"),
+
+    CYAN("\u001B[36m"),
+
+    WHITE("\u001B[37m");
+
+    private final String ansi;
+
+    ConsoleColor(String ansi) {
+        this.ansi = ansi;
+    }
+
+    public String ansi() {
+        return ansi;
+    }
+}
+
+==== FILE: ./compiler/compiler-cli/src/main/java/com/devinebyte/compiler/cli/console/DiagnosticFormatter.java ====
+package org.devinebyte.compiler.cli.console;
+
+import org.devinebyte.compiler.sdk.diagnostics.Diagnostic;
+import org.devinebyte.compiler.sdk.diagnostics.Severity;
+
+public class DiagnosticFormatter {
+
+    public String format(Diagnostic diagnostic) {
+
+        return String.format(
+                "%s: %s (%s:%d:%d)",
+                diagnostic.severity(),
+                diagnostic.message(),
+                diagnostic.location().file(),
+                diagnostic.location().line(),
+                diagnostic.location().column()
+        );
+    }
+
+    public void print(Console console, Diagnostic diagnostic) {
+
+        String text = format(diagnostic);
+
+        if (diagnostic.severity() == Severity.ERROR) {
+            console.error(text);
+        } else {
+            console.warning(text);
+        }
+    }
+}
+
+==== FILE: ./compiler/compiler-cli/src/main/java/com/devinebyte/compiler/cli/console/ProgressReporter.java ====
+package org.devinebyte.compiler.cli.console;
+
+public class ProgressReporter {
+
+    private final Console console;
+
+    public ProgressReporter(Console console) {
+        this.console = console;
+    }
+
+    public void start(String task) {
+        console.info("[START] " + task);
+    }
+
+    public void step(String task) {
+        console.print("  -> " + task);
+    }
+
+    public void finish(String task) {
+        console.success("[DONE] " + task);
+    }
+}
+
+==== FILE: ./compiler/compiler-cli/src/main/java/com/devinebyte/compiler/cli/console/SummaryReporter.java ====
+package org.devinebyte.compiler.cli.console;
+
+public class SummaryReporter {
+
+    public void print(
+            Console console,
+            int files,
+            int warnings,
+            int errors,
+            long durationMillis) {
+
+        console.print("");
+
+        console.print("Compilation Summary");
+
+        console.print("-------------------");
+
+        console.print("Files      : " + files);
+
+        console.print("Warnings   : " + warnings);
+
+        console.print("Errors     : " + errors);
+
+        console.print("Duration   : " + durationMillis + " ms");
+
+        if (errors == 0) {
+            console.success("BUILD SUCCESSFUL");
+        } else {
+            console.error("BUILD FAILED");
+        }
+    }
+}
+
+==== FILE: ./compiler/compiler-cli/src/main/java/com/devinebyte/compiler/cli/options/CliOptions.java ====
+package org.devinebyte.compiler.cli.options;
+
+import java.nio.file.Path;
+
+public class CliOptions {
+
+    private Path input;
+    private Path output;
+
+    private boolean incremental;
+    private boolean optimize;
+    private boolean strict;
+    private boolean verbose;
+
+    public Path getInput() {
+        return input;
+    }
+
+    public void setInput(Path input) {
+        this.input = input;
+    }
+
+    public Path getOutput() {
+        return output;
+    }
+
+    public void setOutput(Path output) {
+        this.output = output;
+    }
+
+    public boolean isIncremental() {
+        return incremental;
+    }
+
+    public void setIncremental(boolean incremental) {
+        this.incremental = incremental;
+    }
+
+    public boolean isOptimize() {
+        return optimize;
+    }
+
+    public void setOptimize(boolean optimize) {
+        this.optimize = optimize;
+    }
+
+    public boolean isStrict() {
+        return strict;
+    }
+
+    public void setStrict(boolean strict) {
+        this.strict = strict;
+    }
+
+    public boolean isVerbose() {
+        return verbose;
+    }
+
+    public void setVerbose(boolean verbose) {
+        this.verbose = verbose;
+    }
+}
+
+==== FILE: ./compiler/compiler-cli/src/main/java/com/devinebyte/compiler/cli/options/OptionException.java ====
+package org.devinebyte.compiler.cli.options;
+
+public class OptionException extends RuntimeException {
+
+    public OptionException(String message) {
+        super(message);
+    }
+}
+
+==== FILE: ./compiler/compiler-cli/src/main/java/com/devinebyte/compiler/cli/options/OptionParser.java ====
+package org.devinebyte.compiler.cli.options;
+
+import java.nio.file.Path;
+
+public class OptionParser {
+
+    public CliOptions parse(String[] args) {
+
+        CliOptions options = new CliOptions();
+
+        for (int i = 0; i < args.length; i++) {
+
+            String arg = args[i];
+
+            switch (arg) {
+
+                case "-i":
+                case "--input":
+                    options.setInput(Path.of(requireValue(args, ++i, arg)));
+                    break;
+
+                case "-o":
+                case "--output":
+                    options.setOutput(Path.of(requireValue(args, ++i, arg)));
+                    break;
+
+                case "--incremental":
+                    options.setIncremental(true);
+                    break;
+
+                case "--optimize":
+                    options.setOptimize(true);
+                    break;
+
+                case "--strict":
+                    options.setStrict(true);
+                    break;
+
+                case "-v":
+                case "--verbose":
+                    options.setVerbose(true);
+                    break;
+
+                default:
+                    throw new OptionException("Unknown option: " + arg);
+            }
+        }
+
+        return options;
+    }
+
+    private String requireValue(String[] args, int index, String option) {
+
+        if (index >= args.length) {
+            throw new OptionException("Missing value for " + option);
+        }
+
+        return args[index];
+    }
+}
+
+==== FILE: ./compiler/compiler-cli/src/main/java/com/devinebyte/compiler/cli/sdk/RequestMapper.java ====
+package org.devinebyte.compiler.cli.sdk;
+
+import org.devinebyte.compiler.cli.options.CliOptions;
+import org.devinebyte.compiler.sdk.request.CompilerRequest;
+
+public class RequestMapper {
+
+    public CompilerRequest compileRequest(CliOptions options) {
+
+        return CompilerRequest.builder()
+                .input(options.getInput())
+                .output(options.getOutput())
+                .incremental(options.isIncremental())
+                .strict(options.isStrict())
+                .optimize(options.isOptimize())
+                .verbose(options.isVerbose())
+                .build();
+    }
+}
+
+==== FILE: ./compiler/compiler-cli/src/main/java/com/devinebyte/compiler/cli/sdk/ResultPrinter.java ====
+package org.devinebyte.compiler.cli.sdk;
+
+import org.devinebyte.compiler.cli.console.Console;
+import org.devinebyte.compiler.cli.console.DiagnosticFormatter;
+import org.devinebyte.compiler.sdk.diagnostics.Diagnostic;
+import org.devinebyte.compiler.sdk.result.CompilerResult;
+
+public class ResultPrinter {
+
+    private final Console console;
+
+    private final DiagnosticFormatter formatter =
+            new DiagnosticFormatter();
+
+    public ResultPrinter(Console console) {
+        this.console = console;
+    }
+
+    public void print(CompilerResult result) {
+
+        for (Diagnostic diagnostic : result.diagnostics()) {
+            formatter.print(console, diagnostic);
+        }
+
+        if (result.success()) {
+            console.success("Compilation completed successfully.");
+        } else {
+            console.error("Compilation failed.");
+        }
+    }
+}
+
+==== FILE: ./compiler/compiler-cli/src/main/java/com/devinebyte/compiler/cli/sdk/SessionFactory.java ====
+package org.devinebyte.compiler.cli.sdk;
+
+import org.devinebyte.compiler.sdk.CompilerSDK;
+import org.devinebyte.compiler.sdk.session.BuildSession;
+
+public final class SessionFactory {
+
+    private final CompilerSDK sdk;
+
+    public SessionFactory(CompilerSDK sdk) {
+        this.sdk = sdk;
+    }
+
+    public BuildSession create() {
+        return sdk.createSession();
+    }
+}
+
+==== FILE: ./compiler/compiler-cli/src/main/java/com/devinebyte/compiler/cli/util/ExitCodes.java ====
+package org.devinebyte.compiler.cli.util;
+
+public final class ExitCodes {
+
+    public static final int SUCCESS = 0;
+
+    public static final int COMPILATION_ERROR = 1;
+
+    public static final int VALIDATION_ERROR = 2;
+
+    public static final int INVALID_ARGUMENT = 3;
+
+    public static final int IO_ERROR = 4;
+
+    public static final int CONFIGURATION_ERROR = 5;
+
+    public static final int INTERNAL_ERROR = 10;
+
+    private ExitCodes() {
+        throw new AssertionError("Utility class");
+    }
+
+}
+
+==== FILE: ./compiler/compiler-core/src/main/java/org/devinebyte/compiler/core/CompilationContext.java ====
+package org.devinebyte.compiler.core;
+
+public class CompilationContext {
+
+}
+
+==== FILE: ./compiler/compiler-core/src/main/java/org/devinebyte/compiler/core/CompilerConfiguration.java ====
+package org.devinebyte.compiler.core;
+
+public record CompilerConfiguration(
+
+        String outputDirectory,
+
+        boolean strictMode,
+
+        boolean incremental
+
+) {}
+
+==== FILE: ./compiler/compiler-core/src/main/java/org/devinebyte/compiler/core/CompilerEngine.java ====
+package org.devinebyte.compiler.core;
+
+public class CompilerEngine {
+
+    public void start() {
+
+        // pipeline starts here
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-core/src/main/java/org/devinebyte/compiler/core/ProjectModel.java ====
+package org.devinebyte.compiler.core;
+
+public class ProjectModel {
+
+    private String name;
+
+    private String version;
+
+}
+
+==== FILE: ./compiler/compiler-core/src/test/java/org/devinebyte/compiler/core/CompilationContextTest.java ====
+package org.devinebyte.compiler.core;
+
+import org.devinebyte.compiler.testing.support.CompilerTestSupport;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+class CompilationContextTest extends CompilerTestSupport {
+
+    @Test
+    void shouldCreateCompilationContext() {
+
+        CompilationContext context = new CompilationContext();
+
+        assertNotNull(context);
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-core/src/test/java/org/devinebyte/compiler/core/CompilerConfigurationTest.java ====
+package org.devinebyte.compiler.core;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
+class CompilerConfigurationTest {
+
+    @Test
+    void shouldStoreConfigurationValues() {
+
+        CompilerConfiguration configuration =
+                new CompilerConfiguration(
+                        "build",
+                        false,
+                        true
+                );
+
+        assertEquals("build", configuration.outputDirectory());
+
+        assertFalse(configuration.strictMode());
+
+        assertEquals(true, configuration.incremental());
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-core/src/test/java/org/devinebyte/compiler/core/CompilerEngineTest.java ====
+package org.devinebyte.compiler.core;
+
+import org.devinebyte.compiler.testing.support.CompilerTestSupport;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+class CompilerEngineTest extends CompilerTestSupport {
+
+    @Test
+    void shouldCreateCompilerEngine() {
+
+        CompilerEngine engine = new CompilerEngine();
+
+        assertNotNull(engine);
+
+    }
+
+    @Test
+    void shouldStartWithoutThrowingException() {
+
+        CompilerEngine engine = new CompilerEngine();
+
+        assertDoesNotThrow(engine::start);
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-core/src/test/java/org/devinebyte/compiler/core/CompilerLifecycleTest.java ====
+package org.devinebyte.compiler.core;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+
+class CompilerLifecycleTest {
+
+    @Test
+    void shouldAllowMultipleStarts() {
+
+        CompilerEngine engine = new CompilerEngine();
+
+        assertDoesNotThrow(engine::start);
+
+        assertDoesNotThrow(engine::start);
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-core/src/test/java/org/devinebyte/compiler/core/DiagnosticsTest.java ====
+package org.devinebyte.compiler.core;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class DiagnosticsTest {
+
+    @Test
+    void diagnosticsSubsystemPlaceholder() {
+
+        // Expand as diagnostics are implemented.
+
+        assertTrue(true);
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-core/src/test/java/org/devinebyte/compiler/core/ProjectModelTest.java ====
+package org.devinebyte.compiler.core;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+class ProjectModelTest {
+
+    @Test
+    void shouldInstantiateProjectModel() {
+
+        ProjectModel model = new ProjectModel();
+
+        assertNotNull(model);
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-diagnostics/src/main/java/org/devinebyte/compiler/diagnostics/Diagnostic.java ====
+package org.devinebyte.compiler.diagnostics;
+
+public record Diagnostic(
+
+        Severity severity,
+
+        String code,
+
+        String message
+
+) {}
+
+==== FILE: ./compiler/compiler-diagnostics/src/main/java/org/devinebyte/compiler/diagnostics/DiagnosticCollector.java ====
+package org.devinebyte.compiler.diagnostics;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class DiagnosticCollector {
+
+    private final List<Diagnostic> diagnostics = new ArrayList<>();
+
+    public void add(Diagnostic diagnostic) {
+        diagnostics.add(diagnostic);
+    }
+
+    public List<Diagnostic> getAll() {
+        return diagnostics;
+    }
+}
+
+==== FILE: ./compiler/compiler-diagnostics/src/main/java/org/devinebyte/compiler/diagnostics/Severity.java ====
+package org.devinebyte.compiler.diagnostics;
+
+public enum Severity {
+
+    INFO,
+
+    WARNING,
+
+    ERROR
+
+}
+
+==== FILE: ./compiler/compiler-generator/src/main/java/org/devinebyte/compiler/generator/api/OpenApiGenerator.java ====
+package org.devinebyte.compiler.generator.api;
+
+import org.devinebyte.compiler.blueprint.model.BlueprintModel;
+
+public class OpenApiGenerator {
+
+    public String generate(BlueprintModel blueprint) {
+
+        return "";
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-generator/src/main/java/org/devinebyte/compiler/generator/api/RestGenerator.java ====
+package org.devinebyte.compiler.generator.api;
+
+import org.devinebyte.compiler.blueprint.model.BlueprintModel;
+
+public class RestGenerator {
+
+    public String generate(BlueprintModel blueprint) {
+
+        return "";
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-generator/src/main/java/org/devinebyte/compiler/generator/database/MigrationGenerator.java ====
+package org.devinebyte.compiler.generator.database;
+
+public class MigrationGenerator {
+
+    public String generate() {
+
+        return "";
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-generator/src/main/java/org/devinebyte/compiler/generator/database/SchemaGenerator.java ====
+package org.devinebyte.compiler.generator.database;
+
+import org.devinebyte.compiler.blueprint.model.BlueprintModel;
+
+public class SchemaGenerator {
+
+    public String generate(BlueprintModel blueprint) {
+
+        return "";
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-generator/src/main/java/org/devinebyte/compiler/generator/engine/CodeGenerator.java ====
+package org.devinebyte.compiler.generator.engine;
+
+import org.devinebyte.compiler.blueprint.model.BlueprintModel;
+
+public interface CodeGenerator {
+
+    GenerationResult generate(BlueprintModel blueprint);
+
+}
+
+==== FILE: ./compiler/compiler-generator/src/main/java/org/devinebyte/compiler/generator/engine/GenerationContext.java ====
+package org.devinebyte.compiler.generator.engine;
+
+import java.nio.file.Path;
+
+public record GenerationContext(
+
+        Path outputDirectory,
+
+        boolean overwriteExisting,
+
+        boolean formatCode
+
+) {}
+
+==== FILE: ./compiler/compiler-generator/src/main/java/org/devinebyte/compiler/generator/engine/GenerationResult.java ====
+package org.devinebyte.compiler.generator.engine;
+
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+
+public class GenerationResult {
+
+    private final List<Path> generatedFiles = new ArrayList<>();
+
+    public void add(Path file) {
+        generatedFiles.add(file);
+    }
+
+    public List<Path> getGeneratedFiles() {
+        return generatedFiles;
+    }
+
+}
+
+==== FILE: ./compiler/compiler-generator/src/main/java/org/devinebyte/compiler/generator/engine/GeneratorException.java ====
+package org.devinebyte.compiler.generator.engine;
+
+public class GeneratorException extends RuntimeException {
+
+    public GeneratorException(String message) {
+        super(message);
+    }
+
+}
+
+==== FILE: ./compiler/compiler-generator/src/main/java/org/devinebyte/compiler/generator/java/ControllerGenerator.java ====
+package org.devinebyte.compiler.generator.java;
+
+import org.devinebyte.compiler.blueprint.model.EntityDefinition;
+
+public class ControllerGenerator {
+
+    public String generate(EntityDefinition entity) {
+
+        return "";
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-generator/src/main/java/org/devinebyte/compiler/generator/java/DtoGenerator.java ====
+package org.devinebyte.compiler.generator.java;
+
+import org.devinebyte.compiler.blueprint.model.EntityDefinition;
+
+public class DtoGenerator {
+
+    public String generate(EntityDefinition entity) {
+
+        return "";
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-generator/src/main/java/org/devinebyte/compiler/generator/java/EntityGenerator.java ====
+package org.devinebyte.compiler.generator.java;
+
+import org.devinebyte.compiler.blueprint.model.EntityDefinition;
+
+public class EntityGenerator {
+
+    public String generate(EntityDefinition entity) {
+
+        return "";
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-generator/src/main/java/org/devinebyte/compiler/generator/java/JavaGenerator.java ====
+package org.devinebyte.compiler.generator.java;
+
+import org.devinebyte.compiler.blueprint.model.BlueprintModel;
+import org.devinebyte.compiler.generator.engine.CodeGenerator;
+import org.devinebyte.compiler.generator.engine.GenerationResult;
+
+public class JavaGenerator implements CodeGenerator {
+
+    @Override
+    public GenerationResult generate(BlueprintModel blueprint) {
+
+        return new GenerationResult();
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-generator/src/main/java/org/devinebyte/compiler/generator/java/RepositoryGenerator.java ====
+package org.devinebyte.compiler.generator.java;
+
+import org.devinebyte.compiler.blueprint.model.EntityDefinition;
+
+public class RepositoryGenerator {
+
+    public String generate(EntityDefinition entity) {
+
+        return "";
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-generator/src/main/java/org/devinebyte/compiler/generator/java/ServiceGenerator.java ====
+package org.devinebyte.compiler.generator.java;
+
+import org.devinebyte.compiler.blueprint.model.EntityDefinition;
+
+public class ServiceGenerator {
+
+    public String generate(EntityDefinition entity) {
+
+        return "";
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-generator/src/main/java/org/devinebyte/compiler/generator/templates/TemplateEngine.java ====
+package org.devinebyte.compiler.generator.templates;
+
+public interface TemplateEngine {
+
+    String render(String template, Object model);
+
+}
+
+==== FILE: ./compiler/compiler-generator/src/main/java/org/devinebyte/compiler/generator/templates/TemplateLoader.java ====
+package org.devinebyte.compiler.generator.templates;
+
+public class TemplateLoader {
+
+    public String load(String templateName) {
+
+        return "";
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-generator/src/main/java/org/devinebyte/compiler/generator/templates/TemplateRenderer.java ====
+package org.devinebyte.compiler.generator.templates;
+
+public class TemplateRenderer {
+
+    public String render(String template, Object model) {
+
+        return template;
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-generator/src/main/java/org/devinebyte/compiler/generator/writer/FileEmitter.java ====
+package org.devinebyte.compiler.generator.writer;
+
+import java.nio.file.Path;
+
+public class FileEmitter {
+
+    private final SourceWriter writer = new SourceWriter();
+
+    public void emit(Path file, String content) throws Exception {
+
+        writer.write(file, content);
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-generator/src/main/java/org/devinebyte/compiler/generator/writer/SourceWriter.java ====
+package org.devinebyte.compiler.generator.writer;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+public class SourceWriter {
+
+    public void write(Path file, String content) throws IOException {
+
+        Files.createDirectories(file.getParent());
+
+        Files.writeString(file, content);
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-parser/src/main/java/org/devinebyte/compiler/parser/ast/AstNode.java ====
+package org.devinebyte.compiler.parser.ast;
+
+public abstract class AstNode {
+
+}
+
+==== FILE: ./compiler/compiler-parser/src/main/java/org/devinebyte/compiler/parser/ast/EntityNode.java ====
+package org.devinebyte.compiler.parser.ast;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class EntityNode extends AstNode {
+
+    private String name;
+
+    private final List<PropertyNode> properties = new ArrayList<>();
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public List<PropertyNode> getProperties() {
+        return properties;
+    }
+}
+
+==== FILE: ./compiler/compiler-parser/src/main/java/org/devinebyte/compiler/parser/ast/ProgramNode.java ====
+package org.devinebyte.compiler.parser.ast;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class ProgramNode extends AstNode {
+
+    private final List<AstNode> declarations = new ArrayList<>();
+
+    public List<AstNode> getDeclarations() {
+        return declarations;
+    }
+
+}
+
+==== FILE: ./compiler/compiler-parser/src/main/java/org/devinebyte/compiler/parser/ast/PropertyNode.java ====
+package org.devinebyte.compiler.parser.ast;
+
+public class PropertyNode extends AstNode {
+
+    private String name;
+
+    private String type;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+}
+
+==== FILE: ./compiler/compiler-parser/src/main/java/org/devinebyte/compiler/parser/ast/WorkflowNode.java ====
+package org.devinebyte.compiler.parser.ast;
+
+public class WorkflowNode extends AstNode {
+
+    private String name;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+}
+
+==== FILE: ./compiler/compiler-parser/src/main/java/org/devinebyte/compiler/parser/lexer/Lexer.java ====
+package org.devinebyte.compiler.parser.lexer;
+
+import java.util.List;
+
+public interface Lexer {
+
+    List<Token> tokenize(String source);
+
+}
+
+==== FILE: ./compiler/compiler-parser/src/main/java/org/devinebyte/compiler/parser/lexer/LexerException.java ====
+package org.devinebyte.compiler.parser.lexer;
+
+public class LexerException extends RuntimeException {
+
+    public LexerException(String message) {
+        super(message);
+    }
+
+}
+
+==== FILE: ./compiler/compiler-parser/src/main/java/org/devinebyte/compiler/parser/lexer/Token.java ====
+package org.devinebyte.compiler.parser.lexer;
+
+public record Token(
+
+        TokenType type,
+
+        String value,
+
+        int line,
+
+        int column
+
+) {}
+
+==== FILE: ./compiler/compiler-parser/src/main/java/org/devinebyte/compiler/parser/lexer/TokenType.java ====
+package org.devinebyte.compiler.parser.lexer;
+
+public enum TokenType {
+
+    ENTITY,
+    WORKFLOW,
+    PROPERTY,
+    IDENTIFIER,
+    STRING,
+    NUMBER,
+    BOOLEAN,
+
+    LEFT_BRACE,
+    RIGHT_BRACE,
+    LEFT_PAREN,
+    RIGHT_PAREN,
+
+    COLON,
+    COMMA,
+    SEMICOLON,
+
+    EQUALS,
+
+    EOF
+}
+
+==== FILE: ./compiler/compiler-parser/src/main/java/org/devinebyte/compiler/parser/parser/ParseResult.java ====
+package org.devinebyte.compiler.parser.parser;
+
+import org.devinebyte.compiler.parser.ast.ProgramNode;
+
+public record ParseResult(
+
+        ProgramNode program,
+
+        boolean success
+
+) {}
+
+==== FILE: ./compiler/compiler-parser/src/main/java/org/devinebyte/compiler/parser/parser/Parser.java ====
+package org.devinebyte.compiler.parser.parser;
+
+import org.devinebyte.compiler.parser.ast.ProgramNode;
+
+public interface Parser {
+
+    ProgramNode parse(String source);
+
+}
+
+==== FILE: ./compiler/compiler-parser/src/main/java/org/devinebyte/compiler/parser/parser/ParserException.java ====
+package org.devinebyte.compiler.parser.parser;
+
+public class ParserException extends RuntimeException {
+
+    public ParserException(String message) {
+        super(message);
+    }
+
+}
+
+==== FILE: ./compiler/compiler-parser/src/main/java/org/devinebyte/compiler/parser/semantic/SemanticAnalyzer.java ====
+package org.devinebyte.compiler.parser.semantic;
+
+import org.devinebyte.compiler.parser.ast.ProgramNode;
+
+public interface SemanticAnalyzer {
+
+    void analyze(ProgramNode program);
+
+}
+
+==== FILE: ./compiler/compiler-parser/src/main/java/org/devinebyte/compiler/parser/semantic/SemanticException.java ====
+package org.devinebyte.compiler.parser.semantic;
+
+public class SemanticException extends RuntimeException {
+
+    public SemanticException(String message) {
+        super(message);
+    }
+
+}
+
+==== FILE: ./compiler/compiler-parser/src/main/java/org/devinebyte/compiler/parser/semantic/SymbolTable.java ====
+package org.devinebyte.compiler.parser.semantic;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class SymbolTable {
+
+    private final Map<String, Object> symbols = new HashMap<>();
+
+    public void define(String name, Object symbol) {
+        symbols.put(name, symbol);
+    }
+
+    public Object resolve(String name) {
+        return symbols.get(name);
+    }
+}
+
+==== FILE: ./compiler/compiler-sdk/src/main/java/org/devinebyte/sdk/Builder.java ====
+package org.devinebyte.sdk;
+
+import java.nio.file.Path;
+
+public class Builder {
+
+    private Path projectRoot;
+    private Path sourceDirectory;
+    private Path outputDirectory;
+    private boolean incremental;
+    private boolean optimize;
+
+    public Builder projectRoot(Path root) {
+        this.projectRoot = root;
+        return this;
+    }
+
+    public Builder sourceDirectory(Path source) {
+        this.sourceDirectory = source;
+        return this;
+    }
+
+    public Builder outputDirectory(Path output) {
+        this.outputDirectory = output;
+        return this;
+    }
+
+    public Builder incremental(boolean value) {
+        this.incremental = value;
+        return this;
+    }
+
+    public Builder optimize(boolean value) {
+        this.optimize = value;
+        return this;
+    }
+
+    public Session build() {
+        return new Session(
+                projectRoot,
+                sourceDirectory,
+                outputDirectory,
+                incremental,
+                optimize
+        );
+    }
+
+}
+
+==== FILE: ./compiler/compiler-sdk/src/main/java/org/devinebyte/sdk/CompilerSDK.java ====
+package org.devinebyte.sdk;
+
+public final class CompilerSDK {
+
+    private CompilerSDK() {
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+}
+
+==== FILE: ./compiler/compiler-sdk/src/main/java/org/devinebyte/sdk/Request.java ====
+package org.devinebyte.sdk;
+
+import java.nio.file.Path;
+
+public final class Request {
+
+    private final Path sourceFile;
+
+    public Request(Path sourceFile) {
+        this.sourceFile = sourceFile;
+    }
+
+    public Path getSourceFile() {
+        return sourceFile;
+    }
+
+}
+
+==== FILE: ./compiler/compiler-sdk/src/main/java/org/devinebyte/sdk/Result.java ====
+package org.devinebyte.sdk;
+
+import java.util.Collections;
+import java.util.List;
+
+public final class Result {
+
+    private final boolean success;
+    private final List<String> diagnostics;
+
+    private Result(boolean success, List<String> diagnostics) {
+        this.success = success;
+        this.diagnostics = diagnostics;
+    }
+
+    public static Result success() {
+        return new Result(true, Collections.emptyList());
+    }
+
+    public static Result failure(List<String> diagnostics) {
+        return new Result(false, diagnostics);
+    }
+
+    public boolean isSuccess() {
+        return success;
+    }
+
+    public List<String> getDiagnostics() {
+        return diagnostics;
+    }
+
+}
+
+==== FILE: ./compiler/compiler-sdk/src/main/java/org/devinebyte/sdk/Session.java ====
+package org.devinebyte.sdk;
+
+import java.nio.file.Path;
+import org.devinebyte.sdk.internal.CompilerFacade;
+
+public final class Session {
+
+    private final Path projectRoot;
+    private final Path sourceDirectory;
+    private final Path outputDirectory;
+    private final boolean incremental;
+    private final boolean optimize;
+
+    Session(
+            Path projectRoot,
+            Path sourceDirectory,
+            Path outputDirectory,
+            boolean incremental,
+            boolean optimize
+    ) {
+        this.projectRoot = projectRoot;
+        this.sourceDirectory = sourceDirectory;
+        this.outputDirectory = outputDirectory;
+        this.incremental = incremental;
+        this.optimize = optimize;
+    }
+
+    public Result compile(Request request) {
+        CompilerFacade facade = new CompilerFacade();
+        return facade.compile(this, request);
+    }
+
+    public Path getProjectRoot() {
+        return projectRoot;
+    }
+
+    public Path getSourceDirectory() {
+        return sourceDirectory;
+    }
+
+    public Path getOutputDirectory() {
+        return outputDirectory;
+    }
+
+    public boolean isIncremental() {
+        return incremental;
+    }
+
+    public boolean isOptimize() {
+        return optimize;
+    }
+}
+
+==== FILE: ./compiler/compiler-sdk/src/main/java/org/devinebyte/sdk/diagnostics/CompilerError.java ====
+package org.devinebyte.sdk.diagnostics;
+
+public final class CompilerError implements Diagnostic {
+
+    private final String code;
+    private final String message;
+    private final SourceLocation location;
+
+    public CompilerError(
+            String code,
+            String message,
+            SourceLocation location) {
+
+        this.code = code;
+        this.message = message;
+        this.location = location;
+    }
+
+    @Override
+    public String getCode() {
+        return code;
+    }
+
+    @Override
+    public String getMessage() {
+        return message;
+    }
+
+    @Override
+    public DiagnosticSeverity getSeverity() {
+        return DiagnosticSeverity.ERROR;
+    }
+
+    @Override
+    public SourceLocation getLocation() {
+        return location;
+    }
+
+}
+
+==== FILE: ./compiler/compiler-sdk/src/main/java/org/devinebyte/sdk/diagnostics/CompilerWarning.java ====
+package org.devinebyte.sdk.diagnostics;
+
+public final class CompilerWarning implements Diagnostic {
+
+    private final String code;
+    private final String message;
+    private final SourceLocation location;
+
+    public CompilerWarning(
+            String code,
+            String message,
+            SourceLocation location) {
+
+        this.code = code;
+        this.message = message;
+        this.location = location;
+    }
+
+    @Override
+    public String getCode() {
+        return code;
+    }
+
+    @Override
+    public String getMessage() {
+        return message;
+    }
+
+    @Override
+    public DiagnosticSeverity getSeverity() {
+        return DiagnosticSeverity.WARNING;
+    }
+
+    @Override
+    public SourceLocation getLocation() {
+        return location;
+    }
+
+}
+
+==== FILE: ./compiler/compiler-sdk/src/main/java/org/devinebyte/sdk/diagnostics/Diagnostic.java ====
+package org.devinebyte.sdk.diagnostics;
+
+public interface Diagnostic {
+
+    String getCode();
+
+    String getMessage();
+
+    DiagnosticSeverity getSeverity();
+
+    SourceLocation getLocation();
+
+}
+
+==== FILE: ./compiler/compiler-sdk/src/main/java/org/devinebyte/sdk/diagnostics/DiagnosticSeverity.java ====
+package org.devinebyte.sdk.diagnostics;
+
+public enum DiagnosticSeverity {
+
+    ERROR,
+    WARNING,
+    INFO
+
+}
+
+==== FILE: ./compiler/compiler-sdk/src/main/java/org/devinebyte/sdk/diagnostics/SourceLocation.java ====
+package org.devinebyte.sdk.diagnostics;
+
+import java.nio.file.Path;
+
+public final class SourceLocation {
+
+    private final Path file;
+    private final int line;
+    private final int column;
+
+    public SourceLocation(Path file, int line, int column) {
+        this.file = file;
+        this.line = line;
+        this.column = column;
+    }
+
+    public Path getFile() {
+        return file;
+    }
+
+    public int getLine() {
+        return line;
+    }
+
+    public int getColumn() {
+        return column;
+    }
+
+}
+
+==== FILE: ./compiler/compiler-sdk/src/main/java/org/devinebyte/sdk/internal/CompilerFacade.java ====
+package org.devinebyte.sdk.internal;
+
+import org.devinebyte.compiler.core.CompilerEngine;
+import org.devinebyte.compiler.core.CompilerConfiguration;
+
+import org.devinebyte.sdk.Request;
+import org.devinebyte.sdk.Result;
+import org.devinebyte.sdk.Session;
+
+public final class CompilerFacade {
+
+    public Result compile(Session session, Request request) {
+
+        CompilerConfiguration configuration =
+                ConfigurationMapper.map(session);
+
+        CompilerEngine engine = new CompilerEngine();
+
+        engine.start();
+
+        return Result.success();
+    }
+
+}
+
+==== FILE: ./compiler/compiler-sdk/src/main/java/org/devinebyte/sdk/internal/ConfigurationMapper.java ====
+package org.devinebyte.sdk.internal;
+
+import org.devinebyte.compiler.core.CompilerConfiguration;
+import org.devinebyte.sdk.Session;
+
+public final class ConfigurationMapper {
+
+    private ConfigurationMapper() {
+    }
+
+    public static CompilerConfiguration map(Session session) {
+
+        return new CompilerConfiguration(
+
+                session.getOutputDirectory().toString(),
+
+                false,
+
+                session.isIncremental()
+
+        );
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-sdk/src/main/java/org/devinebyte/sdk/internal/RequestMapper.java ====
+package org.devinebyte.sdk.internal;
+
+import org.devinebyte.compiler.core.CompilationContext;
+import org.devinebyte.sdk.Request;
+
+public final class RequestMapper {
+
+    private RequestMapper() {
+    }
+
+    public static CompilationContext map(Request request) {
+
+        return new CompilationContext();
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-sdk/src/main/java/org/devinebyte/sdk/internal/ResultMapper.java ====
+package org.devinebyte.sdk.internal;
+
+import org.devinebyte.sdk.Result;
+
+public final class ResultMapper {
+
+    private ResultMapper() {
+    }
+
+    public static Result success() {
+        return Result.success();
+    }
+
+}
+
+==== FILE: ./compiler/compiler-sdk/src/main/java/org/devinebyte/sdk/plugin/CompilerEvent.java ====
+package org.devinebyte.sdk.plugin;
+
+public final class CompilerEvent {
+
+    private final EventType type;
+
+    public CompilerEvent(EventType type) {
+        this.type = type;
+    }
+
+    public EventType getType() {
+        return type;
+    }
+
+}
+
+==== FILE: ./compiler/compiler-sdk/src/main/java/org/devinebyte/sdk/plugin/CompilerPlugin.java ====
+package org.devinebyte.sdk.plugin;
+
+public interface CompilerPlugin {
+
+    String getId();
+
+    String getName();
+
+    String getVersion();
+
+    void initialize(PluginContext context);
+
+}
+
+==== FILE: ./compiler/compiler-sdk/src/main/java/org/devinebyte/sdk/plugin/EventListener.java ====
+package org.devinebyte.sdk.plugin;
+
+public interface EventListener {
+
+    void onEvent(CompilerEvent event);
+
+}
+
+==== FILE: ./compiler/compiler-sdk/src/main/java/org/devinebyte/sdk/plugin/EventType.java ====
+package org.devinebyte.sdk.plugin;
+
+public enum EventType {
+
+    COMPILATION_STARTED,
+
+    PARSING_STARTED,
+    PARSING_COMPLETED,
+
+    VALIDATION_STARTED,
+    VALIDATION_COMPLETED,
+
+    COMPILATION_COMPLETED,
+
+    ARTIFACT_GENERATED,
+
+    ERROR_OCCURRED
+
+}
+
+==== FILE: ./compiler/compiler-sdk/src/main/java/org/devinebyte/sdk/plugin/ExtensionPoint.java ====
+package org.devinebyte.sdk.plugin;
+
+public interface ExtensionPoint {
+
+    String getName();
+
+}
+
+==== FILE: ./compiler/compiler-sdk/src/main/java/org/devinebyte/sdk/plugin/PluginContext.java ====
+package org.devinebyte.sdk.plugin;
+
+import org.devinebyte.sdk.service.CompilationService;
+import org.devinebyte.sdk.service.ParsingService;
+import org.devinebyte.sdk.service.ValidationService;
+
+public interface PluginContext {
+
+    ParsingService getParsingService();
+
+    ValidationService getValidationService();
+
+    CompilationService getCompilationService();
+
+}
+
+==== FILE: ./compiler/compiler-sdk/src/main/java/org/devinebyte/sdk/service/ArtifactService.java ====
+package org.devinebyte.sdk.service;
+
+import java.nio.file.Path;
+
+import org.devinebyte.sdk.Request;
+import org.devinebyte.sdk.Result;
+
+public interface ArtifactService {
+
+    Result generate(Request request, Path outputDirectory);
+
+}
+
+==== FILE: ./compiler/compiler-sdk/src/main/java/org/devinebyte/sdk/service/CompilationService.java ====
+package org.devinebyte.sdk.service;
+
+import org.devinebyte.sdk.Request;
+import org.devinebyte.sdk.Result;
+
+public interface CompilationService {
+
+    Result compile(Request request);
+
+}
+
+==== FILE: ./compiler/compiler-sdk/src/main/java/org/devinebyte/sdk/service/ParsingService.java ====
+package org.devinebyte.sdk.service;
+
+import org.devinebyte.sdk.Request;
+import org.devinebyte.sdk.Result;
+
+public interface ParsingService {
+
+    Result parse(Request request);
+
+}
+
+==== FILE: ./compiler/compiler-sdk/src/main/java/org/devinebyte/sdk/service/ValidationService.java ====
+package org.devinebyte.sdk.service;
+
+import org.devinebyte.sdk.Request;
+import org.devinebyte.sdk.Result;
+
+public interface ValidationService {
+
+    Result validate(Request request);
+
+}
+
+==== FILE: ./compiler/compiler-sdk/src/test/java/org/devinebyte/compiler/sdk/ArtifactGenerationServiceTest.java ====
+package org.devinebyte.compiler.sdk;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+class ArtifactGenerationServiceTest {
+
+    @Test
+    void shouldProvideArtifactGenerationService() {
+
+        CompilerSDK sdk =
+                CompilerSDK.builder().build();
+
+        assertNotNull(sdk.artifactGenerationService());
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-sdk/src/test/java/org/devinebyte/compiler/sdk/BuildSessionTest.java ====
+package org.devinebyte.compiler.sdk;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class BuildSessionTest {
+
+    @Test
+    void shouldCreateSession() {
+
+        CompilerSDK sdk =
+                CompilerSDK.builder().build();
+
+        BuildSession session =
+                sdk.createSession();
+
+        assertNotNull(session);
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-sdk/src/test/java/org/devinebyte/compiler/sdk/CompilationServiceTest.java ====
+package org.devinebyte.compiler.sdk;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+class CompilationServiceTest {
+
+    @Test
+    void shouldProvideCompilationService() {
+
+        CompilerSDK sdk =
+                CompilerSDK.builder().build();
+
+        assertNotNull(sdk.compilationService());
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-sdk/src/test/java/org/devinebyte/compiler/sdk/CompilerRequestTest.java ====
+package org.devinebyte.compiler.sdk;
+
+import org.junit.jupiter.api.Test;
+
+import java.nio.file.Path;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class CompilerRequestTest {
+
+    @Test
+    void shouldBuildRequest() {
+
+        CompilerRequest request =
+                CompilerRequest.builder()
+                        .input(Path.of("src"))
+                        .output(Path.of("build"))
+                        .incremental(true)
+                        .strict(false)
+                        .verbose(true)
+                        .build();
+
+        assertEquals(Path.of("src"), request.input());
+
+        assertEquals(Path.of("build"), request.output());
+
+        assertTrue(request.incremental());
+
+        assertFalse(request.strict());
+
+        assertTrue(request.verbose());
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-sdk/src/test/java/org/devinebyte/compiler/sdk/CompilerResultTest.java ====
+package org.devinebyte.compiler.sdk;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class CompilerResultTest {
+
+    @Test
+    void shouldContainSuccessState() {
+
+        CompilerResult result =
+                CompilerResult.success();
+
+        assertTrue(result.success());
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-sdk/src/test/java/org/devinebyte/compiler/sdk/CompilerSDKBuilderTest.java ====
+package org.devinebyte.compiler.sdk;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class CompilerSDKBuilderTest {
+
+    @Test
+    void shouldBuildSdk() {
+
+        CompilerSDK sdk =
+                CompilerSDK.builder().build();
+
+        assertNotNull(sdk);
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-sdk/src/test/java/org/devinebyte/compiler/sdk/CompilerSDKTest.java ====
+package org.devinebyte.compiler.sdk;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class CompilerSDKTest {
+
+    @Test
+    void shouldCreateBuilder() {
+
+        CompilerSDKBuilder builder = CompilerSDK.builder();
+
+        assertNotNull(builder);
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-sdk/src/test/java/org/devinebyte/compiler/sdk/DiagnosticsPropagationTest.java ====
+package org.devinebyte.compiler.sdk;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+class DiagnosticsPropagationTest {
+
+    @Test
+    void shouldReturnDiagnosticsCollection() {
+
+        CompilerResult result =
+                CompilerResult.success();
+
+        assertNotNull(result.diagnostics());
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-sdk/src/test/java/org/devinebyte/compiler/sdk/ParsingServiceTest.java ====
+package org.devinebyte.compiler.sdk;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+class ParsingServiceTest {
+
+    @Test
+    void shouldProvideParsingService() {
+
+        CompilerSDK sdk =
+                CompilerSDK.builder().build();
+
+        assertNotNull(sdk.parsingService());
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-sdk/src/test/java/org/devinebyte/compiler/sdk/PluginRegistrationTest.java ====
+package org.devinebyte.compiler.sdk;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+
+class PluginRegistrationTest {
+
+    @Test
+    void shouldRegisterPlugin() {
+
+        CompilerSDK sdk =
+                CompilerSDK.builder().build();
+
+        CompilerPlugin plugin = new TestCompilerPlugin();
+
+        assertDoesNotThrow(() ->
+                sdk.registerPlugin(plugin));
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-sdk/src/test/java/org/devinebyte/compiler/sdk/ValidationServiceTest.java ====
+package org.devinebyte.compiler.sdk;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+class ValidationServiceTest {
+
+    @Test
+    void shouldProvideValidationService() {
+
+        CompilerSDK sdk =
+                CompilerSDK.builder().build();
+
+        assertNotNull(sdk.validationService());
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-testing/src/main/java/org/devinebyte/compiler/testing/assertions/ArtifactAssertions.java ====
+package org.devinebyte.compiler.testing.assertions;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+public final class ArtifactAssertions {
+
+    private ArtifactAssertions() {
+    }
+
+    public static void exists(Path artifact) {
+
+        assertThat(Files.exists(artifact))
+                .isTrue();
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-testing/src/main/java/org/devinebyte/compiler/testing/assertions/CompilationAssertions.java ====
+package org.devinebyte.compiler.testing.assertions;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+public final class CompilationAssertions {
+
+    private CompilationAssertions() {
+    }
+
+    public static void succeeded(boolean success) {
+
+        assertThat(success).isTrue();
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-testing/src/main/java/org/devinebyte/compiler/testing/assertions/DiagnosticAssertions.java ====
+package org.devinebyte.compiler.testing.assertions;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import org.devinebyte.compiler.sdk.diagnostics.Diagnostic;
+
+public final class DiagnosticAssertions {
+
+    private DiagnosticAssertions() {
+    }
+
+    public static void hasNoErrors(
+            Iterable<Diagnostic> diagnostics) {
+
+        assertThat(diagnostics)
+                .noneMatch(d ->
+                        d.getSeverity().name().equals("ERROR"));
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-testing/src/main/java/org/devinebyte/compiler/testing/assertions/TestAssertions.java ====
+package org.devinebyte.compiler.testing;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+public final class TestAssertions {
+
+    private TestAssertions() {
+    }
+
+    public static void compilationSucceeded(boolean success) {
+
+        assertThat(success).isTrue();
+
+    }
+
+    public static void compilationFailed(boolean success) {
+
+        assertThat(success).isFalse();
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-testing/src/main/java/org/devinebyte/compiler/testing/builders/BlueprintBuilder.java ====
+package org.devinebyte.compiler.testing.builders;
+
+public final class BlueprintBuilder {
+
+    private String name = "TestBlueprint";
+
+    public BlueprintBuilder name(String name) {
+        this.name = name;
+        return this;
+    }
+
+    public String build() {
+
+        return """
+               blueprint %s {
+               }
+               """.formatted(name);
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-testing/src/main/java/org/devinebyte/compiler/testing/builders/ProjectBuilder.java ====
+package org.devinebyte.compiler.testing.builders;
+
+import java.nio.file.Path;
+
+public final class ProjectBuilder {
+
+    private Path root;
+
+    public ProjectBuilder root(Path root) {
+        this.root = root;
+        return this;
+    }
+
+    public Path build() {
+        return root;
+    }
+
+}
+
+==== FILE: ./compiler/compiler-testing/src/main/java/org/devinebyte/compiler/testing/builders/SourceFileBuilder.java ====
+package org.devinebyte.compiler.testing.builders;
+
+public final class SourceFileBuilder {
+
+    private final StringBuilder builder =
+            new StringBuilder();
+
+    public SourceFileBuilder append(String line) {
+
+        builder.append(line)
+               .append(System.lineSeparator());
+
+        return this;
+    }
+
+    public String build() {
+        return builder.toString();
+    }
+
+}
+
+==== FILE: ./compiler/compiler-testing/src/main/java/org/devinebyte/compiler/testing/builders/WorkspaceBuilder.java ====
+package org.devinebyte.compiler.testing.builders;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+public final class WorkspaceBuilder {
+
+    public Path build() throws IOException {
+
+        return Files.createTempDirectory(
+                "compiler-workspace");
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-testing/src/main/java/org/devinebyte/compiler/testing/factory/TestDataFactory.java ====
+package org.devinebyte.compiler.testing.factory;
+
+public final class TestDataFactory {
+
+    private TestDataFactory() {
+    }
+
+    public static String entityDsl() {
+
+        return """
+               entity Customer {
+
+                   id UUID
+
+                   name STRING
+
+               }
+               """;
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-testing/src/main/java/org/devinebyte/compiler/testing/fixtures/FixtureManager.java ====
+package org.devinebyte.compiler.testing.fixtures;
+
+import java.nio.file.Path;
+
+public final class FixtureManager {
+
+    private FixtureManager() {
+    }
+
+    public static Path projects() {
+
+        return Path.of(
+                "src/test/resources/fixtures/projects");
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-testing/src/main/java/org/devinebyte/compiler/testing/runners/CompilerRunner.java ====
+package org.devinebyte.compiler.testing.runners;
+
+import org.devinebyte.compiler.sdk.CompilerSDK;
+import org.devinebyte.compiler.sdk.Result;
+import org.devinebyte.compiler.sdk.Session;
+import org.devinebyte.compiler.sdk.Request;
+
+public final class CompilerRunner {
+
+    public Result run(Session session,
+                      Request request) {
+
+        return session.compile(request);
+
+    }
+
+}
+
+==== FILE: ./compiler/compiler-testing/src/main/java/org/devinebyte/compiler/testing/support/CompilerTestSupport.java ====
+
+package org.devinebyte.compiler.testing;
+
+public abstract class CompilerTestSupport {
+
+    protected CompilerTestSupport() {
+    }
+
+}
+
+==== FILE: ./compiler/compiler-testing/src/main/java/org/devinebyte/compiler/testing/workspace/TemporaryWorkspace.java ====
+package org.devinebyte.compiler.testing;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+public final class TemporaryWorkspace {
+
+    private TemporaryWorkspace() {
+    }
+
+    public static Path create() throws IOException {
+
+        return Files.createTempDirectory("devinebyte-test");
+
+    }
+
+}
+
