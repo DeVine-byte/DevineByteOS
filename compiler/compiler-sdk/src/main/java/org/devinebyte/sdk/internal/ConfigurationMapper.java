@@ -1,6 +1,6 @@
 package org.devinebyte.sdk.internal;
 
-import com.devinebyte.compiler.core.CompilerConfiguration;
+import org.devinebyte.compiler.core.CompilerConfiguration;
 import org.devinebyte.sdk.Session;
 
 public final class ConfigurationMapper {
