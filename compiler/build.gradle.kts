@@ -1,7 +1,5 @@
 plugins {
-    java
-    application
-    jacoco
+    java // no application here
 }
 
 group = "org.devinebyte"
@@ -13,21 +11,20 @@ repositories {
 
 subprojects {
     apply(plugin = "java")
+    
+    java {
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(21)) // you have 21 now, good
+        }
+    }
 
     repositories {
         mavenCentral()
     }
 
-    java {
-        toolchain {
-            languageVersion.set(JavaLanguageVersion.of(21))
-        }
-    }
-
     dependencies {
-        testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
-        implementation(project(":compiler-diagnostics"))
-        testImplementation(testFixtures(project(":compiler-testing")))
+        testImplementation(platform("org.junit:junit-bom:5.10.2"))
+        testImplementation("org.junit.jupiter:junit-jupiter")
     }
 
     tasks.test {
