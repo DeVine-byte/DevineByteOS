@@ -1,7 +1,7 @@
-package com.devinebyte.compiler.cli.sdk;
+package org.devinebyte.compiler.cli.sdk;
 
-import com.devinebyte.compiler.cli.options.CliOptions;
-import com.devinebyte.compiler.sdk.request.CompilerRequest;
+import org.devinebyte.compiler.cli.options.CliOptions;
+import org.devinebyte.compiler.sdk.request.CompilerRequest;
 
 public class RequestMapper {
 

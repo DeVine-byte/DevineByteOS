@@ -1,9 +1,9 @@
-package com.devinebyte.compiler.cli.sdk;
+package org.devinebyte.compiler.cli.sdk;
 
-import com.devinebyte.compiler.cli.console.Console;
-import com.devinebyte.compiler.cli.console.DiagnosticFormatter;
-import com.devinebyte.compiler.sdk.diagnostics.Diagnostic;
-import com.devinebyte.compiler.sdk.result.CompilerResult;
+import org.devinebyte.compiler.cli.console.Console;
+import org.devinebyte.compiler.cli.console.DiagnosticFormatter;
+import org.devinebyte.compiler.sdk.diagnostics.Diagnostic;
+import org.devinebyte.compiler.sdk.result.CompilerResult;
 
 public class ResultPrinter {
 

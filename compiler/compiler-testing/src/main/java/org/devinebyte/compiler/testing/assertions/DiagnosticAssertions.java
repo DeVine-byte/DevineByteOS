@@ -2,7 +2,7 @@ package org.devinebyte.compiler.testing.assertions;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.devinebyte.compiler.sdk.diagnostics.Diagnostic;
+import org.devinebyte.compiler.sdk.diagnostics.Diagnostic;
 
 public final class DiagnosticAssertions {
 

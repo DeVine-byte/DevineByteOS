@@ -1,6 +1,6 @@
-package com.devinebyte.compiler.cli.commands;
+package org.devinebyte.compiler.cli.commands;
 
-import com.devinebyte.compiler.cli.util.ExitCodes;
+import org.devinebyte.compiler.cli.util.ExitCodes;
 
 public final class ValidateCommand implements Command {
 

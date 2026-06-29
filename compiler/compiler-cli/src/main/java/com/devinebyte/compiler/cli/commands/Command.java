@@ -1,4 +1,4 @@
-package com.devinebyte.compiler.cli.commands;
+package org.devinebyte.compiler.cli.commands;
 
 public interface Command {
 

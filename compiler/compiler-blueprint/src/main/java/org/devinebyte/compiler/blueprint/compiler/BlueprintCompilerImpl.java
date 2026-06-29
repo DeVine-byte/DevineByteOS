@@ -1,6 +1,6 @@
 package org.devinebyte.compiler.blueprint.compiler;
 
-import com.devinebyte.compiler.parser.ast.ProgramNode;
+import org.devinebyte.compiler.parser.ast.ProgramNode;
 
 public class BlueprintCompilerImpl implements BlueprintCompiler {
 

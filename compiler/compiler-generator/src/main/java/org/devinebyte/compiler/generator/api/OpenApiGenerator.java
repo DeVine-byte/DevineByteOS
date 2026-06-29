@@ -1,6 +1,6 @@
 package org.devinebyte.compiler.generator.api;
 
-import com.devinebyte.compiler.blueprint.model.BlueprintModel;
+import org.devinebyte.compiler.blueprint.model.BlueprintModel;
 
 public class OpenApiGenerator {
 

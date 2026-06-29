@@ -1,4 +1,4 @@
-package com.devinebyte.compiler.cli;
+package org.devinebyte.compiler.cli;
 
 public final class Main {
 

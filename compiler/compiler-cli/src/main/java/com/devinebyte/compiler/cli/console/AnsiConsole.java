@@ -1,4 +1,4 @@
-package com.devinebyte.compiler.cli.console;
+package org.devinebyte.compiler.cli.console;
 
 public class AnsiConsole implements Console {
 

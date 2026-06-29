@@ -1,6 +1,6 @@
 package org.devinebyte.compiler.parser.parser;
 
-import com.devinebyte.compiler.parser.ast.ProgramNode;
+import org.devinebyte.compiler.parser.ast.ProgramNode;
 
 public interface Parser {
 

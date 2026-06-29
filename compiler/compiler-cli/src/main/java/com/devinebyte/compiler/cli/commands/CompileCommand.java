@@ -1,15 +1,15 @@
-package com.devinebyte.compiler.cli.commands;
+package org.devinebyte.compiler.cli.commands;
 
-import com.devinebyte.compiler.cli.options.CliOptions;
-import com.devinebyte.compiler.cli.options.OptionParser;
-import com.devinebyte.compiler.cli.sdk.RequestMapper;
-import com.devinebyte.compiler.cli.sdk.SessionFactory;
-import com.devinebyte.compiler.cli.sdk.ResultPrinter;
-import com.devinebyte.compiler.cli.util.ExitCodes;
-import com.devinebyte.compiler.sdk.service.CompilationService;
-import com.devinebyte.compiler.sdk.session.BuildSession;
-import com.devinebyte.compiler.sdk.request.CompilerRequest;
-import com.devinebyte.compiler.sdk.result.CompilerResult;
+import org.devinebyte.compiler.cli.options.CliOptions;
+import org.devinebyte.compiler.cli.options.OptionParser;
+import org.devinebyte.compiler.cli.sdk.RequestMapper;
+import org.devinebyte.compiler.cli.sdk.SessionFactory;
+import org.devinebyte.compiler.cli.sdk.ResultPrinter;
+import org.devinebyte.compiler.cli.util.ExitCodes;
+import org.devinebyte.compiler.sdk.service.CompilationService;
+import org.devinebyte.compiler.sdk.session.BuildSession;
+import org.devinebyte.compiler.sdk.request.CompilerRequest;
+import org.devinebyte.compiler.sdk.result.CompilerResult;
 
 public final class CompileCommand implements Command {
 

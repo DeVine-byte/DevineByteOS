@@ -1,7 +1,7 @@
 package org.devinebyte.compiler.blueprint.mapper;
 
-import com.devinebyte.compiler.blueprint.model.BlueprintModel;
-import com.devinebyte.compiler.parser.ast.ProgramNode;
+import org.devinebyte.compiler.blueprint.model.BlueprintModel;
+import org.devinebyte.compiler.parser.ast.ProgramNode;
 
 public class AstToBlueprintMapper {
 

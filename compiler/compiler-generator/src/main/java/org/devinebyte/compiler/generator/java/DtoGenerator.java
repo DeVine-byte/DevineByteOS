@@ -1,6 +1,6 @@
 package org.devinebyte.compiler.generator.java;
 
-import com.devinebyte.compiler.blueprint.model.EntityDefinition;
+import org.devinebyte.compiler.blueprint.model.EntityDefinition;
 
 public class DtoGenerator {
 

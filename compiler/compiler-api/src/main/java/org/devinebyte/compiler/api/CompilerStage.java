@@ -1,6 +1,6 @@
 package org.devinebyte.compiler.api;
 
-import com.devinebyte.compiler.core.CompilationContext;
+import org.devinebyte.compiler.core.CompilationContext;
 
 public interface CompilerStage {
 

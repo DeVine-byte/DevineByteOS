@@ -1,7 +1,7 @@
-package com.devinebyte.compiler.cli.sdk;
+package org.devinebyte.compiler.cli.sdk;
 
-import com.devinebyte.compiler.sdk.CompilerSDK;
-import com.devinebyte.compiler.sdk.session.BuildSession;
+import org.devinebyte.compiler.sdk.CompilerSDK;
+import org.devinebyte.compiler.sdk.session.BuildSession;
 
 public final class SessionFactory {
 

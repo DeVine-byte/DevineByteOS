@@ -1,4 +1,4 @@
-package com.devinebyte.compiler.cli.util;
+package org.devinebyte.compiler.cli.util;
 
 public final class ExitCodes {
 

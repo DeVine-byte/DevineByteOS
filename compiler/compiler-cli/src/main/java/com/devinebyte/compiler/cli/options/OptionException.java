@@ -1,4 +1,4 @@
-package com.devinebyte.compiler.cli.options;
+package org.devinebyte.compiler.cli.options;
 
 public class OptionException extends RuntimeException {
 

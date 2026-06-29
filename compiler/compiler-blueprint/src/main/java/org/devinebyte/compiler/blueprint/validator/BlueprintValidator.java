@@ -1,6 +1,6 @@
 package org.devinebyte.compiler.blueprint.validator;
 
-import com.devinebyte.compiler.blueprint.model.BlueprintModel;
+import org.devinebyte.compiler.blueprint.model.BlueprintModel;
 
 public interface BlueprintValidator {
 

@@ -1,13 +1,13 @@
-package com.devinebyte.compiler.cli;
+package org.devinebyte.compiler.cli;
 
-import com.devinebyte.compiler.cli.commands.BuildCommand;
-import com.devinebyte.compiler.cli.commands.Command;
-import com.devinebyte.compiler.cli.commands.CompileCommand;
-import com.devinebyte.compiler.cli.commands.HelpCommand;
-import com.devinebyte.compiler.cli.commands.ParseCommand;
-import com.devinebyte.compiler.cli.commands.ValidateCommand;
-import com.devinebyte.compiler.cli.commands.VersionCommand;
-import com.devinebyte.compiler.cli.util.ExitCodes;
+import org.devinebyte.compiler.cli.commands.BuildCommand;
+import org.devinebyte.compiler.cli.commands.Command;
+import org.devinebyte.compiler.cli.commands.CompileCommand;
+import org.devinebyte.compiler.cli.commands.HelpCommand;
+import org.devinebyte.compiler.cli.commands.ParseCommand;
+import org.devinebyte.compiler.cli.commands.ValidateCommand;
+import org.devinebyte.compiler.cli.commands.VersionCommand;
+import org.devinebyte.compiler.cli.util.ExitCodes;
 
 public final class CliApplication {
 
