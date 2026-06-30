@@ -1,7 +1,7 @@
 package org.devinebyte.compiler.cli.console;
 
-import org.devinebyte.compiler.sdk.diagnostics.Diagnostic;
-import org.devinebyte.compiler.sdk.diagnostics.Severity;
+import org.devinebyte.sdk.diagnostics.Diagnostic;
+import org.devinebyte.sdk.diagnostics.Severity; 
 
 public class DiagnosticFormatter {
 
