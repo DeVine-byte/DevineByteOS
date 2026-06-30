@@ -1,4 +1,4 @@
-package org.devinebyte.compiler.sdk;
+package org.devinebyte.sdk;
 
 import org.junit.jupiter.api.Test;
 
