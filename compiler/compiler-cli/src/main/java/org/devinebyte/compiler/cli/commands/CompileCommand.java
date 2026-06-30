@@ -13,6 +13,7 @@ import org.devinebyte.compiler.sdk.result.CompilerResult;
 
 public final class CompileCommand implements Command {
 
+    private final String[] args;
     private final CompilationService compilationService;
     private final SessionFactory sessionFactory;
     private final RequestMapper mapper;
@@ -20,11 +21,13 @@ public final class CompileCommand implements Command {
     private final ResultPrinter resultPrinter;
 
     public CompileCommand(
+            String[] args,
             CompilationService compilationService,
             SessionFactory sessionFactory,
             RequestMapper mapper,
             OptionParser parser,
             ResultPrinter resultPrinter) {
+        this.args = args;
         this.compilationService = compilationService;
         this.sessionFactory = sessionFactory;
         this.mapper = mapper;
@@ -33,7 +36,7 @@ public final class CompileCommand implements Command {
     }
 
     @Override
-    public int execute(String[] args) {
+    public int execute() {
         CliOptions options = parser.parse(args);
 
         BuildSession session = sessionFactory.create();
