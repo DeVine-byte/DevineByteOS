@@ -1,10 +1,10 @@
 package org.devinebyte.compiler.api;
 
-import org.devinebyte.compiler.core.CompilationContext;
+import org.devinebyte.sdk.CompilerContext;
 
 public interface CompilerStage {
 
     String name();
 
-    void execute(CompilationContext context);
+    void execute(CompilerContext context);
 }
