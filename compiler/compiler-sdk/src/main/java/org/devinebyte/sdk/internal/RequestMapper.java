@@ -1,17 +1,26 @@
 package org.devinebyte.sdk.internal;
 
-import org.devinebyte.compiler.core.CompilationContext;
-import org.devinebyte.sdk.Request;
+import org.devinebyte.compiler.cli.options.CliOptions; // CLI -> SDK boundary
+import org.devinebyte.sdk.CompilerContext;
+import org.devinebyte.sdk.CompilerRequest;
+import org.devinebyte.sdk.diagnostics.DiagnosticCollector;
+
+import java.util.Map;
 
 public final class RequestMapper {
 
-    private RequestMapper() {
+    public CompilerRequest compileRequest(CliOptions options) {
+        CompilerContext ctx = new DefaultCompilerContext(
+            options.outputDirectory(), 
+            Map.of(), 
+            new DiagnosticCollector()
+        );
+
+        return new CompilerRequest(
+            options.inputFile(),
+            options.outputDirectory(),
+            ctx,
+            options.incremental()
+        );
     }
-
-    public static CompilationContext map(Request request) {
-
-        return new CompilationContext();
-
-    }
-
 }
