@@ -1,17 +1,21 @@
-package org.devinebyte.compiler.parser.semantic;
+package org.devinebyte.compiler.semantic;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 public class SymbolTable {
-
     private final Map<String, Object> symbols = new HashMap<>();
+
+    public boolean isDeclared(String name) {
+        return symbols.containsKey(name);
+    }
 
     public void define(String name, Object symbol) {
         symbols.put(name, symbol);
     }
 
-    public Object resolve(String name) {
-        return symbols.get(name);
+    public Optional<Object> resolve(String name) {
+        return Optional.ofNullable(symbols.get(name));
     }
 }
