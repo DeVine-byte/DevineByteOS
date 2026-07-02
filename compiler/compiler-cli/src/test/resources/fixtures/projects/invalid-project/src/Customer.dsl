@@ -1,0 +1,3 @@
+entity Customer {
+  unknownType field
+}
