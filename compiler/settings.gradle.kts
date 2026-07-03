@@ -9,5 +9,6 @@ include(
     "compiler-blueprint",
     "compiler-generator",
     "compiler-sdk",
-    "compiler-cli"
+    "compiler-cli",
+    "compiler-regression"
 )
