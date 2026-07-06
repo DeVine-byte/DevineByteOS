@@ -10,5 +10,6 @@ include(
     "compiler-generator",
     "compiler-sdk",
     "compiler-cli",
-    "compiler-regression"
+    "compiler-regression",
+    "compiler-performace"
 )
