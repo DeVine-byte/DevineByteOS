@@ -3,18 +3,12 @@ plugins {
 }
 
 java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
+    toolchain { languageVersion.set(JavaLanguageVersion.of(21)) }
 }
+
+repositories { mavenCentral() }
 
 dependencies {
-
-    testImplementation(platform("org.junit:junit-bom:5.10.2"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation("org.assertj:assertj-core:3.27.3")
-}
-
-tasks.test {
-    useJUnitPlatform()
+    api(project(":compiler-core")) // for CompilerEngine, CompilerConfiguration
+    implementation(project(":compiler-cli")) // for CliOptions
 }
