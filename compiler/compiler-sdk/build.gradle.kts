@@ -10,5 +10,4 @@ repositories { mavenCentral() }
 
 dependencies {
     api(project(":compiler-core")) // for CompilerEngine, CompilerConfiguration
-    implementation(project(":compiler-cli")) // for CliOptions
 }
