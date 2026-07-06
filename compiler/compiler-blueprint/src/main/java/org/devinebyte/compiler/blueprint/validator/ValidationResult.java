@@ -1,4 +1,4 @@
-package org.devinebyte.compiler.blueprint.validator;
+package org.devinebyte.compiler.blueprint.validation;
 
 import java.util.ArrayList;
 import java.util.List;
