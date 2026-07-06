@@ -45,7 +45,7 @@ public final class CliApplication {
             case "help" -> new HelpCommand().execute();
             default -> {
                 System.err.println("Unknown command: " + args[0]);
-                yield ExitCodes.UNKNOWN_COMMAND;
+                yield ExitCodes.INVALID_ARGUMENT;
             }
         };
     }
