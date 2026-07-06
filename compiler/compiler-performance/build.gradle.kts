@@ -8,5 +8,5 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
-    systemProperty "junit.jupiter.execution.parallel.enabled", "false" // benchmarks should be serial
+    systemProperty ("junit.jupiter.execution.parallel.enabled", "false") // benchmarks should be serial
 }
