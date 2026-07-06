@@ -6,10 +6,10 @@ import org.devinebyte.compiler.cli.sdk.RequestMapper;
 import org.devinebyte.compiler.cli.sdk.SessionFactory;
 import org.devinebyte.compiler.cli.sdk.ResultPrinter;
 import org.devinebyte.compiler.cli.util.ExitCodes;
-import org.devinebyte.compiler.sdk.service.CompilationService;
-import org.devinebyte.compiler.sdk.session.BuildSession;
-import org.devinebyte.compiler.sdk.request.CompilerRequest;
-import org.devinebyte.compiler.sdk.result.CompilerResult;
+import org.devinebyte.sdk.service.CompilationService;
+import org.devinebyte.sdk.session.BuildSession;
+import org.devinebyte.sdk.request.CompilerRequest;
+import org.devinebyte.sdk.result.CompilerResult;
 
 public final class CompileCommand implements Command {
 
@@ -38,15 +38,10 @@ public final class CompileCommand implements Command {
     @Override
     public int execute() {
         CliOptions options = parser.parse(args);
-
         BuildSession session = sessionFactory.create();
-
         CompilerRequest request = mapper.compileRequest(options);
-
         CompilerResult result = compilationService.compile(session, request);
-
         resultPrinter.print(result);
-
-        return result.success() ? ExitCodes.SUCCESS : ExitCodes.COMPILATION_ERROR;
+        return result.success()? ExitCodes.SUCCESS : ExitCodes.COMPILATION_ERROR;
     }
 }
