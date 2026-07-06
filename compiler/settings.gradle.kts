@@ -3,7 +3,6 @@ rootProject.name = "devinebyte-compiler"
 include(
     "compiler-api",
     "compiler-core",
-    "compiler-diagnostics",
     "compiler-testing",
     "compiler-parser",
     "compiler-blueprint",
@@ -11,5 +10,5 @@ include(
     "compiler-sdk",
     "compiler-cli",
     "compiler-regression",
-    "compiler-performace"
+    "compiler-performance"
 )
