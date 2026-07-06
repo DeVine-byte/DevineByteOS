@@ -1,4 +1,5 @@
 package org.devinebyte.compiler.blueprint.validation;
+import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
 
 import java.util.ArrayList;
 import java.util.List;

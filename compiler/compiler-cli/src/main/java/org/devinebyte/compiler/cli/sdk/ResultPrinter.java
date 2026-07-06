@@ -1,4 +1,5 @@
 package org.devinebyte.compiler.cli.sdk;
+import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.compiler.cli.console.Console;
 import org.devinebyte.compiler.cli.console.DiagnosticFormatter;

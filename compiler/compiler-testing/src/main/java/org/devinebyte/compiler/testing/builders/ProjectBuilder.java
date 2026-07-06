@@ -1,4 +1,5 @@
 package org.devinebyte.compiler.testing.builders;
+import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
 
 import java.nio.file.Path;
 

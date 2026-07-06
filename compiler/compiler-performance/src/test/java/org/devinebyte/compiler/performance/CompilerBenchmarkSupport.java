@@ -1,4 +1,5 @@
 package org.devinebyte.compiler.performance;
+import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.sdk.CompilerContext;
 import org.devinebyte.sdk.CompilerRequest;

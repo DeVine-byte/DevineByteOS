@@ -1,4 +1,5 @@
 package org.devinebyte.compiler.testing.factory;
+import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
 
 public final class TestDataFactory {
 

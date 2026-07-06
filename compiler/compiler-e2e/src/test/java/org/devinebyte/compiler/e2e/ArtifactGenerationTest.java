@@ -1,4 +1,5 @@
 package org.devinebyte.compiler.e2e;
+import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.compiler.testing.assertions.ArtifactAssertions;
 import org.devinebyte.compiler.testing.fixtures.FixtureManager;

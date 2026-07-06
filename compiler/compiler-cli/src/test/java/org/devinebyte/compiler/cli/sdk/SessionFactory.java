@@ -1,4 +1,5 @@
 package org.devinebyte.compiler.cli.sdk; 
+import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.sdk.CompilerSDK; 
 import org.devinebyte.sdk.session.BuildSession;

@@ -1,4 +1,5 @@
 package org.devinebyte.compiler.parser.ast;
+import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
 
 public class WorkflowNode extends AstNode {
 

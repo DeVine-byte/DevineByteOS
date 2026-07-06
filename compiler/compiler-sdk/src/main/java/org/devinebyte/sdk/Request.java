@@ -1,4 +1,5 @@
 package org.devinebyte.sdk;
+import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
 
 import java.io.File;
 import java.util.List;

@@ -1,4 +1,5 @@
 package org.devinebyte.compiler.generator.java;
+import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.compiler.blueprint.model.BlueprintModel;
 import org.devinebyte.compiler.generator.engine.CodeGenerator;

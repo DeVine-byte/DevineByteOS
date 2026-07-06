@@ -1,4 +1,5 @@
 package org.devinebyte.compiler.regression;
+import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.sdk.CompilerContext;
 import org.devinebyte.sdk.CompilerRequest;

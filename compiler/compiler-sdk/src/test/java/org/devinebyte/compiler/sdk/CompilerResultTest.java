@@ -1,4 +1,5 @@
 package org.devinebyte.sdk;
+import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.sdk.diagnostics.Diagnostic;
 import org.devinebyte.sdk.diagnostics.Severity;
@@ -15,7 +16,7 @@ class CompilerResultTest {
     void shouldBeSuccessWhenNoErrors() {
         var result = new CompilerResult(
             List.of(Path.of("out/User.java")),
-            List.of(new Diagnostic(Severity.INFO, "INF001", "Done", null))
+            List.of(new Diagnostic(DiagnosticSeverity.INFO, "INF001", "Done", null))
         );
         assertTrue(result.success());
     }
@@ -24,7 +25,7 @@ class CompilerResultTest {
     void shouldBeFailureWhenErrorPresent() {
         var result = new CompilerResult(
             List.of(),
-            List.of(new Diagnostic(Severity.ERROR, "SEM001", "Duplicate", null))
+            List.of(new Diagnostic(DiagnosticSeverity.ERROR, "SEM001", "Duplicate", null))
         );
         assertFalse(result.success());
     }

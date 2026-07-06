@@ -1,4 +1,5 @@
 package org.devinebyte.compiler.cli.console;
+import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.sdk.diagnostics.Diagnostic;
 import org.devinebyte.sdk.diagnostics.Severity; 
@@ -21,7 +22,7 @@ public class DiagnosticFormatter {
 
         String text = format(diagnostic);
 
-        if (diagnostic.severity() == Severity.ERROR) {
+        if (diagnostic.severity() == DiagnosticSeverity.ERROR) {
             console.error(text);
         } else {
             console.warning(text);

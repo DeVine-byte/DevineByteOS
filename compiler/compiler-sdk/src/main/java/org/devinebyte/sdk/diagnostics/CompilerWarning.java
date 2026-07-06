@@ -1,4 +1,5 @@
 package org.devinebyte.sdk.diagnostics;
+import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
 
 public final class CompilerWarning implements Diagnostic {
 
@@ -28,7 +29,7 @@ public final class CompilerWarning implements Diagnostic {
 
     @Override
     public DiagnosticSeverity getSeverity() {
-        return DiagnosticSeverity.WARNING;
+        return DiagnosticDiagnosticSeverity.WARNING;
     }
 
     @Override

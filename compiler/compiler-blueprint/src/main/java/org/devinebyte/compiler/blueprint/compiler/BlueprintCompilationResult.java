@@ -1,4 +1,5 @@
 package org.devinebyte.compiler.blueprint.compiler;
+import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.compiler.blueprint.model.BlueprintModel;
 import org.devinebyte.sdk.diagnostics.Diagnostic;

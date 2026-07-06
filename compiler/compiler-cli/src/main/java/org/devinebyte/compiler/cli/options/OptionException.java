@@ -1,4 +1,5 @@
 package org.devinebyte.compiler.cli.options;
+import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
 
 public class OptionException extends RuntimeException {
 

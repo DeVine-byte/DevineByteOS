@@ -1,4 +1,5 @@
 package org.devinebyte.compiler.semantic;
+import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.compiler.parser.ast.ProgramNode;
 import org.devinebyte.sdk.CompilerContext;
@@ -14,7 +15,7 @@ public class SemanticAnalyzer {
         for (var entity : program.entities()) {
             if (table.isDeclared(entity.name())) {
                 ctx.diagnostics().add(new Diagnostic(
-                    Severity.ERROR, "SEM001",
+                    DiagnosticSeverity.ERROR, "SEM001",
                     "Duplicate entity: " + entity.name(),
                     entity.location()
                 ));

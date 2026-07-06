@@ -1,4 +1,5 @@
 package org.devinebyte.compiler.generator.engine;
+import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
 
 import java.nio.file.Path;
 import java.util.ArrayList;

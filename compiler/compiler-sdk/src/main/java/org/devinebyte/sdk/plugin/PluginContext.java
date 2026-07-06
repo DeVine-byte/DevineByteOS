@@ -1,4 +1,5 @@
 package org.devinebyte.sdk.plugin;
+import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.sdk.service.CompilationService;
 import org.devinebyte.sdk.service.ParsingService;

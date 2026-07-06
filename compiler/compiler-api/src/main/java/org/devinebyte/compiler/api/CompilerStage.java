@@ -1,4 +1,5 @@
 package org.devinebyte.compiler.api;
+import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.sdk.CompilerContext;
 

@@ -1,4 +1,5 @@
 package org.devinebyte.compiler.parser.parser;
+import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
 
 public class ParserException extends RuntimeException {
 

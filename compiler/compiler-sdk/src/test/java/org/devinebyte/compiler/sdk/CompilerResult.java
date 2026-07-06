@@ -1,4 +1,5 @@
 package org.devinebyte.sdk;
+import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.sdk.diagnostics.Diagnostic;
 import org.devinebyte.sdk.diagnostics.Severity;
@@ -10,7 +11,7 @@ public record CompilerResult(
     List<Diagnostic> diagnostics
 ) {
     public boolean success() {
-        return diagnostics.stream().noneMatch(d -> d.severity() == Severity.ERROR);
+        return diagnostics.stream().noneMatch(d -> d.severity() == DiagnosticSeverity.ERROR);
     }
 
     public static CompilerResult failed(List<Diagnostic> diagnostics) {

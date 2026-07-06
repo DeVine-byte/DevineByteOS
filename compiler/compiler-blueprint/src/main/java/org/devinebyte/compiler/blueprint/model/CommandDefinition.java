@@ -1,4 +1,5 @@
 package org.devinebyte.compiler.blueprint.model;
+import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
 
 public class CommandDefinition {
 

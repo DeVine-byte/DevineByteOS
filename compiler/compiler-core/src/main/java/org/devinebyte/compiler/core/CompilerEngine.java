@@ -1,4 +1,5 @@
 package org.devinebyte.compiler.core;
+import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.compiler.blueprint.compiler.BlueprintCompiler;
 import org.devinebyte.compiler.blueprint.model.BlueprintModel;
@@ -37,12 +38,12 @@ public final class CompilerEngine {
 
     public CompilerResult compile(Path sourceFile, CompilerContext ctx) {
         var tokens = lexer.lex(sourceFile, ctx.diagnostics());
-        if (ctx.diagnostics().hasSeverity(Severity.ERROR)) return CompilerResult.failed(ctx.diagnostics().all());
+        if (ctx.diagnostics().hasSeverity(DiagnosticSeverity.ERROR)) return CompilerResult.failed(ctx.diagnostics().all());
 
         ProgramNode ast = parser.parse(tokens, ctx.diagnostics());
-        if (ctx.diagnostics().hasSeverity(Severity.ERROR)) return CompilerResult.failed(ctx.diagnostics().all());
+        if (ctx.diagnostics().hasSeverity(DiagnosticSeverity.ERROR)) return CompilerResult.failed(ctx.diagnostics().all());
         semanticAnalyzer.analyze(ast, ctx);
-        if (ctx.diagnostics().hasSeverity(Severity.ERROR)) return CompilerResult.failed(ctx.diagnostics().all());
+        if (ctx.diagnostics().hasSeverity(DiagnosticSeverity.ERROR)) return CompilerResult.failed(ctx.diagnostics().all());
 
         var bpResult = blueprintCompiler.compile(ast, ctx);
         if (!bpResult.success()) return CompilerResult.failed(bpResult.diagnostics());

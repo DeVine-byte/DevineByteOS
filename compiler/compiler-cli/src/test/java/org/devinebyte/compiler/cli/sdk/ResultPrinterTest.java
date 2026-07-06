@@ -1,4 +1,5 @@
 package org.devinebyte.compiler.cli.sdk; // Fixed: org not com
+import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.compiler.cli.console.AnsiConsole; // Fixed: org not com
 import org.devinebyte.sdk.CompilerResult; // Fixed: org.devinebyte.sdk.*
@@ -21,7 +22,7 @@ class ResultPrinterTest {
         // CompilerResult.success() is gone. Use record ctor. Audit §4
         CompilerResult result = new CompilerResult(
             List.of(Path.of("out/User.java")), // artifacts
-            List.of(new Diagnostic(Severity.INFO, "INF001", "Compilation succeeded", null))
+            List.of(new Diagnostic(DiagnosticSeverity.INFO, "INF001", "Compilation succeeded", null))
         );
 
         assertDoesNotThrow(() -> printer.print(result));

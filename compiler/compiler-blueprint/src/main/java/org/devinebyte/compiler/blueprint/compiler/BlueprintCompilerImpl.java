@@ -1,4 +1,5 @@
 package org.devinebyte.compiler.blueprint.compiler;
+import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.compiler.blueprint.mapper.AstToBlueprintMapper;
 import org.devinebyte.compiler.blueprint.model.BlueprintModel;
@@ -33,7 +34,7 @@ public class BlueprintCompilerImpl implements BlueprintCompiler {
         validator.validate(model, ctx.diagnostics());
         
         // 3. Stop on ERROR, but continue on WARNING/INFO
-        if (ctx.diagnostics().hasSeverity(Severity.ERROR)) {
+        if (ctx.diagnostics().hasSeverity(DiagnosticSeverity.ERROR)) {
             return BlueprintCompilationResult.failed(model, ctx.diagnostics().all());
         }
 

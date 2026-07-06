@@ -1,4 +1,5 @@
 package org.devinebyte.compiler.cli.util;
+import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
 
 public final class ExitCodes {
 

@@ -1,4 +1,5 @@
 package org.devinebyte.compiler.regression;
+import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.compiler.testing.fixtures.FixtureManager;
 import java.nio.file.Path;

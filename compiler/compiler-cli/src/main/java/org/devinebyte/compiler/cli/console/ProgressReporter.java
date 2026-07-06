@@ -1,4 +1,5 @@
 package org.devinebyte.compiler.cli.console;
+import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
 
 public class ProgressReporter {
 
