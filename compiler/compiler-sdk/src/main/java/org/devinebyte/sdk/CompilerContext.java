@@ -1,11 +1,12 @@
 package org.devinebyte.sdk;
 
-import org.devinebyte.sdk.diagnostics.DiagnosticCollector;
-import java.nio.file.Path;
+import org.devinebyte.sdk.diagnostics.Diagnostic;
+import java.io.File;
+import java.util.List;
 import java.util.Map;
 
 public interface CompilerContext {
-    Path workingDirectory();
+    File workingDirectory();
     Map<String, String> options();
-    DiagnosticCollector diagnostics();
+    List<Diagnostic> diagnostics(); // was DiagnosticCollector
 }
