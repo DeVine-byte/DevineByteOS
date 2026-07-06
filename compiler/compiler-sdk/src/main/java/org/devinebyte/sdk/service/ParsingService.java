@@ -1,8 +1,8 @@
-package org.devinebyte.sdk.service;
-import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
+package org.devinebyte.compiler.api.service;
+import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
-import org.devinebyte.sdk.Request;
-import org.devinebyte.sdk.Result;
+import org.devinebyte.compiler.api.Request;
+import org.devinebyte.compiler.api.Result;
 
 public interface ParsingService {
 

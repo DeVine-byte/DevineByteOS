@@ -1,5 +1,5 @@
 package org.devinebyte.compiler.cli.commands;
-import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
+import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.compiler.cli.options.CliOptions;
 import org.devinebyte.compiler.cli.options.OptionParser;
@@ -7,10 +7,10 @@ import org.devinebyte.compiler.cli.sdk.RequestMapper;
 import org.devinebyte.compiler.cli.sdk.SessionFactory;
 import org.devinebyte.compiler.cli.sdk.ResultPrinter;
 import org.devinebyte.compiler.cli.util.ExitCodes;
-import org.devinebyte.sdk.service.CompilationService;
-import org.devinebyte.sdk.session.BuildSession;
-import org.devinebyte.sdk.request.CompilerRequest;
-import org.devinebyte.sdk.result.CompilerResult;
+import org.devinebyte.compiler.api.service.CompilationService;
+import org.devinebyte.compiler.api.session.BuildSession;
+import org.devinebyte.compiler.api.request.CompilerRequest;
+import org.devinebyte.compiler.api.result.CompilerResult;
 
 public final class CompileCommand implements Command {
 

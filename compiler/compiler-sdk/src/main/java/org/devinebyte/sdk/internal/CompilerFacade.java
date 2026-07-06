@@ -1,12 +1,12 @@
-package org.devinebyte.sdk.internal;
-import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
+package org.devinebyte.compiler.api.internal;
+import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.compiler.core.CompilerEngine;
 import org.devinebyte.compiler.core.CompilerConfiguration;
 
-import org.devinebyte.sdk.Request;
-import org.devinebyte.sdk.Result;
-import org.devinebyte.sdk.Session;
+import org.devinebyte.compiler.api.Request;
+import org.devinebyte.compiler.api.Result;
+import org.devinebyte.compiler.api.Session;
 
 public final class CompilerFacade {
 

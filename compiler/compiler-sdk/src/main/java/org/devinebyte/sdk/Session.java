@@ -1,8 +1,8 @@
-package org.devinebyte.sdk;
-import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
+package org.devinebyte.compiler.api;
+import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 import java.nio.file.Path;
-import org.devinebyte.sdk.internal.CompilerFacade;
+import org.devinebyte.compiler.api.internal.CompilerFacade;
 
 public final class Session {
 

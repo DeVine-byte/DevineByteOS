@@ -1,5 +1,5 @@
 package org.devinebyte.compiler.regression.blueprint;
-import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
+import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.compiler.regression.CompilerRegressionTestSupport;
 import org.devinebyte.compiler.regression.RegressionFixtures;

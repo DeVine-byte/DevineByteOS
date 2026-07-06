@@ -1,5 +1,5 @@
 package org.devinebyte.compiler.testing.runners;
-import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
+import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.compiler.sdk.CompilerSDK;
 import org.devinebyte.compiler.sdk.Result;

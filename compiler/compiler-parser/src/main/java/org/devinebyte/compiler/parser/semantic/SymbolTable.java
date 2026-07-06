@@ -1,5 +1,5 @@
 package org.devinebyte.compiler.semantic;
-import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
+import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 import java.util.HashMap;
 import java.util.Map;

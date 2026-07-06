@@ -1,5 +1,5 @@
 package org.devinebyte.compiler.core;
-import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
+import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.compiler.blueprint.compiler.BlueprintCompiler;
 import org.devinebyte.compiler.blueprint.model.BlueprintModel;
@@ -10,9 +10,9 @@ import org.devinebyte.compiler.lexing.Lexer;
 import org.devinebyte.compiler.parser.Parser;
 import org.devinebyte.compiler.parser.ast.ProgramNode;
 import org.devinebyte.compiler.semantic.SemanticAnalyzer;
-import org.devinebyte.sdk.CompilerContext;
-import org.devinebyte.sdk.CompilerResult;
-import org.devinebyte.sdk.diagnostics.Severity;
+import org.devinebyte.compiler.api.CompilerContext;
+import org.devinebyte.compiler.api.CompilerResult;
+import org.devinebyte.compiler.api.diagnostics.Severity;
 
 import java.nio.file.Path;
 import java.util.List;

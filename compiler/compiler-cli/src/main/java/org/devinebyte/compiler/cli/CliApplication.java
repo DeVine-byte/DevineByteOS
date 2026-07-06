@@ -1,5 +1,5 @@
 package org.devinebyte.compiler.cli;
-import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
+import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.compiler.blueprint.compiler.BlueprintCompilerImpl;
 import org.devinebyte.compiler.blueprint.mapper.AstToBlueprintMapper;
@@ -8,8 +8,8 @@ import org.devinebyte.compiler.cli.commands.*;
 import org.devinebyte.compiler.cli.options.OptionParser;
 import org.devinebyte.compiler.cli.sdk.*;
 import org.devinebyte.compiler.cli.util.ExitCodes;
-import org.devinebyte.sdk.service.CompilationService;
-import org.devinebyte.sdk.service.CompilationServiceImpl; // assuming you have this
+import org.devinebyte.compiler.api.service.CompilationService;
+import org.devinebyte.compiler.api.service.CompilationServiceImpl; // assuming you have this
 import org.devinebyte.compiler.core.CompilerEngine;
 import org.devinebyte.compiler.generator.java.JavaGenerator;
 import org.devinebyte.compiler.generator.engine.SourceWriter;

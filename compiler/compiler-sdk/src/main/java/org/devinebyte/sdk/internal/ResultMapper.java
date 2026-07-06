@@ -1,7 +1,7 @@
-package org.devinebyte.sdk.internal;
-import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
+package org.devinebyte.compiler.api.internal;
+import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
-import org.devinebyte.sdk.Result;
+import org.devinebyte.compiler.api.Result;
 
 public final class ResultMapper {
 

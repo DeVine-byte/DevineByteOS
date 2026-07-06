@@ -1,5 +1,5 @@
 package org.devinebyte.compiler.parser.semantic;
-import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
+import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 public class SemanticException extends RuntimeException {
 

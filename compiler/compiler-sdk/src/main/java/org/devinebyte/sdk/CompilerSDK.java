@@ -1,5 +1,5 @@
-package org.devinebyte.sdk;
-import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
+package org.devinebyte.compiler.api;
+import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 public final class CompilerSDK {
 

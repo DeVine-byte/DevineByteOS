@@ -1,5 +1,5 @@
 package org.devinebyte.compiler.testing;
-import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
+import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

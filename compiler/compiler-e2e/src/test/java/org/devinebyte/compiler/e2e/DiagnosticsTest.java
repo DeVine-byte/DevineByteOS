@@ -1,5 +1,5 @@
 package org.devinebyte.compiler.e2e;
-import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
+import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.compiler.testing.assertions.DiagnosticAssertions;
 import org.junit.jupiter.api.Test;

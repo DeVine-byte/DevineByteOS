@@ -1,11 +1,11 @@
-package org.devinebyte.sdk.internal;
-import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
+package org.devinebyte.compiler.api.internal;
+import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.compiler.cli.options.CliOptions;
-import org.devinebyte.sdk.CompilerContext;
-import org.devinebyte.sdk.Request;
-import org.devinebyte.sdk.diagnostics.Diagnostic;
-import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
+import org.devinebyte.compiler.api.CompilerContext;
+import org.devinebyte.compiler.api.Request;
+import org.devinebyte.compiler.api.diagnostics.Diagnostic;
+import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 import java.util.ArrayList;
 import java.util.List;

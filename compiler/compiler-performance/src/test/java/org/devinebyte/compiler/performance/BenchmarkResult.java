@@ -1,7 +1,7 @@
 package org.devinebyte.compiler.performance;
-import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
+import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
-import org.devinebyte.sdk.CompilerResult;
+import org.devinebyte.compiler.api.CompilerResult;
 import java.time.Duration;
 
 public record BenchmarkResult(

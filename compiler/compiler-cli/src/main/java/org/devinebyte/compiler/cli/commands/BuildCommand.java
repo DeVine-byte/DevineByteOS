@@ -1,5 +1,5 @@
 package org.devinebyte.compiler.cli.commands;
-import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
+import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.compiler.cli.util.ExitCodes;
 import org.devinebyte.compiler.core.CompilerEngine;

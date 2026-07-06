@@ -1,8 +1,8 @@
 package org.devinebyte.compiler.core;
-import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
+import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
-import org.devinebyte.sdk.CompilerContext;
-import org.devinebyte.sdk.diagnostics.DiagnosticCollector;
+import org.devinebyte.compiler.api.CompilerContext;
+import org.devinebyte.compiler.api.diagnostics.DiagnosticCollector;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Map;

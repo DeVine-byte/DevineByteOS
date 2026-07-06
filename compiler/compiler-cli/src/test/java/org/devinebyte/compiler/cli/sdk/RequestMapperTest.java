@@ -1,8 +1,8 @@
 package org.devinebyte.compiler.cli.sdk; // Fixed: org not com
-import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
+import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.compiler.cli.options.CliOptions; // Fixed: org not com
-import org.devinebyte.sdk.request.CompilerRequest; // Fixed: org.devinebyte.sdk.*
+import org.devinebyte.compiler.api.request.CompilerRequest; // Fixed: org.devinebyte.compiler.api.*
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;

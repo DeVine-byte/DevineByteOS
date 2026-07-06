@@ -1,7 +1,7 @@
 package org.devinebyte.compiler.api;
-import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
+import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
-import org.devinebyte.sdk.CompilerContext;
+import org.devinebyte.compiler.api.CompilerContext;
 
 public interface CompilerStage {
 

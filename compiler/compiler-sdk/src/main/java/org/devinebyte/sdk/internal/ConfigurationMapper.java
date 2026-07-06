@@ -1,8 +1,8 @@
-package org.devinebyte.sdk.internal;
-import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
+package org.devinebyte.compiler.api.internal;
+import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.compiler.core.CompilerConfiguration;
-import org.devinebyte.sdk.Session;
+import org.devinebyte.compiler.api.Session;
 
 public final class ConfigurationMapper {
 

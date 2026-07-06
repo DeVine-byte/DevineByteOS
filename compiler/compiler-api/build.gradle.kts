@@ -9,5 +9,4 @@ java {
 repositories { mavenCentral() }
 
 dependencies {
-    implementation(project(":compiler-sdk")) // for CompilerContext
 }

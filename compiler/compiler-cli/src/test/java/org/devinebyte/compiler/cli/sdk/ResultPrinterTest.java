@@ -1,10 +1,10 @@
 package org.devinebyte.compiler.cli.sdk; // Fixed: org not com
-import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
+import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.compiler.cli.console.AnsiConsole; // Fixed: org not com
-import org.devinebyte.sdk.CompilerResult; // Fixed: org.devinebyte.sdk.*
-import org.devinebyte.sdk.diagnostics.Diagnostic;
-import org.devinebyte.sdk.diagnostics.Severity;
+import org.devinebyte.compiler.api.CompilerResult; // Fixed: org.devinebyte.compiler.api.*
+import org.devinebyte.compiler.api.diagnostics.Diagnostic;
+import org.devinebyte.compiler.api.diagnostics.Severity;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;

@@ -1,5 +1,5 @@
 package org.devinebyte.compiler.core;
-import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
+import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 import org.junit.jupiter.api.Test;
 

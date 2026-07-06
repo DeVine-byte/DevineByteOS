@@ -1,5 +1,5 @@
 package org.devinebyte.compiler.blueprint.loader;
-import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
+import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 public record BlueprintFile(
 

@@ -1,5 +1,5 @@
 package org.devinebyte.compiler.parser.ast;
-import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
+import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 public class PropertyNode extends AstNode {
 

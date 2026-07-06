@@ -1,8 +1,8 @@
 package org.devinebyte.compiler.cli.sdk; 
-import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
+import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
-import org.devinebyte.sdk.CompilerSDK; 
-import org.devinebyte.sdk.session.BuildSession;
+import org.devinebyte.compiler.api.CompilerSDK; 
+import org.devinebyte.compiler.api.session.BuildSession;
 
 import java.util.Objects;
 

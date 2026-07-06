@@ -1,5 +1,5 @@
 package org.devinebyte.compiler.testing.fixtures;
-import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
+import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 import java.io.IOException;
 import java.net.URISyntaxException;

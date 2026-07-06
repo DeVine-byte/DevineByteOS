@@ -1,13 +1,13 @@
 package org.devinebyte.compiler.blueprint.compiler;
-import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
+import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.compiler.blueprint.mapper.AstToBlueprintMapper;
 import org.devinebyte.compiler.blueprint.model.BlueprintModel;
 import org.devinebyte.compiler.blueprint.validation.BlueprintValidator;
 import org.devinebyte.compiler.blueprint.validation.ValidationResult;
 import org.devinebyte.compiler.parser.ast.ProgramNode;
-import org.devinebyte.sdk.CompilerContext;
-import org.devinebyte.sdk.diagnostics.Severity;
+import org.devinebyte.compiler.api.CompilerContext;
+import org.devinebyte.compiler.api.diagnostics.Severity;
 
 import java.util.List;
 

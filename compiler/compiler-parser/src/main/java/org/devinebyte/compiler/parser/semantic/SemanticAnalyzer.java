@@ -1,10 +1,10 @@
 package org.devinebyte.compiler.semantic;
-import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
+import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.compiler.parser.ast.ProgramNode;
-import org.devinebyte.sdk.CompilerContext;
-import org.devinebyte.sdk.diagnostics.Diagnostic;
-import org.devinebyte.sdk.diagnostics.Severity;
+import org.devinebyte.compiler.api.CompilerContext;
+import org.devinebyte.compiler.api.diagnostics.Diagnostic;
+import org.devinebyte.compiler.api.diagnostics.Severity;
 
 public class SemanticAnalyzer {
 

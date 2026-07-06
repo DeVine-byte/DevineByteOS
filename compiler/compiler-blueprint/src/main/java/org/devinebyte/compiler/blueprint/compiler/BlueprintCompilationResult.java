@@ -1,8 +1,8 @@
 package org.devinebyte.compiler.blueprint.compiler;
-import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
+import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.compiler.blueprint.model.BlueprintModel;
-import org.devinebyte.sdk.diagnostics.Diagnostic;
+import org.devinebyte.compiler.api.diagnostics.Diagnostic;
 import java.util.List;
 
 public record BlueprintCompilationResult(
