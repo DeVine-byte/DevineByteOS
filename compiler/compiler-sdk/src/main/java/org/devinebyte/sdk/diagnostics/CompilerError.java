@@ -1,5 +1,5 @@
-package org.devinebyte.compiler.api.diagnostics;
-import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
+package org.devinebyte.sdk.diagnostics;
+import org.devinebyte.compiler.api.DiagnosticSeverity;
 
 public final class CompilerError implements Diagnostic {
 
@@ -29,7 +29,7 @@ public final class CompilerError implements Diagnostic {
 
     @Override
     public DiagnosticSeverity getSeverity() {
-        return DiagnosticDiagnosticSeverity.ERROR;
+        return DiagnosticSeverity.ERROR;
     }
 
     @Override

@@ -1,5 +1,5 @@
-package org.devinebyte.compiler.api.internal;
-import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
+package org.devinebyte.sdk.internal;
+import org.devinebyte.compiler.api.DiagnosticSeverity;
 
 import org.devinebyte.compiler.core.CompilerEngine;
 import org.devinebyte.compiler.core.CompilerConfiguration;

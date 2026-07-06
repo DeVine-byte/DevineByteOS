@@ -1,5 +1,5 @@
-package org.devinebyte.compiler.api;
-import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
+package org.devinebyte.sdk;
+import org.devinebyte.compiler.api.DiagnosticSeverity;
 
 import java.nio.file.Path;
 
