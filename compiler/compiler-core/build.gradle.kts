@@ -9,7 +9,6 @@ java {
 }
 
 dependencies {
-    implementation(project(":compiler-diagnostics"))
     implementation(project(":compiler-sdk"))
 
     testImplementation(platform("org.junit:junit-bom:5.10.2"))
