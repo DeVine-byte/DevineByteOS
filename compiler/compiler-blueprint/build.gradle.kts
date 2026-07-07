@@ -4,3 +4,4 @@ java {
 }
 repositories { mavenCentral() }
 dependencies { api(project(":compiler-api")) }
+    implementation(project(":compiler-parser"))
