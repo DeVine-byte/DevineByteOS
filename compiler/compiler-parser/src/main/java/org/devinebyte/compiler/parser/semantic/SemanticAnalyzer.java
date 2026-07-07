@@ -4,7 +4,7 @@ import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 import org.devinebyte.compiler.parser.ast.ProgramNode;
 import org.devinebyte.compiler.api.CompilerContext;
 import org.devinebyte.compiler.api.diagnostics.Diagnostic;
-import org.devinebyte.compiler.api.diagnostics.Severity;
+import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 public class SemanticAnalyzer {
 

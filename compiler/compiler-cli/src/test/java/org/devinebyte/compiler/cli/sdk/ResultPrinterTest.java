@@ -4,7 +4,7 @@ import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 import org.devinebyte.compiler.cli.console.AnsiConsole; // Fixed: org not com
 import org.devinebyte.compiler.api.CompilerResult; // Fixed: org.devinebyte.compiler.api.*
 import org.devinebyte.compiler.api.diagnostics.Diagnostic;
-import org.devinebyte.compiler.api.diagnostics.Severity;
+import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;

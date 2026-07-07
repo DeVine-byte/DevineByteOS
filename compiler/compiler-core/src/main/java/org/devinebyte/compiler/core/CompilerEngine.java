@@ -12,7 +12,7 @@ import org.devinebyte.compiler.parser.ast.ProgramNode;
 import org.devinebyte.compiler.semantic.SemanticAnalyzer;
 import org.devinebyte.compiler.api.CompilerContext;
 import org.devinebyte.compiler.api.CompilerResult;
-import org.devinebyte.compiler.api.diagnostics.Severity;
+import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 import java.nio.file.Path;
 import java.util.List;

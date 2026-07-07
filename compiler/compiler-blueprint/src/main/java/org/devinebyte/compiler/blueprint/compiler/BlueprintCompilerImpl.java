@@ -7,7 +7,7 @@ import org.devinebyte.compiler.blueprint.validation.BlueprintValidator;
 import org.devinebyte.compiler.blueprint.validation.ValidationResult;
 import org.devinebyte.compiler.parser.ast.ProgramNode;
 import org.devinebyte.compiler.api.CompilerContext;
-import org.devinebyte.compiler.api.diagnostics.Severity;
+import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 import java.util.List;
 
