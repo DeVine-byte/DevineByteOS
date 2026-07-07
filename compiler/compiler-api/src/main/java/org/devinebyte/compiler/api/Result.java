@@ -1,5 +1,6 @@
 package org.devinebyte.compiler.api;
 
+import org.devinebyte.compiler.api.diagnostics.Diagnostic;
 import java.util.List;
 
 public record Result(boolean success, List<Diagnostic> diagnostics) {
