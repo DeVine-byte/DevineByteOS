@@ -1,7 +1,18 @@
-plugins { `java-library` }
-java { 
-    toolchain { languageVersion.set(JavaLanguageVersion.of(21)) } 
+plugins {
+    `java-library`
 }
-repositories { mavenCentral() }
-dependencies { api(project(":compiler-api")) }
-    implementation(project(":compiler-parser"))
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(21))
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    api(project(":compiler-api"))
+    api(project(":compiler-parser"))
+}
