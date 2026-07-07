@@ -1,4 +1,4 @@
-package org.devinebyte.compiler.semantic;
+package org.devinebyte.compiler.parser.semantic;
 import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 import java.util.HashMap;
