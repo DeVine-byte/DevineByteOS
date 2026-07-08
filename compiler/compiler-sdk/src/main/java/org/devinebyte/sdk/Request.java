@@ -1,25 +1,40 @@
 package org.devinebyte.sdk;
-import org.devinebyte.compiler.api.DiagnosticSeverity;
 
-import java.io.File;
-import java.util.List;
-import java.util.Map;
+import java.nio.file.Path;
+import java.util.Objects;
 
 public final class Request {
-    private final File sourceFile;
-    private final File outputDirectory;
+
+    private final Path sourceFile;
+    private final Path outputDirectory;
     private final CompilerContext context;
     private final boolean incremental;
 
-    public Request(File sourceFile, File outputDirectory, CompilerContext context, boolean incremental) {
-        this.sourceFile = sourceFile;
-        this.outputDirectory = outputDirectory;
-        this.context = context;
+    public Request(
+            Path sourceFile,
+            Path outputDirectory,
+            CompilerContext context,
+            boolean incremental) {
+
+        this.sourceFile = Objects.requireNonNull(sourceFile, "sourceFile");
+        this.outputDirectory = Objects.requireNonNull(outputDirectory, "outputDirectory");
+        this.context = Objects.requireNonNull(context, "context");
         this.incremental = incremental;
     }
 
-    public File getSourceFile() { return sourceFile; }
-    public File getOutputDirectory() { return outputDirectory; }
-    public CompilerContext getContext() { return context; }
-    public boolean isIncremental() { return incremental; }
+    public Path getSourceFile() {
+        return sourceFile;
+    }
+
+    public Path getOutputDirectory() {
+        return outputDirectory;
+    }
+
+    public CompilerContext getContext() {
+        return context;
+    }
+
+    public boolean isIncremental() {
+        return incremental;
+    }
 }
