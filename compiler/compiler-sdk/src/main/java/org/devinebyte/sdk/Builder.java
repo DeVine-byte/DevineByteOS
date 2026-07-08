@@ -1,28 +1,29 @@
 package org.devinebyte.sdk;
-import org.devinebyte.compiler.api.DiagnosticSeverity;
 
 import java.nio.file.Path;
+import java.util.Objects;
 
-public class Builder {
+public final class Builder {
 
     private Path projectRoot;
     private Path sourceDirectory;
     private Path outputDirectory;
+
     private boolean incremental;
     private boolean optimize;
 
     public Builder projectRoot(Path root) {
-        this.projectRoot = root;
+        this.projectRoot = Objects.requireNonNull(root);
         return this;
     }
 
     public Builder sourceDirectory(Path source) {
-        this.sourceDirectory = source;
+        this.sourceDirectory = Objects.requireNonNull(source);
         return this;
     }
 
     public Builder outputDirectory(Path output) {
-        this.outputDirectory = output;
+        this.outputDirectory = Objects.requireNonNull(output);
         return this;
     }
 
@@ -45,5 +46,4 @@ public class Builder {
                 optimize
         );
     }
-
 }
