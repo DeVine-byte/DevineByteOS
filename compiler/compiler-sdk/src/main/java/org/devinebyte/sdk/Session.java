@@ -1,8 +1,7 @@
 package org.devinebyte.sdk;
-import org.devinebyte.compiler.api.DiagnosticSeverity;
 
 import java.nio.file.Path;
-import org.devinebyte.compiler.api.internal.CompilerFacade;
+import java.util.Objects;
 
 public final class Session {
 
@@ -17,18 +16,14 @@ public final class Session {
             Path sourceDirectory,
             Path outputDirectory,
             boolean incremental,
-            boolean optimize
-    ) {
-        this.projectRoot = projectRoot;
-        this.sourceDirectory = sourceDirectory;
-        this.outputDirectory = outputDirectory;
+            boolean optimize) {
+
+        this.projectRoot = Objects.requireNonNull(projectRoot, "projectRoot");
+        this.sourceDirectory = Objects.requireNonNull(sourceDirectory, "sourceDirectory");
+        this.outputDirectory = Objects.requireNonNull(outputDirectory, "outputDirectory");
+
         this.incremental = incremental;
         this.optimize = optimize;
-    }
-
-    public Result compile(Request request) {
-        CompilerFacade facade = new CompilerFacade();
-        return facade.compile(this, request);
     }
 
     public Path getProjectRoot() {
@@ -49,5 +44,25 @@ public final class Session {
 
     public boolean isOptimize() {
         return optimize;
+    }
+
+    /**
+     * Creates a compilation request for a source file.
+     */
+    public Request request(Path sourceFile, CompilerContext context) {
+        return new Request(
+                sourceFile,
+                outputDirectory,
+                context,
+                incremental
+        );
+    }
+
+    /**
+     * Compiles a request using the SDK facade.
+     */
+    public Result compile(Request request) {
+        return new org.devinebyte.sdk.internal.CompilerFacade()
+                .compile(this, request);
     }
 }
