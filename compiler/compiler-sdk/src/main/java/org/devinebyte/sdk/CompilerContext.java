@@ -1,6 +1,6 @@
 package org.devinebyte.sdk;
 
-import org.devinebyte.compiler.api.diagnostics.Diagnostic;
+import org.devinebyte.sdk.diagnostics.Diagnostic;
 
 import java.io.File;
 import java.util.List;
