@@ -1,9 +1,14 @@
 package org.devinebyte.sdk.plugin;
-import org.devinebyte.compiler.api.DiagnosticSeverity;
 
+/**
+ * Compiler lifecycle events.
+ */
 public enum EventType {
 
     COMPILATION_STARTED,
+
+    LEXING_STARTED,
+    LEXING_COMPLETED,
 
     PARSING_STARTED,
     PARSING_COMPLETED,
@@ -11,10 +16,13 @@ public enum EventType {
     VALIDATION_STARTED,
     VALIDATION_COMPLETED,
 
+    BLUEPRINT_STARTED,
+    BLUEPRINT_COMPLETED,
+
+    GENERATION_STARTED,
+    GENERATION_COMPLETED,
+
     COMPILATION_COMPLETED,
 
-    ARTIFACT_GENERATED,
-
     ERROR_OCCURRED
-
 }
