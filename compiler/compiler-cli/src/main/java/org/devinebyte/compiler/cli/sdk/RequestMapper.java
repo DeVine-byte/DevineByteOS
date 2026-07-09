@@ -1,34 +1,29 @@
 package org.devinebyte.compiler.cli.sdk;
 
-import org.devinebyte.compiler.cli.console.Console;
-import org.devinebyte.sdk.Result;
+import java.io.File;
 
-public final class ResultPrinter {
+import org.devinebyte.compiler.cli.options.CliOptions;
+import org.devinebyte.sdk.CompilerContext;
+import org.devinebyte.sdk.Request;
+import org.devinebyte.sdk.Session;
 
-    private final Console console;
-
-    public ResultPrinter(Console console) {
-        this.console = console;
-    }
+public final class RequestMapper {
 
     /**
-     * Prints the compilation result to the console.
+     * Converts CLI options into an SDK Request.
      */
-    public void print(Result result) {
+    public Request compileRequest(Session session, CliOptions options) {
 
-        if (result.success()) {
-            console.success("Compilation completed successfully.");
-        } else {
-            console.error("Compilation failed.");
-        }
+        File sourceFile = options.getInput().toFile();
+        File outputDirectory = options.getOutput().toFile();
 
-        if (!result.diagnostics().isEmpty()) {
+        CompilerContext context = session.getContext();
 
-            console.print("");
-
-            for (String diagnostic : result.diagnostics()) {
-                console.print(diagnostic);
-            }
-        }
+        return new Request(
+                sourceFile,
+                outputDirectory,
+                context,
+                session.isIncremental()
+        );
     }
 }
