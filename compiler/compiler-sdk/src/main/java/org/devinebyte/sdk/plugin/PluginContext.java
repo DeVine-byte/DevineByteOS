@@ -1,16 +1,47 @@
 package org.devinebyte.sdk.plugin;
-import org.devinebyte.compiler.api.DiagnosticSeverity;
 
-import org.devinebyte.compiler.api.CompilationService;
-import org.devinebyte.compiler.api.ParsingService;
-import org.devinebyte.compiler.api.ValidationService;
+import org.devinebyte.sdk.service.ArtifactService;
+import org.devinebyte.sdk.service.CompilationService;
+import org.devinebyte.sdk.service.ParsingService;
+import org.devinebyte.sdk.service.ValidationService;
 
+import java.util.Map;
+
+/**
+ * Context provided to compiler plugins.
+ *
+ * Exposes stable SDK services and configuration without exposing
+ * compiler implementation details.
+ */
 public interface PluginContext {
 
-    ParsingService getParsingService();
+    /**
+     * Compiler configuration properties.
+     */
+    Map<String, String> properties();
 
-    ValidationService getValidationService();
+    /**
+     * Parsing service.
+     */
+    ParsingService parsingService();
 
-    CompilationService getCompilationService();
+    /**
+     * Validation service.
+     */
+    ValidationService validationService();
 
+    /**
+     * Compilation service.
+     */
+    CompilationService compilationService();
+
+    /**
+     * Artifact generation service.
+     */
+    ArtifactService artifactService();
+
+    /**
+     * Registers an event listener.
+     */
+    void registerListener(EventListener listener);
 }
