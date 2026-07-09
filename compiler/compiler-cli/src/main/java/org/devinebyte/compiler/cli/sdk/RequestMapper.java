@@ -1,20 +1,23 @@
 package org.devinebyte.compiler.cli.sdk;
-import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
+
+import java.io.File;
 
 import org.devinebyte.compiler.cli.options.CliOptions;
-import org.devinebyte.compiler.sdk.request.CompilerRequest;
+import org.devinebyte.sdk.Request;
+import org.devinebyte.sdk.Session;
 
-public class RequestMapper {
+public final class RequestMapper {
 
-    public CompilerRequest compileRequest(CliOptions options) {
+    public Request compileRequest(Session session, CliOptions options) {
 
-        return CompilerRequest.builder()
-                .input(options.getInput())
-                .output(options.getOutput())
-                .incremental(options.isIncremental())
-                .strict(options.isStrict())
-                .optimize(options.isOptimize())
-                .verbose(options.isVerbose())
-                .build();
+        File sourceFile = options.getSourceFile().toFile();
+        File outputDirectory = session.getOutputDirectory().toFile();
+
+        return new Request(
+                sourceFile,
+                outputDirectory,
+                session,
+                options.isIncremental()
+        );
     }
 }
