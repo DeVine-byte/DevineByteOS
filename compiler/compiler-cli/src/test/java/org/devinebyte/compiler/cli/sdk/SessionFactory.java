@@ -11,8 +11,9 @@ public final class SessionFactory {
     public Session create(CliOptions options) {
         Path input = options.getInput();
         Path output = options.getOutput();
-        
-        Path projectRoot = input.getParent();
+
+        // derive from input/output since CliOptions doesn't have them yet
+        Path projectRoot = input != null ? input.getParent() : Path.of(".");
         Path sourceDirectory = input;
         Path outputDirectory = output;
 
