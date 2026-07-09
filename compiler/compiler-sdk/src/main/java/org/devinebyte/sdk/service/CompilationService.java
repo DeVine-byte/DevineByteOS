@@ -3,6 +3,7 @@ package org.devinebyte.sdk.service;
 import org.devinebyte.sdk.Request;
 import org.devinebyte.sdk.Result;
 import org.devinebyte.sdk.Session;
+import org.devinebyte.sdk.internal.CompilerFacade
 
 /**
  * Primary compilation service exposed by the SDK.
