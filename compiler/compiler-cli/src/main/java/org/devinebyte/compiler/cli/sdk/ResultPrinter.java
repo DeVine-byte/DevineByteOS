@@ -20,7 +20,7 @@ public final class ResultPrinter {
         }
 
         if (!result.diagnostics().isEmpty()) {
-            console.println("");
+            console.print("");
 
             result.diagnostics().forEach(console::println);
         }
