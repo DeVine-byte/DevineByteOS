@@ -2,20 +2,19 @@ package org.devinebyte.sdk.service;
 
 import org.devinebyte.sdk.Request;
 import org.devinebyte.sdk.Result;
+import org.devinebyte.sdk.Session;
 
 /**
  * Primary compilation service exposed by the SDK.
- *
- * Implementations are responsible for executing the
- * complete compiler pipeline.
  */
 public interface CompilationService {
 
     /**
-     * Compiles a project.
+     * Compiles a project inside a session.
      *
-     * @param request compiler request
+     * @param session compiler session with config/plugins
+     * @param request compilation request: sources, options
      * @return compilation result
      */
-    Result compile(Request request);
+    Result compile(Session session, Request request);
 }
