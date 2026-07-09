@@ -11,6 +11,9 @@ public final class ResultPrinter {
         this.console = console;
     }
 
+    /**
+     * Prints the compilation result to the console.
+     */
     public void print(Result result) {
 
         if (result.success()) {
@@ -20,9 +23,12 @@ public final class ResultPrinter {
         }
 
         if (!result.diagnostics().isEmpty()) {
+
             console.print("");
 
-            result.diagnostics().forEach(console::println);
+            for (String diagnostic : result.diagnostics()) {
+                console.print(diagnostic);
+            }
         }
     }
 }
