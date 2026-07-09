@@ -1,9 +1,11 @@
 package org.devinebyte.sdk.internal;
-import org.devinebyte.compiler.api.DiagnosticSeverity;
 
 import org.devinebyte.compiler.core.CompilerConfiguration;
-import org.devinebyte.compiler.api.Session;
+import org.devinebyte.sdk.Session;
 
+/**
+ * Maps SDK Session -> CompilerConfiguration.
+ */
 public final class ConfigurationMapper {
 
     private ConfigurationMapper() {
@@ -12,15 +14,9 @@ public final class ConfigurationMapper {
     public static CompilerConfiguration map(Session session) {
 
         return new CompilerConfiguration(
-
                 session.getOutputDirectory().toString(),
-
-                false,
-
+                false,                      // strictMode (future SDK option)
                 session.isIncremental()
-
         );
-
     }
-
 }
