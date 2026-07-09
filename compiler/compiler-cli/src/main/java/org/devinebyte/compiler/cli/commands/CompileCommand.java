@@ -1,16 +1,15 @@
 package org.devinebyte.compiler.cli.commands;
-import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
+import org.devinebyte.sdk.Session;
+import org.devinebyte.sdk.Request;
+import org.devinebyte.sdk.Result;
+import org.devinebyte.sdk.service.CompilationService;
 import org.devinebyte.compiler.cli.options.CliOptions;
 import org.devinebyte.compiler.cli.options.OptionParser;
 import org.devinebyte.compiler.cli.sdk.RequestMapper;
 import org.devinebyte.compiler.cli.sdk.SessionFactory;
 import org.devinebyte.compiler.cli.sdk.ResultPrinter;
 import org.devinebyte.compiler.cli.util.ExitCodes;
-import org.devinebyte.compiler.api.service.CompilationService;
-import org.devinebyte.compiler.api.session.BuildSession;
-import org.devinebyte.compiler.api.request.CompilerRequest;
-import org.devinebyte.compiler.api.result.CompilerResult;
 
 public final class CompileCommand implements Command {
 
@@ -39,10 +38,13 @@ public final class CompileCommand implements Command {
     @Override
     public int execute() {
         CliOptions options = parser.parse(args);
-        BuildSession session = sessionFactory.create();
-        CompilerRequest request = mapper.compileRequest(options);
-        CompilerResult result = compilationService.compile(session, request);
+        
+        // New SDK flow
+        Session session = sessionFactory.create(options);
+        Request request = mapper.compileRequest(session, options);
+        Result result = compilationService.compile(session, request);
+        
         resultPrinter.print(result);
-        return result.success()? ExitCodes.SUCCESS : ExitCodes.COMPILATION_ERROR;
+        return result.success() ? ExitCodes.SUCCESS : ExitCodes.COMPILATION_ERROR;
     }
 }
