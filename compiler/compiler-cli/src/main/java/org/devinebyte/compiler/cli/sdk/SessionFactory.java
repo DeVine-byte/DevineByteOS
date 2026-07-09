@@ -1,8 +1,10 @@
 package org.devinebyte.compiler.cli.sdk;
-import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
-import org.devinebyte.compiler.sdk.CompilerSDK;
-import org.devinebyte.compiler.sdk.session.BuildSession;
+import java.nio.file.Path;
+
+import org.devinebyte.compiler.cli.options.CliOptions;
+import org.devinebyte.sdk.CompilerSDK;
+import org.devinebyte.sdk.Session;
 
 public final class SessionFactory {
 
@@ -12,7 +14,18 @@ public final class SessionFactory {
         this.sdk = sdk;
     }
 
-    public BuildSession create() {
-        return sdk.createSession();
+    public Session create(CliOptions options) {
+
+        Path projectRoot = options.getProjectRoot();
+        Path sourceDirectory = options.getSourceDirectory();
+        Path outputDirectory = options.getOutputDirectory();
+
+        return sdk.builder()
+                .projectRoot(projectRoot)
+                .sourceDirectory(sourceDirectory)
+                .outputDirectory(outputDirectory)
+                .incremental(options.isIncremental())
+                .optimize(options.isOptimize())
+                .build();
     }
 }
