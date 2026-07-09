@@ -3,19 +3,14 @@ package org.devinebyte.sdk.service;
 import org.devinebyte.sdk.Request;
 import org.devinebyte.sdk.Result;
 import org.devinebyte.sdk.Session;
-import org.devinebyte.sdk.internal.CompilerFacade
 
 /**
- * Primary compilation service exposed by the SDK.
+ * Executes compiler requests.
  */
 public interface CompilationService {
 
-    /**
-     * Compiles a project inside a session.
-     *
-     * @param session compiler session with config/plugins
-     * @param request compilation request: sources, options
-     * @return compilation result
-     */
-    Result compile(Session session, Request request);
+    Result compile(
+            Session session,
+            Request request
+    );
 }
