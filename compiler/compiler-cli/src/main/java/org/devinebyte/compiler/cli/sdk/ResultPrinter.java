@@ -1,32 +1,28 @@
 package org.devinebyte.compiler.cli.sdk;
-import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.compiler.cli.console.Console;
-import org.devinebyte.compiler.cli.console.DiagnosticFormatter;
-import org.devinebyte.compiler.sdk.diagnostics.Diagnostic;
-import org.devinebyte.compiler.sdk.result.CompilerResult;
+import org.devinebyte.sdk.Result;
 
-public class ResultPrinter {
+public final class ResultPrinter {
 
     private final Console console;
-
-    private final DiagnosticFormatter formatter =
-            new DiagnosticFormatter();
 
     public ResultPrinter(Console console) {
         this.console = console;
     }
 
-    public void print(CompilerResult result) {
-
-        for (Diagnostic diagnostic : result.diagnostics()) {
-            formatter.print(console, diagnostic);
-        }
+    public void print(Result result) {
 
         if (result.success()) {
             console.success("Compilation completed successfully.");
         } else {
             console.error("Compilation failed.");
+        }
+
+        if (!result.diagnostics().isEmpty()) {
+            console.println("");
+
+            result.diagnostics().forEach(console::println);
         }
     }
 }
