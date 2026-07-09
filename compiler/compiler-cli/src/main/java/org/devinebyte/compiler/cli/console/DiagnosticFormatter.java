@@ -1,31 +1,58 @@
 package org.devinebyte.compiler.cli.console;
-import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
-import org.devinebyte.compiler.api.diagnostics.Diagnostic;
-import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity; 
+import org.devinebyte.sdk.diagnostics.Diagnostic;
+import org.devinebyte.sdk.diagnostics.DiagnosticSeverity;
+import org.devinebyte.sdk.diagnostics.SourceLocation;
 
-public class DiagnosticFormatter {
+public final class DiagnosticFormatter {
 
+    /**
+     * Formats a diagnostic into a human-readable string.
+     */
     public String format(Diagnostic diagnostic) {
 
+        SourceLocation location = diagnostic.getLocation();
+
+        String position = "";
+
+        if (location != null) {
+            position = String.format(
+                    "%s:%d:%d",
+                    location.getFile(),
+                    location.getLine(),
+                    location.getColumn()
+            );
+        }
+
         return String.format(
-                "%s: %s (%s:%d:%d)",
-                diagnostic.severity(),
-                diagnostic.message(),
-                diagnostic.location().file(),
-                diagnostic.location().line(),
-                diagnostic.location().column()
+                "[%s] %s%s",
+                diagnostic.getSeverity(),
+                diagnostic.getMessage(),
+                position.isEmpty() ? "" : " (" + position + ")"
         );
     }
 
+    /**
+     * Prints a formatted diagnostic using the appropriate console method.
+     */
     public void print(Console console, Diagnostic diagnostic) {
 
         String text = format(diagnostic);
 
-        if (diagnostic.severity() == DiagnosticSeverity.ERROR) {
-            console.error(text);
-        } else {
-            console.warning(text);
+        switch (diagnostic.getSeverity()) {
+
+            case ERROR:
+                console.error(text);
+                break;
+
+            case WARNING:
+                console.warning(text);
+                break;
+
+            case INFO:
+            default:
+                console.info(text);
+                break;
         }
     }
 }
