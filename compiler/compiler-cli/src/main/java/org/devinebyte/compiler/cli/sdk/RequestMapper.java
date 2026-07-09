@@ -1,19 +1,29 @@
 package org.devinebyte.compiler.cli.sdk;
 
+import java.io.File;
+
+import org.devinebyte.compiler.cli.options.CliOptions;
+import org.devinebyte.sdk.CompilerContext;
 import org.devinebyte.sdk.Request;
 import org.devinebyte.sdk.Session;
-import org.devinebyte.compiler.cli.options.CliOptions;
 
-public class RequestMapper {
+public final class RequestMapper {
 
+    /**
+     * Converts CLI options into an SDK Request.
+     */
     public Request compileRequest(Session session, CliOptions options) {
-        return Request.builder()
-                .source(options.getInput()) // Path, not File
-                .output(options.getOutput())
-                .incremental(options.isIncremental())
-                .optimize(options.isOptimize())
-                .strict(options.isStrict())
-                .verbose(options.isVerbose())
-                .build();
+
+        File sourceFile = options.getInput().toFile();
+        File outputDirectory = options.getOutput().toFile();
+
+        CompilerContext context = session.getContext();
+
+        return new Request(
+                sourceFile,
+                outputDirectory,
+                context,
+                session.isIncremental()
+        );
     }
 }
