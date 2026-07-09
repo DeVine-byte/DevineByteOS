@@ -1,32 +1,42 @@
 package org.devinebyte.sdk.internal;
-import org.devinebyte.compiler.api.DiagnosticSeverity;
 
-import org.devinebyte.compiler.cli.options.CliOptions;
 import org.devinebyte.compiler.api.CompilerContext;
-import org.devinebyte.compiler.api.Request;
-import org.devinebyte.compiler.api.Diagnostic;
-import org.devinebyte.compiler.api.DiagnosticSeverity;
+import org.devinebyte.compiler.api.diagnostics.Diagnostic;
+import org.devinebyte.sdk.Request;
 
-import java.util.ArrayList;
+import java.io.File;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Maps SDK Request -> CompilerContext.
+ */
 public final class RequestMapper {
 
-    public Request compileRequest(CliOptions options) {
-        List<Diagnostic> diagnostics = new ArrayList<>();
+    private RequestMapper() {
+    }
 
-        CompilerContext ctx = new CompilerContext() {
-            @Override public java.io.File workingDirectory() { return options.getOutput().toFile(); }
-            @Override public Map<String, String> options() { return Map.of(); }
-            @Override public List<Diagnostic> diagnostics() { return diagnostics; }
+    public static CompilerContext map(Request request) {
+
+        return new CompilerContext() {
+
+            @Override
+            public File workingDirectory() {
+                return request.getOutputDirectory().toFile();
+            }
+
+            @Override
+            public Map<String, String> options() {
+                return Map.of(
+                        "incremental",
+                        Boolean.toString(request.isIncremental())
+                );
+            }
+
+            @Override
+            public List<Diagnostic> diagnostics() {
+                return List.of();
+            }
         };
-
-        return new Request(
-                options.getInput().toFile(),
-                options.getOutput().toFile(),
-                ctx,
-                options.isIncremental()
-        );
     }
 }
