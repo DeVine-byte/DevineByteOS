@@ -1,17 +1,14 @@
+
 package org.devinebyte.sdk.internal;
 
 import org.devinebyte.sdk.Request;
 import org.devinebyte.sdk.Result;
 import org.devinebyte.sdk.Session;
+import org.devinebyte.sdk.service.CompilationService;
 
-/**
- * Internal bridge between the SDK and the compiler.
- *
- * This class is intentionally isolated from the public SDK API.
- * Its implementation will evolve as compiler-core becomes complete.
- */
-public final class CompilerFacade {
+public final class CompilerFacade implements CompilationService {
 
+    @Override
     public Result compile(Session session, Request request) {
 
         // Future pipeline:
@@ -30,7 +27,6 @@ public final class CompilerFacade {
         //      ↓
         // SDK Result
 
-        throw new UnsupportedOperationException(
-                "Compiler pipeline has not yet been connected.");
+        throw new UnsupportedOperationException("Compiler pipeline has not yet been connected.");
     }
 }
