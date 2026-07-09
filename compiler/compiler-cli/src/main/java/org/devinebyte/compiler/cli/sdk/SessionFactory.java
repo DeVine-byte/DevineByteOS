@@ -8,19 +8,20 @@ import org.devinebyte.sdk.Session;
 
 public final class SessionFactory {
 
-    private final CompilerSDK sdk;
-
-    public SessionFactory(CompilerSDK sdk) {
-        this.sdk = sdk;
-    }
-
+    /**
+     * Creates a compiler session from CLI options.
+     */
     public Session create(CliOptions options) {
 
-        Path projectRoot = options.getProjectRoot();
-        Path sourceDirectory = options.getSourceDirectory();
-        Path outputDirectory = options.getOutputDirectory();
+        Path projectRoot = options.getInput().toAbsolutePath().getParent();
+        if (projectRoot == null) {
+            projectRoot = Path.of(".");
+        }
 
-        return sdk.builder()
+        Path sourceDirectory = options.getInput();
+        Path outputDirectory = options.getOutput();
+
+        return CompilerSDK.builder()
                 .projectRoot(projectRoot)
                 .sourceDirectory(sourceDirectory)
                 .outputDirectory(outputDirectory)
