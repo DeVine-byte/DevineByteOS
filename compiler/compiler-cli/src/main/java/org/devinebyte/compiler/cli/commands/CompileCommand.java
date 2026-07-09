@@ -37,14 +37,21 @@ public final class CompileCommand implements Command {
 
     @Override
     public int execute() {
+        // 1. Parse
         CliOptions options = parser.parse(args);
         
-        // New SDK flow
+        // 2. Create session from options
         Session session = sessionFactory.create(options);
+        
+        // 3. Map to request
         Request request = mapper.compileRequest(session, options);
+        
+        // 4. Compile inside session
         Result result = compilationService.compile(session, request);
         
+        // 5. Print
         resultPrinter.print(result);
+        
         return result.success() ? ExitCodes.SUCCESS : ExitCodes.COMPILATION_ERROR;
     }
 }
