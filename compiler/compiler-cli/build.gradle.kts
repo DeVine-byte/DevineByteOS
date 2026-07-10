@@ -25,12 +25,13 @@ dependencies {
     implementation("org.assertj:assertj-core:3.27.3")
 
     testImplementation(project(":compiler-testing"))
+    
     testImplementation(platform("org.junit:junit-bom:5.10.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation("org.mockito:mockito-core")
-    testImplementation("org.mockito:mockito-junit-jupiter")
-}
 
+    testImplementation("org.mockito:mockito-core:5.18.0")
+    testImplementation("org.mockito:mockito-junit-jupiter:5.18.0")
+}
 application {
     mainClass.set("org.devinebyte.compiler.cli.CliApplication")
 }
