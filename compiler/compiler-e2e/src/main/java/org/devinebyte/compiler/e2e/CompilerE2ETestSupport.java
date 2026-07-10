@@ -1,7 +1,5 @@
 package org.devinebyte.compiler.e2e;
 
-import org.devinebyte.sdk.Builder;
-import org.devinebyte.sdk.CompilerContext;
 import org.devinebyte.sdk.CompilerSDK;
 import org.devinebyte.sdk.Request;
 import org.devinebyte.sdk.Result;
@@ -10,7 +8,6 @@ import org.devinebyte.sdk.Session;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Map;
 
 /**
  * Base support class for end-to-end compiler tests.
@@ -20,84 +17,32 @@ import java.util.Map;
  */
 public abstract class CompilerE2ETestSupport {
 
-    /**
-     * Performs a full compilation.
-     *
-     * @param sourceFile source file to compile
-     * @return compilation result
-     */
     protected Result compile(Path sourceFile) {
-
-        try {
-            Path projectRoot = Files.createTempDirectory("dbos-e2e");
-            Path outputDirectory = Files.createDirectories(
-                    projectRoot.resolve("build"));
-
-            CompilerSDK sdk = CompilerSDK.builder().build();
-
-            Session session = sdk.newSession()
-                    .projectRoot(projectRoot)
-                    .sourceDirectory(sourceFile.getParent())
-                    .outputDirectory(outputDirectory)
-                    .incremental(false)
-                    .optimize(true)
-                    .context(defaultContext(projectRoot))
-                    .build();
-
-            Request request = session.request(
-                    sourceFile,
-                    session.getContext());
-
-            return session.compile(request);
-
-        } catch (IOException ex) {
-            throw new RuntimeException("Failed to execute end-to-end compilation.", ex);
-        }
+        return doCompile(sourceFile, false);
     }
 
-    /**
-     * Performs an incremental compilation.
-     *
-     * @param sourceFile source file
-     * @return compilation result
-     */
     protected Result compileIncremental(Path sourceFile) {
+        return doCompile(sourceFile, true);
+    }
 
+    private Result doCompile(Path sourceFile, boolean incremental) {
         try {
             Path projectRoot = Files.createTempDirectory("dbos-e2e");
-            Path outputDirectory = Files.createDirectories(
-                    projectRoot.resolve("build"));
+            Path outputDirectory = Files.createDirectories(projectRoot.resolve("build"));
 
-            CompilerSDK sdk = CompilerSDK.builder().build();
-
-            Session session = sdk.newSession()
+            Session session = CompilerSDK.builder()
                     .projectRoot(projectRoot)
                     .sourceDirectory(sourceFile.getParent())
                     .outputDirectory(outputDirectory)
-                    .incremental(true)
+                    .incremental(incremental)
                     .optimize(true)
-                    .context(defaultContext(projectRoot))
                     .build();
 
-            Request request = session.request(
-                    sourceFile,
-                    session.getContext());
-
+            Request request = session.request(sourceFile);
             return session.compile(request);
 
         } catch (IOException ex) {
-            throw new RuntimeException("Failed to execute incremental compilation.", ex);
+            throw new RuntimeException("Failed to execute compilation.", ex);
         }
-    }
-
-    /**
-     * Creates the default compiler context.
-     */
-    protected CompilerContext defaultContext(Path workingDirectory) {
-
-        return new Builder.DefaultCompilerContext(
-                workingDirectory.toFile(),
-                Map.of()
-        );
     }
 }
