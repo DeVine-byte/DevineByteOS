@@ -40,9 +40,18 @@ tasks.test {
 }
 
 tasks.jar {
+
     manifest {
-        attributes["Main-Class"] = "org.devinebyte.compiler.cli.CliApplication"
+        attributes(
+            "Main-Class" to "org.devinebyte.compiler.cli.CliApplication"
+        )
     }
-    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
-    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    from({
+        configurations.runtimeClasspath.get()
+            .filter { it.exists() }
+            .map { if (it.isDirectory) it else zipTree(it) }
+    })
 }
