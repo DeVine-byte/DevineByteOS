@@ -10,5 +10,6 @@ include(
     "compiler-sdk",
     "compiler-cli",
     "compiler-regression",
-    "compiler-performance"
+    "compiler-performance",
+    "compiler-e2e"
 )
