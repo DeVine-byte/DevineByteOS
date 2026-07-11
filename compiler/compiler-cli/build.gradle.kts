@@ -44,6 +44,15 @@ tasks.test {
 
 tasks.jar {
 
+    dependsOn(
+        ":compiler-api:jar",
+        ":compiler-parser:jar",
+        ":compiler-blueprint:jar",
+        ":compiler-generator:jar",
+        ":compiler-core:jar",
+        ":compiler-sdk:jar"
+    )
+
     manifest {
         attributes(
             "Main-Class" to "org.devinebyte.compiler.cli.CliApplication"
@@ -54,7 +63,10 @@ tasks.jar {
 
     from({
         configurations.runtimeClasspath.get()
-            .filter { it.exists() }
-            .map { if (it.isDirectory) it else zipTree(it) }
+            .filter(File::exists)
+            .map {
+                if (it.isDirectory) it
+                else zipTree(it)
+            }
     })
 }
