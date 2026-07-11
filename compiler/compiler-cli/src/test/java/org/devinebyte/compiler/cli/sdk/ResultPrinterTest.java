@@ -1,30 +1,84 @@
-package org.devinebyte.compiler.cli.sdk; // Fixed: org not com
-import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
+package org.devinebyte.compiler.cli.sdk;
 
-import org.devinebyte.compiler.cli.console.AnsiConsole; // Fixed: org not com
-import org.devinebyte.compiler.api.CompilerResult; // Fixed: org.devinebyte.compiler.api.*
-import org.devinebyte.compiler.api.diagnostics.Diagnostic;
-import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
+import org.devinebyte.compiler.cli.console.Console;
+import org.devinebyte.sdk.Result;
 import org.junit.jupiter.api.Test;
 
-import java.nio.file.Path;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.mockito.Mockito.*;
 
 class ResultPrinterTest {
 
     @Test
-    void shouldPrintCompilationResult() {
+    void printsSuccessfulCompilation() {
 
-        ResultPrinter printer = new ResultPrinter(new AnsiConsole());
+        Console console = mock(Console.class);
 
-        // CompilerResult.success() is gone. Use record ctor. Audit §4
-        CompilerResult result = new CompilerResult(
-            List.of(Path.of("out/User.java")), // artifacts
-            List.of(new Diagnostic(DiagnosticSeverity.INFO, "INF001", "Compilation succeeded", null))
-        );
+        Result result = mock(Result.class);
+        when(result.success()).thenReturn(true);
+        when(result.diagnostics()).thenReturn(List.of());
 
-        assertDoesNotThrow(() -> printer.print(result));
+        ResultPrinter printer = new ResultPrinter(console);
+
+        printer.print(result);
+
+        verify(console).success("Compilation completed successfully.");
+        verify(console, never()).error(anyString());
+    }
+
+    @Test
+    void printsFailedCompilation() {
+
+        Console console = mock(Console.class);
+
+        Result result = mock(Result.class);
+        when(result.success()).thenReturn(false);
+        when(result.diagnostics()).thenReturn(List.of());
+
+        ResultPrinter printer = new ResultPrinter(console);
+
+        printer.print(result);
+
+        verify(console).error("Compilation failed.");
+        verify(console, never()).success(anyString());
+    }
+
+    @Test
+    void printsDiagnostics() {
+
+        Console console = mock(Console.class);
+
+        Result result = mock(Result.class);
+        when(result.success()).thenReturn(false);
+        when(result.diagnostics()).thenReturn(List.of(
+                "Error 1",
+                "Error 2"
+        ));
+
+        ResultPrinter printer = new ResultPrinter(console);
+
+        printer.print(result);
+
+        verify(console).error("Compilation failed.");
+        verify(console).print("");
+        verify(console).print("Error 1");
+        verify(console).print("Error 2");
+    }
+
+    @Test
+    void doesNotPrintBlankLineWhenNoDiagnostics() {
+
+        Console console = mock(Console.class);
+
+        Result result = mock(Result.class);
+        when(result.success()).thenReturn(true);
+        when(result.diagnostics()).thenReturn(List.of());
+
+        ResultPrinter printer = new ResultPrinter(console);
+
+        printer.print(result);
+
+        verify(console, never()).print("");
     }
 }
