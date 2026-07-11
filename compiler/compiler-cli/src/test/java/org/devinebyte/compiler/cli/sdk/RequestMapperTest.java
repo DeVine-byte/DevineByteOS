@@ -1,34 +1,42 @@
-package org.devinebyte.compiler.cli.sdk; // Fixed: org not com
-import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
+package org.devinebyte.compiler.cli.sdk;
 
-import org.devinebyte.compiler.cli.options.CliOptions; // Fixed: org not com
-import org.devinebyte.compiler.api.request.CompilerRequest; // Fixed: org.devinebyte.compiler.api.*
+import org.devinebyte.compiler.cli.options.CliOptions;
+import org.devinebyte.sdk.CompilerContext;
+import org.devinebyte.sdk.Request;
+import org.devinebyte.sdk.Session;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.mockito.Mockito.*;
 
 class RequestMapperTest {
 
     @Test
-    void shouldMapCliOptionsToCompilerRequest() {
+    void compileRequestMapsSessionAndOptions() {
 
-        
-        CliOptions options = new CliOptions(
-            Path.of("src"), 
-            Path.of("build"), 
-            true, 
-            Map.of() // flags/props
-        );
+        Path input = Path.of("project.db");
+        Path output = Path.of("build");
+
+        CliOptions options = new CliOptions();
+        options.setInput(input);
+
+        CompilerContext context = mock(CompilerContext.class);
+
+        Session session = mock(Session.class);
+        when(session.getContext()).thenReturn(context);
+        when(session.getOutputDirectory()).thenReturn(output);
+        when(session.isIncremental()).thenReturn(true);
 
         RequestMapper mapper = new RequestMapper();
 
-        CompilerRequest request = mapper.compileRequest(options);
+        Request request = mapper.compileRequest(session, options);
 
-        assertEquals(Path.of("src"), request.input());
-        assertEquals(Path.of("build"), request.output());
-        // assertEquals(true, request.incremental()); // Add if field exists
+        assertEquals(input, request.getSourceFile());
+        assertEquals(output, request.getOutputDirectory());
+        assertSame(context, request.getContext());
+        assertEquals(true, request.isIncremental());
     }
 }
