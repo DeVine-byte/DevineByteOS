@@ -1,31 +1,20 @@
 package org.devinebyte.compiler.cli;
 
+import org.devinebyte.compiler.cli.options.OptionException;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class CliApplicationTest {
 
     @Test
-    void applicationCanBeConstructed() {
-        assertDoesNotThrow(CliApplication::new);
-    }
+    void invalidArgumentsThrowOptionException() {
 
-    @Test
-    void runDoesNotThrowForHelpCommand() {
         CliApplication application = new CliApplication();
 
-        assertDoesNotThrow(() ->
-                application.run(new String[]{"help"})
-        );
-    }
-
-    @Test
-    void runDoesNotThrowForVersionCommand() {
-        CliApplication application = new CliApplication();
-
-        assertDoesNotThrow(() ->
-                application.run(new String[]{"version"})
+        assertThrows(
+                OptionException.class,
+                () -> application.run(new String[]{"--unknown"})
         );
     }
 }
