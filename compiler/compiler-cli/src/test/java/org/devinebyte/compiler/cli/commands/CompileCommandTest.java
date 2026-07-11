@@ -1,61 +1,117 @@
 package org.devinebyte.compiler.cli.commands;
-import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
-import org.devinebyte.compiler.cli.CompileCommand;
-import org.devinebyte.compiler.core.CompilerEngine;
-import org.devinebyte.compiler.blueprint.compiler.BlueprintCompilerImpl;
-import org.devinebyte.compiler.blueprint.mapper.AstToBlueprintMapper;
-import org.devinebyte.compiler.blueprint.validation.BlueprintValidator;
-import org.devinebyte.compiler.generator.engine.SourceWriter;
-import org.devinebyte.compiler.generator.java.JavaGenerator;
-import org.devinebyte.compiler.lexing.Lexer;
-import org.devinebyte.compiler.parser.Parser;
-import org.devinebyte.compiler.semantic.SemanticAnalyzer;
+import org.devinebyte.compiler.cli.options.CliOptions;
+import org.devinebyte.compiler.cli.options.OptionParser;
+import org.devinebyte.compiler.cli.sdk.RequestMapper;
+import org.devinebyte.compiler.cli.sdk.ResultPrinter;
+import org.devinebyte.compiler.cli.sdk.SessionFactory;
+import org.devinebyte.compiler.cli.util.ExitCodes;
+import org.devinebyte.sdk.Request;
+import org.devinebyte.sdk.Result;
+import org.devinebyte.sdk.Session;
+import org.devinebyte.sdk.service.CompilationService;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.*;
 
 class CompileCommandTest {
 
     @Test
-    void shouldExecuteCompileCommand_Success(@TempDir Path tempDir) throws Exception {
-        // 1. Build a real Engine with all stages. Fixes Defect 1
-        CompilerEngine engine = new CompilerEngine(
-            new Lexer(), new Parser(), new SemanticAnalyzer(),
-            new BlueprintCompilerImpl(new AstToBlueprintMapper(), new BlueprintValidator()),
-            new JavaGenerator(), new SourceWriter()
+    void executeReturnsSuccessWhenCompilationSucceeds() {
+
+        String[] args = {"--input", "project.db", "--output", "build"};
+
+        CliOptions options = new CliOptions();
+
+        Session session = mock(Session.class);
+        Request request = mock(Request.class);
+
+        Result result = mock(Result.class);
+        when(result.success()).thenReturn(true);
+        when(result.diagnostics()).thenReturn(List.of());
+
+        CompilationService compilationService = mock(CompilationService.class);
+        when(compilationService.compile(session, request)).thenReturn(result);
+
+        SessionFactory sessionFactory = mock(SessionFactory.class);
+        when(sessionFactory.create(options)).thenReturn(session);
+
+        RequestMapper requestMapper = mock(RequestMapper.class);
+        when(requestMapper.compileRequest(session, options)).thenReturn(request);
+
+        OptionParser optionParser = mock(OptionParser.class);
+        when(optionParser.parse(args)).thenReturn(options);
+
+        ResultPrinter resultPrinter = mock(ResultPrinter.class);
+
+        CompileCommand command = new CompileCommand(
+                args,
+                compilationService,
+                sessionFactory,
+                requestMapper,
+                optionParser,
+                resultPrinter
         );
 
-        // 2. Create a valid .bp file so the command has something to run
-        Path validFile = Files.writeString(tempDir.resolve("User.bp"), "entity User {}");
-
-        // 3. Constructor injection now. No no-args ctor. Fixes Audit §1
-        CompileCommand command = new CompileCommand(engine, new String[]{validFile.toString()});
-
-        // 4. execute() now takes no args. Fixes Audit §1
         int exitCode = command.execute();
 
-        assertEquals(0, exitCode); // 0 = success
+        assertEquals(ExitCodes.SUCCESS, exitCode);
+
+        verify(optionParser).parse(args);
+        verify(sessionFactory).create(options);
+        verify(requestMapper).compileRequest(session, options);
+        verify(compilationService).compile(session, request);
+        verify(resultPrinter).print(result);
     }
 
     @Test
-    void shouldReturnNonZeroOnSemanticError(@TempDir Path tempDir) throws Exception {
-        CompilerEngine engine = new CompilerEngine(
-            new Lexer(), new Parser(), new SemanticAnalyzer(),
-            new BlueprintCompilerImpl(new AstToBlueprintMapper(), new BlueprintValidator()),
-            new JavaGenerator(), new SourceWriter()
-        );
+    void executeReturnsCompilationErrorWhenCompilationFails() {
 
-        // Duplicate entity -> should trigger SEM001 ERROR. Proves Defect 2 is fixed
-        Path badFile = Files.writeString(tempDir.resolve("dup.bp"), "entity User {} entity User {}");
-        CompileCommand command = new CompileCommand(engine, new String[]{badFile.toString()});
+        String[] args = {"--input", "broken.db", "--output", "build"};
+
+        CliOptions options = new CliOptions();
+
+        Session session = mock(Session.class);
+        Request request = mock(Request.class);
+
+        Result result = mock(Result.class);
+        when(result.success()).thenReturn(false);
+        when(result.diagnostics()).thenReturn(List.of("Syntax error"));
+
+        CompilationService compilationService = mock(CompilationService.class);
+        when(compilationService.compile(session, request)).thenReturn(result);
+
+        SessionFactory sessionFactory = mock(SessionFactory.class);
+        when(sessionFactory.create(options)).thenReturn(session);
+
+        RequestMapper requestMapper = mock(RequestMapper.class);
+        when(requestMapper.compileRequest(session, options)).thenReturn(request);
+
+        OptionParser optionParser = mock(OptionParser.class);
+        when(optionParser.parse(args)).thenReturn(options);
+
+        ResultPrinter resultPrinter = mock(ResultPrinter.class);
+
+        CompileCommand command = new CompileCommand(
+                args,
+                compilationService,
+                sessionFactory,
+                requestMapper,
+                optionParser,
+                resultPrinter
+        );
 
         int exitCode = command.execute();
 
-        assertNotEquals(0, exitCode); 
+        assertEquals(ExitCodes.COMPILATION_ERROR, exitCode);
+
+        verify(optionParser).parse(args);
+        verify(sessionFactory).create(options);
+        verify(requestMapper).compileRequest(session, options);
+        verify(compilationService).compile(session, request);
+        verify(resultPrinter).print(result);
     }
-}
+    }
