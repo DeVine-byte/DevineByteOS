@@ -59,7 +59,8 @@ class SessionFactoryTest {
 
         Session session = factory.create(options);
 
-        assertEquals(Path.of("."), session.getProjectRoot());
+        assertEquals(options.getInput().toAbsolutePath().getParent(), session.getProjectRoot()
+);
     }
 
     @Test
