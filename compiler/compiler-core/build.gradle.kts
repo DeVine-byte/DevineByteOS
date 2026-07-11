@@ -1,5 +1,6 @@
-
-plugins { `java-library` }
+plugins {
+    `java-library`
+}
 
 java {
     toolchain {
@@ -7,11 +8,22 @@ java {
     }
 }
 
-repositories { mavenCentral() }
+repositories {
+    mavenCentral()
+}
 
 dependencies {
     api(project(":compiler-api"))
+
     implementation(project(":compiler-parser"))
     implementation(project(":compiler-blueprint"))
     implementation(project(":compiler-generator"))
+
+    testImplementation(platform("org.junit:junit-bom:5.10.2"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
