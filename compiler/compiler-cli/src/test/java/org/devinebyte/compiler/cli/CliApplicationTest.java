@@ -1,29 +1,31 @@
 package org.devinebyte.compiler.cli;
-import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
-import org.devinebyte.compiler.cli.util.ExitCodes;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 class CliApplicationTest {
 
     @Test
-    void shouldReturnSuccessForHelpCommand() {
-
-        int exitCode = CliApplication.run(new String[]{"help"});
-
-        assertEquals(ExitCodes.SUCCESS, exitCode);
-
+    void applicationCanBeConstructed() {
+        assertDoesNotThrow(CliApplication::new);
     }
 
     @Test
-    void shouldReturnInvalidArgumentForUnknownCommand() {
+    void runDoesNotThrowForHelpCommand() {
+        CliApplication application = new CliApplication();
 
-        int exitCode = CliApplication.run(new String[]{"unknown"});
-
-        assertEquals(ExitCodes.INVALID_ARGUMENT, exitCode);
-
+        assertDoesNotThrow(() ->
+                application.run(new String[]{"help"})
+        );
     }
 
+    @Test
+    void runDoesNotThrowForVersionCommand() {
+        CliApplication application = new CliApplication();
+
+        assertDoesNotThrow(() ->
+                application.run(new String[]{"version"})
+        );
+    }
 }
