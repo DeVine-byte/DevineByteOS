@@ -1,5 +1,4 @@
 package org.devinebyte.compiler.cli;
-import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 import org.junit.jupiter.api.Test;
 
@@ -8,11 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 class MainTest {
 
     @Test
-    void shouldInvokeMainWithoutException() {
-
+    void mainCanExecute() {
         assertDoesNotThrow(() ->
-                Main.main(new String[]{"help"}));
-
+                Main.main(new String[]{"help"})
+        );
     }
-
 }
