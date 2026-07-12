@@ -1,14 +1,21 @@
 package org.devinebyte.compiler.e2e;
-import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.compiler.testing.assertions.CompilationAssertions;
+import org.devinebyte.compiler.testing.fixtures.FixtureManager;
+import org.devinebyte.sdk.Result;
 import org.junit.jupiter.api.Test;
+
+import java.nio.file.Path;
 
 class SchoolProjectCompilationTest extends CompilerE2ETestSupport {
 
     @Test
-    void shouldCompileSchoolBlueprint() {
-        CompilerResult result = compile("school");
-        CompilationAssertions.succeeded(result.success());
+    void shouldCompileSchoolProject() {
+
+        Path project = FixtureManager.project("school");
+
+        Result result = compile(project);
+
+        CompilationAssertions.assertSuccessful(result);
     }
 }
