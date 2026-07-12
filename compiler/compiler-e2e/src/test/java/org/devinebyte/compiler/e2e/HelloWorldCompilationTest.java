@@ -1,19 +1,23 @@
 package org.devinebyte.compiler.e2e;
-import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.compiler.testing.assertions.ArtifactAssertions;
 import org.devinebyte.compiler.testing.assertions.CompilationAssertions;
 import org.devinebyte.compiler.testing.fixtures.FixtureManager;
-import org.devinebyte.compiler.api.CompilerResult;
+import org.devinebyte.sdk.Result;
 import org.junit.jupiter.api.Test;
 
 class HelloWorldCompilationTest extends CompilerE2ETestSupport {
 
     @Test
     void shouldCompileHelloWorldProject() {
-        CompilerResult result = compile("hello-world");
 
-        CompilationAssertions.succeeded(result.success());
-        ArtifactAssertions.exists(FixtureManager.outputDirectory());
+        Result result =
+                compile(FixtureManager.project("hello-world"));
+
+        CompilationAssertions.assertSuccessful(result);
+
+        ArtifactAssertions.assertExists(
+                FixtureManager.outputDirectory()
+        );
     }
 }
