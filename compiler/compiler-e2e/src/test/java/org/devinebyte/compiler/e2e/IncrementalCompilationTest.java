@@ -1,15 +1,23 @@
 package org.devinebyte.compiler.e2e;
-import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.compiler.testing.assertions.CompilationAssertions;
+import org.devinebyte.compiler.testing.fixtures.FixtureManager;
+import org.devinebyte.sdk.Result;
 import org.junit.jupiter.api.Test;
+
+import java.nio.file.Path;
 
 class IncrementalCompilationTest extends CompilerE2ETestSupport {
 
     @Test
-    void shouldSupportIncrementalCompilation() {
-        compile("crm"); // first pass
-        CompilerResult second = compileIncremental("crm");
-        CompilationAssertions.succeeded(second.success());
+    void shouldCompileIncrementally() {
+
+        Path project = FixtureManager.project("crm");
+
+        Result first = compile(project);
+        CompilationAssertions.assertSuccessful(first);
+
+        Result second = compileIncremental(project);
+        CompilationAssertions.assertSuccessful(second);
     }
 }
