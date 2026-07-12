@@ -3,12 +3,21 @@ plugins {
 }
 
 dependencies {
-    testImplementation(project(":compiler-testing"))
     implementation(project(":compiler-sdk"))
-    testImplementation("org.junit.jupiter:junit-jupiter:5.11.0")
+
+    testImplementation(project(":compiler-testing"))
+
+    testImplementation(platform("org.junit:junit-bom:5.11.0"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+
+    // Required by Gradle 9.x
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 tasks.test {
     useJUnitPlatform()
-    testLogging { events("passed", "skipped", "failed") }
+
+    testLogging {
+        events("passed", "skipped", "failed")
+    }
 }
