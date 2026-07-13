@@ -1,0 +1,32 @@
+project "CRMSystem" {
+
+    version "1.0.0"
+
+    module crm {
+
+        entity Customer {
+
+            property id : UUID
+            property company : String
+            property email : String
+
+        }
+
+        entity Opportunity {
+
+            property id : UUID
+            property value : Decimal
+
+        }
+
+        workflow CreateLead {
+
+        }
+
+        workflow CloseDeal {
+
+        }
+
+    }
+
+}
