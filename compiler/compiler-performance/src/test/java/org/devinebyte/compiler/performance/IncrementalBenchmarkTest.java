@@ -12,6 +12,6 @@ class IncrementalBenchmarkTest extends BenchmarkSupport {
         BenchmarkResult result =
                 benchmarkIncremental(BenchmarkFixtures.enterpriseProject());
 
-        assertTrue(result.result().successful());
+        assertTrue(result.result().success());
     }
 }
