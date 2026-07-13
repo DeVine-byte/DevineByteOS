@@ -4,14 +4,25 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class MultiModuleBenchmarkTest extends BenchmarkSupport {
+class MemoryBenchmarkTest extends BenchmarkSupport {
 
     @Test
-    void shouldBenchmarkMultiModuleCompilation() {
+    void shouldMeasureMemoryUsage() {
+
+        Runtime runtime = Runtime.getRuntime();
+
+        runtime.gc();
+
+        long before = runtime.totalMemory() - runtime.freeMemory();
 
         BenchmarkResult result =
-                benchmark(BenchmarkFixtures.multiModuleProject());
+                benchmark(BenchmarkFixtures.enterpriseProject());
+
+        runtime.gc();
+
+        long after = runtime.totalMemory() - runtime.freeMemory();
 
         assertTrue(result.result().successful());
+        assertTrue(after >= before);
     }
 }
