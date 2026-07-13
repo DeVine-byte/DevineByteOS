@@ -12,6 +12,6 @@ class FullCompilationBenchmarkTest extends BenchmarkSupport {
         BenchmarkResult result =
                 benchmark(BenchmarkFixtures.enterpriseProject());
 
-        assertTrue(result.result().successful());
+        assertTrue(result.result().success());
     }
 }
