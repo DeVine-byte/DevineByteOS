@@ -1,14 +1,17 @@
 package org.devinebyte.compiler.performance;
-import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class FullCompilationBenchmarkTest extends CompilerBenchmarkSupport {
+class FullCompilationBenchmarkTest extends BenchmarkSupport {
 
     @Test
     void shouldBenchmarkFullCompilation() {
-        BenchmarkResult r = benchmark(BenchmarkFixtures.enterpriseProject(), BenchmarkFixtures.outputDirectory());
-        assertTrue(r.result().success());
+
+        BenchmarkResult result =
+                benchmark(BenchmarkFixtures.enterpriseProject());
+
+        assertTrue(result.result().successful());
     }
 }
