@@ -1,0 +1,19 @@
+project "HelloWorld" {
+
+    version "1.0.0"
+
+    module hello {
+
+        entity Greeting {
+
+            property message : String
+
+        }
+
+        workflow Startup {
+
+        }
+
+    }
+
+}
