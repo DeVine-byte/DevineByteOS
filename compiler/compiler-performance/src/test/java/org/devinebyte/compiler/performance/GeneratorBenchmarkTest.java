@@ -12,6 +12,6 @@ class GeneratorBenchmarkTest extends BenchmarkSupport {
         BenchmarkResult result =
                 benchmark(BenchmarkFixtures.warehouseProject());
 
-        assertTrue(result.result().successful());
+        assertTrue(result.result().success());
     }
 }
