@@ -1,14 +1,17 @@
 package org.devinebyte.compiler.performance;
-import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class MultiModuleBenchmarkTest extends CompilerBenchmarkSupport {
+class MultiModuleBenchmarkTest extends BenchmarkSupport {
 
     @Test
     void shouldBenchmarkMultiModuleCompilation() {
-        BenchmarkResult r = benchmark(BenchmarkFixtures.multiModuleProject(), BenchmarkFixtures.outputDirectory());
-        assertTrue(r.result().success());
+
+        BenchmarkResult result =
+                benchmark(BenchmarkFixtures.multiModuleProject());
+
+        assertTrue(result.result().successful());
     }
 }
