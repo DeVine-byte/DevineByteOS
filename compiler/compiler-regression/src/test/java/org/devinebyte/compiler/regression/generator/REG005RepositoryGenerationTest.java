@@ -5,7 +5,7 @@ import org.devinebyte.compiler.regression.RegressionFixtures;
 import org.devinebyte.compiler.testing.assertions.ArtifactAssertions;
 import org.junit.jupiter.api.Test;
 
-import static org.devinebyte.compiler.testing.assertions.CompilationAssertions.succeeded;
+import static org.devinebyte.compiler.testing.assertions.CompilationAssertions.assertSuccessful;
 
 class REG005RepositoryGenerationTest extends CompilerRegressionTestSupport {
 
@@ -14,7 +14,7 @@ class REG005RepositoryGenerationTest extends CompilerRegressionTestSupport {
         var output = RegressionFixtures.outputDirectory();
         var result = compile(RegressionFixtures.project("REG-005"), output);
         
-        succeeded(result.success());
+        assertSuccessful(result.success());
         ArtifactAssertions.exists(output.resolve("repositories"));
     }
 }
