@@ -12,6 +12,6 @@ class SemanticBenchmarkTest extends BenchmarkSupport {
         BenchmarkResult result =
                 benchmark(BenchmarkFixtures.schoolProject());
 
-        assertTrue(result.result().successful());
+        assertTrue(result.result().success());
     }
 }
