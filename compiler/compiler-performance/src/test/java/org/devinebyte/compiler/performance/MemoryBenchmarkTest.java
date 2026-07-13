@@ -1,22 +1,17 @@
 package org.devinebyte.compiler.performance;
-import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class MemoryBenchmarkTest extends CompilerBenchmarkSupport {
+class MultiModuleBenchmarkTest extends BenchmarkSupport {
 
     @Test
-    void shouldMeasureMemoryUsage() {
-        Runtime rt = Runtime.getRuntime();
-        rt.gc();
-        long before = rt.totalMemory() - rt.freeMemory();
+    void shouldBenchmarkMultiModuleCompilation() {
 
-        benchmark(BenchmarkFixtures.largeProject(), BenchmarkFixtures.outputDirectory());
+        BenchmarkResult result =
+                benchmark(BenchmarkFixtures.multiModuleProject());
 
-        rt.gc();
-        long after = rt.totalMemory() - rt.freeMemory();
-
-        assertTrue(after >= 0); // heap used. No threshold, just record
+        assertTrue(result.result().successful());
     }
 }
