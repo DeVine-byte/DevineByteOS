@@ -1,6 +1,5 @@
 package org.devinebyte.compiler.performance;
 
-import org.devinebyte.compiler.testing.fixtures.BenchmarkFixtures;
 import org.devinebyte.sdk.CompilerSDK;
 import org.devinebyte.sdk.Request;
 import org.devinebyte.sdk.Result;
@@ -10,24 +9,16 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 
-/**
- * Shared benchmark infrastructure.
- *
- * All compiler performance benchmarks should extend this class.
- */
 public abstract class BenchmarkSupport {
 
-    /**
-     * Executes a normal compilation benchmark.
-     */
-    protected BenchmarkResult benchmark(Path projectDirectory) {
-        Path outputDirectory = BenchmarkFixtures.outputDirectory();
-        Path input = projectDirectory;
+    protected BenchmarkResult benchmark(
+            Path input,
+            Path output) {
 
         Session session = CompilerSDK.builder()
                 .projectRoot(input)
                 .sourceDirectory(input)
-                .outputDirectory(outputDirectory)
+                .outputDirectory(output)
                 .incremental(false)
                 .optimize(false)
                 .build();
@@ -35,7 +26,9 @@ public abstract class BenchmarkSupport {
         Request request = session.request(input);
 
         Instant start = Instant.now();
+
         Result result = session.compile(request);
+
         Instant finish = Instant.now();
 
         return new BenchmarkResult(
@@ -44,20 +37,14 @@ public abstract class BenchmarkSupport {
         );
     }
 
-    /**
-     * Executes an incremental compilation benchmark.
-     * Note: Session is configured as incremental. No warmup needed because
-     * the SDK should handle cache internally. If you need a warmup run, 
-     * do a separate .incremental(false) build first.
-     */
-    protected BenchmarkResult benchmarkIncremental(Path projectDirectory) {
-        Path outputDirectory = BenchmarkFixtures.outputDirectory();
-        Path input = projectDirectory;
+    protected BenchmarkResult benchmarkIncremental(
+            Path input,
+            Path output) {
 
         Session session = CompilerSDK.builder()
                 .projectRoot(input)
                 .sourceDirectory(input)
-                .outputDirectory(outputDirectory)
+                .outputDirectory(output)
                 .incremental(true)
                 .optimize(false)
                 .build();
@@ -65,7 +52,9 @@ public abstract class BenchmarkSupport {
         Request request = session.request(input);
 
         Instant start = Instant.now();
+
         Result result = session.compile(request);
+
         Instant finish = Instant.now();
 
         return new BenchmarkResult(
