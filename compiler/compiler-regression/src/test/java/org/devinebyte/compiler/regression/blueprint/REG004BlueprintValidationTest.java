@@ -14,6 +14,6 @@ class REG004BlueprintValidationTest extends CompilerRegressionTestSupport {
             RegressionFixtures.project("REG-004"),
             RegressionFixtures.outputDirectory()
         );
-        assertSuccessful(result.success());
+        assertSuccessful(result);
     }
 }
