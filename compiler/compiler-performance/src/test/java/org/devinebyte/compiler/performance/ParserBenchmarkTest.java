@@ -12,7 +12,7 @@ class ParserBenchmarkTest extends BenchmarkSupport {
         BenchmarkResult result =
                 benchmark(BenchmarkFixtures.clinicProject());
 
-        assertTrue(result.result().successful());
+        assertTrue(result.result().success());
         assertTrue(result.milliseconds() >= 0);
     }
 }
