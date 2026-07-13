@@ -15,6 +15,6 @@ class REG001UnexpectedTokenTest extends CompilerRegressionTestSupport {
             RegressionFixtures.project("REG-001"),
             RegressionFixtures.outputDirectory()
         );
-        assertSuccessful(result.success());
+        assertSuccessful(result);
     }
 }
