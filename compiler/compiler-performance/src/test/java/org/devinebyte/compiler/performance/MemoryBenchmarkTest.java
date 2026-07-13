@@ -22,7 +22,7 @@ class MemoryBenchmarkTest extends BenchmarkSupport {
 
         long after = runtime.totalMemory() - runtime.freeMemory();
 
-        assertTrue(result.result().successful());
+        assertTrue(result.result().success());
         assertTrue(after >= before);
     }
 }
