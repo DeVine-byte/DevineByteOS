@@ -15,7 +15,7 @@ class LexerBenchmarkTest extends BenchmarkSupport {
         BenchmarkResult result =
                 benchmark(BenchmarkFixtures.helloWorldProject());
 
-        assertTrue(result.result().successful());
+        assertTrue(result.result().success());
         assertTrue(result.nanoseconds() > 0);
     }
 }
