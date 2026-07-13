@@ -1,0 +1,32 @@
+project "SchoolSystem" {
+
+    version "1.0.0"
+
+    module school {
+
+        entity Student {
+
+            property id : UUID
+            property name : String
+            property level : String
+
+        }
+
+        entity Course {
+
+            property code : String
+            property title : String
+
+        }
+
+        workflow Admission {
+
+        }
+
+        workflow Registration {
+
+        }
+
+    }
+
+}
