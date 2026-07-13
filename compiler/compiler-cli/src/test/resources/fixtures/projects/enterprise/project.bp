@@ -1,0 +1,42 @@
+project "EnterpriseSystem" {
+
+    version "1.0.0"
+
+    module hr {
+
+        entity Employee {
+
+            property id : UUID
+            property name : String
+
+        }
+
+    }
+
+    module finance {
+
+        entity Invoice {
+
+            property id : UUID
+            property amount : Decimal
+
+        }
+
+    }
+
+    module crm {
+
+        entity Customer {
+
+            property id : UUID
+            property company : String
+
+        }
+
+    }
+
+    workflow EnterpriseBootstrap {
+
+    }
+
+}
