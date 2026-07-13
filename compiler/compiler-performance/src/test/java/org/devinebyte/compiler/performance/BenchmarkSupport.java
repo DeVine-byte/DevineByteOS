@@ -11,6 +11,23 @@ import java.time.Instant;
 
 public abstract class BenchmarkSupport {
 
+    /**
+     * Benchmarks compilation using the default benchmark output directory.
+     */
+    protected BenchmarkResult benchmark(Path input) {
+        return benchmark(input, BenchmarkFixtures.outputDirectory());
+    }
+
+    /**
+     * Benchmarks incremental compilation using the default benchmark output directory.
+     */
+    protected BenchmarkResult benchmarkIncremental(Path input) {
+        return benchmarkIncremental(input, BenchmarkFixtures.outputDirectory());
+    }
+
+    /**
+     * Benchmarks a full compilation.
+     */
     protected BenchmarkResult benchmark(
             Path input,
             Path output) {
@@ -37,6 +54,9 @@ public abstract class BenchmarkSupport {
         );
     }
 
+    /**
+     * Benchmarks an incremental compilation.
+     */
     protected BenchmarkResult benchmarkIncremental(
             Path input,
             Path output) {
