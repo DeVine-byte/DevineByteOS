@@ -38,6 +38,9 @@ public final class BenchmarkFixtures {
     public static Path crmProject() {
         return FixtureManager.project("crm");
     }
+    public static Path multiModuleProject() {
+        return FixtureManager.project("multi-module");
+    }
 
     public static Path invalidProject() {
         return FixtureManager.project("invalid-project");
