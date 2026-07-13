@@ -15,6 +15,6 @@ class REG003DuplicateEntityTest extends CompilerRegressionTestSupport {
             RegressionFixtures.project("REG-003"),
             RegressionFixtures.outputDirectory()
         );
-        assertFailed(result.success());
+        assertFailed(result);
     }
 }
