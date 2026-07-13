@@ -12,6 +12,6 @@ class BlueprintBenchmarkTest extends BenchmarkSupport {
         BenchmarkResult result =
                 benchmark(BenchmarkFixtures.clinicProject());
 
-        assertTrue(result.result().successful());
+        assertTrue(result.result().success());
     }
 }
