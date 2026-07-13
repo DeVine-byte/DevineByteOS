@@ -14,7 +14,7 @@ class REG005RepositoryGenerationTest extends CompilerRegressionTestSupport {
         var output = RegressionFixtures.outputDirectory();
         var result = compile(RegressionFixtures.project("REG-005"), output);
         
-        assertSuccessful(result.success());
+        assertSuccessful(result);
         ArtifactAssertions.exists(output.resolve("repositories"));
     }
 }
