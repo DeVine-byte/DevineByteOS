@@ -1,15 +1,17 @@
 package org.devinebyte.compiler.performance;
-import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class IncrementalBenchmarkTest extends CompilerBenchmarkSupport {
+class IncrementalBenchmarkTest extends BenchmarkSupport {
 
     @Test
     void shouldBenchmarkIncrementalCompilation() {
-        benchmark(BenchmarkFixtures.enterpriseProject(), BenchmarkFixtures.outputDirectory()); // warm
-        BenchmarkResult second = benchmarkIncremental(BenchmarkFixtures.enterpriseProject(), BenchmarkFixtures.outputDirectory());
-        assertTrue(second.result().success());
+
+        BenchmarkResult result =
+                benchmarkIncremental(BenchmarkFixtures.enterpriseProject());
+
+        assertTrue(result.result().successful());
     }
 }
