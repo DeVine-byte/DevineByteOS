@@ -12,6 +12,6 @@ class MultiModuleBenchmarkTest extends BenchmarkSupport {
         BenchmarkResult result =
                 benchmark(BenchmarkFixtures.multiModuleProject());
 
-        assertTrue(result.result().successful());
+        assertTrue(result.result().success());
     }
 }
