@@ -15,7 +15,7 @@ class ThroughputBenchmarkTest extends BenchmarkSupport {
             BenchmarkResult result =
                     benchmark(BenchmarkFixtures.helloWorldProject());
 
-            assertTrue(result.result().successful());
+            assertTrue(result.result().success());
         }
 
         long elapsed = System.nanoTime() - start;
