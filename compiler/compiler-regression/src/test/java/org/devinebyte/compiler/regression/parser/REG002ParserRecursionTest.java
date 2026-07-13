@@ -14,6 +14,6 @@ class REG002ParserRecursionTest extends CompilerRegressionTestSupport {
             RegressionFixtures.project("REG-002"),
             RegressionFixtures.outputDirectory()
         );
-        assertSuccessful(result.success());
+        assertSuccessful(result);
     }
 }
