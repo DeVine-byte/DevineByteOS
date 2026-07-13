@@ -5,7 +5,7 @@ import org.devinebyte.compiler.regression.CompilerRegressionTestSupport;
 import org.devinebyte.compiler.regression.RegressionFixtures;
 import org.junit.jupiter.api.Test;
 
-import static org.devinebyte.compiler.testing.assertions.CompilationAssertions.failed;
+import static org.devinebyte.compiler.testing.assertions.CompilationAssertions.assertFailed;
 
 class REG003DuplicateEntityTest extends CompilerRegressionTestSupport {
 
@@ -15,6 +15,6 @@ class REG003DuplicateEntityTest extends CompilerRegressionTestSupport {
             RegressionFixtures.project("REG-003"),
             RegressionFixtures.outputDirectory()
         );
-        failed(result.success());
+        assertFailed(result.success());
     }
 }
