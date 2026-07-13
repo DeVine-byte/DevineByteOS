@@ -1,0 +1,32 @@
+project "WarehouseSystem" {
+
+    version "1.0.0"
+
+    module logistics {
+
+        entity Product {
+
+            property sku : String
+            property name : String
+            property quantity : Integer
+
+        }
+
+        entity Shipment {
+
+            property id : UUID
+            property destination : String
+
+        }
+
+        workflow ReceiveInventory {
+
+        }
+
+        workflow DispatchInventory {
+
+        }
+
+    }
+
+}
