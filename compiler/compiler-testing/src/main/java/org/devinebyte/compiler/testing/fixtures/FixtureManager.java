@@ -78,19 +78,22 @@ public final class FixtureManager {
     }
 
     private static void copyRecursively(Path src, Path dest) throws IOException {
-        Files.walk(src).forEach(path -> {
-            try {
-                Path target = dest.resolve(src.relativize(path));
+        try (var stream = Files.walk(src)) {
+            for (Path p : (Iterable<Path>) stream::iterator) {
+                Path relative = src.relativize(p);
+                Path target = dest.resolve(relative.toString());
 
-                if (Files.isDirectory(path)) {
+                if (Files.isDirectory(p)) {
                     Files.createDirectories(target);
                 } else {
                     Files.createDirectories(target.getParent());
-                    Files.copy(path, target);
+                    Files.copy(
+                        p,
+                        target,
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING
+                    );
                 }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
             }
-        });
+        }
     }
 }
