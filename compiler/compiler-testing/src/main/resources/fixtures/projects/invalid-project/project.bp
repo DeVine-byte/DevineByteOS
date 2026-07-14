@@ -1,0 +1,19 @@
+project "BrokenProject" {
+
+    module invalid {
+
+        entity Customer {
+
+            property id : UUID
+
+        }
+
+        entity Customer {
+
+            property id : UUID
+
+        }
+
+    }
+
+}
