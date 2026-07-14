@@ -14,9 +14,11 @@ public final class ConfigurationMapper {
     public static CompilerConfiguration map(Session session) {
 
         return new CompilerConfiguration(
-                session.getOutputDirectory().toString(),
-                false,                      // strictMode (future SDK option)
-                session.isIncremental()
+                session.getProjectRoot(),
+                session.getSourceDirectory(),
+                session.getOutputDirectory(),
+                session.isIncremental(),
+                session.isOptimize()
         );
     }
 }
