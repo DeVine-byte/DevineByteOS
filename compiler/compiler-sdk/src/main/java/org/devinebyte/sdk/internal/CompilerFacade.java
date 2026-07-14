@@ -1,6 +1,8 @@
-
 package org.devinebyte.sdk.internal;
 
+import org.devinebyte.compiler.api.CompilationResult;
+import org.devinebyte.compiler.core.CompilerConfiguration;
+import org.devinebyte.compiler.core.CompilerEngine;
 import org.devinebyte.sdk.Request;
 import org.devinebyte.sdk.Result;
 import org.devinebyte.sdk.Session;
@@ -11,22 +13,15 @@ public final class CompilerFacade implements CompilationService {
     @Override
     public Result compile(Session session, Request request) {
 
-        // Future pipeline:
-        //
-        // Session
-        //      ↓
-        // ConfigurationMapper
-        //      ↓
-        // CompilerConfiguration
-        //      ↓
-        // CompilerEngine
-        //      ↓
-        // CompilationResult
-        //      ↓
-        // ResultMapper
-        //      ↓
-        // SDK Result
+        CompilerConfiguration configuration =
+                ConfigurationMapper.map(session);
 
-        throw new UnsupportedOperationException("Compiler pipeline has not yet been connected.");
+        CompilerEngine engine =
+                new CompilerEngine(configuration);
+
+        CompilationResult result =
+                engine.compile();
+
+        return ResultMapper.map(result);
     }
 }
