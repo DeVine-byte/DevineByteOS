@@ -23,22 +23,32 @@ public final class FixtureManager {
             throw new RuntimeException(e); 
         }
     }
-
-    /** Copy fixture to temp dir so tests can write to it */
-    public static Path project(String name) {
-        Path src = projects().resolve(name);
-        if (!Files.exists(src)) {
-            throw new IllegalArgumentException("Missing fixture: " + name);
+    public static Path projects() {
+        URL url = FixtureManager.class.getResource("/fixtures/projects");
+        if (url == null) {
+            throw new IllegalStateException("Missing /fixtures/projects on classpath");
         }
         try {
-            Path tmp = Files.createTempDirectory("e2e-" + name + "-");
-            copyRecursively(src, tmp);
-            return tmp;
-        } catch (IOException e) { 
-            throw new RuntimeException("Failed to copy fixture: " + name, e); 
+            var uri = url.toURI();
+            
+            if ("jar".equals(uri.getScheme())) {
+                try {
+                    return java.nio.file.FileSystems
+                        .getFileSystem(uri)
+                        .getPath("/fixtures/projects");
+                } catch (java.nio.file.FileSystemNotFoundException e) {
+                    return java.nio.file.FileSystems
+                        .newFileSystem(uri, java.util.Map.of())
+                        .getPath("/fixtures/projects");
+                }
+            }
+            
+            return Path.of(uri);
+        
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
-
     /** Fresh temp output dir per test */
     public static Path outputDirectory() {
         try { 
