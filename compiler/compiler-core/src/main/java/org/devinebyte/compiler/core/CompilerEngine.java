@@ -1,32 +1,42 @@
 package org.devinebyte.compiler.core;
 
 import org.devinebyte.compiler.api.CompilationResult;
-import org.devinebyte.compiler.core.pipeline.CompilationPipeline;
-import org.devinebyte.compiler.core.pipeline.PipelineContext;
-import org.devinebyte.compiler.core.pipeline.ProjectLoaderStage;
-
-import java.util.List;
 
 public final class CompilerEngine {
 
     private final CompilerConfiguration configuration;
-    private final CompilationPipeline pipeline;
+    private final ProjectLoader loader;
 
-    public CompilerEngine(CompilerConfiguration configuration) {
-
+    public CompilerEngine(
+            CompilerConfiguration configuration
+    ) {
         this.configuration = configuration;
-
-        this.pipeline = new CompilationPipeline(
-                List.of(
-                        new ProjectLoaderStage()
-                )
-        );
+        this.loader = new ProjectLoader();
     }
 
     public CompilationResult compile() {
 
-        return pipeline.execute(
-                new PipelineContext(configuration)
-        );
+        try {
+
+            ProjectModel project =
+                    loader.load(configuration);
+
+            return new CompilationResult(
+                    true,
+                    "Project loaded: "
+                            + project.sourceFileCount()
+                            + " source files.",
+                    null
+            );
+
+        } catch (Exception ex) {
+
+            return new CompilationResult(
+                    false,
+                    null,
+                    ex.getMessage()
+            );
+        }
     }
+
 }
