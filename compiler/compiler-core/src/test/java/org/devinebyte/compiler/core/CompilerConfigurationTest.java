@@ -1,29 +1,34 @@
 package org.devinebyte.compiler.core;
-import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import java.nio.file.Path;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 class CompilerConfigurationTest {
 
     @Test
     void shouldStoreConfigurationValues() {
 
+        Path project = Path.of("project");
+        Path source = project.resolve("src");
+        Path output = project.resolve("build");
+
         CompilerConfiguration configuration =
                 new CompilerConfiguration(
-                        "build",
-                        false,
-                        true
+                        project,
+                        source,
+                        output,
+                        true,
+                        false
                 );
 
-        assertEquals("build", configuration.outputDirectory());
+        assertEquals(project, configuration.projectRoot());
+        assertEquals(source, configuration.sourceDirectory());
+        assertEquals(output, configuration.outputDirectory());
 
-        assertFalse(configuration.strictMode());
-
-        assertEquals(true, configuration.incremental());
-
+        assertTrue(configuration.incremental());
+        assertFalse(configuration.optimize());
     }
-
 }
