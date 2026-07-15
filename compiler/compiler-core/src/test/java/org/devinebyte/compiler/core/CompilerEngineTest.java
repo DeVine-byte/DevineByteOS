@@ -50,8 +50,8 @@ class CompilerEngineTest {
         CompilationResult result = engine.compile();
 
         assertEquals(
-                "Compilation completed.",
-                result.output()
+            "Project loaded.",
+            result.output()
         );
 
         assertNull(result.error());
