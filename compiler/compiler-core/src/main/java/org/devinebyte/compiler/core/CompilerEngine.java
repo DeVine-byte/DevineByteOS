@@ -1,42 +1,22 @@
 package org.devinebyte.compiler.core;
 
 import org.devinebyte.compiler.api.CompilationResult;
+import org.devinebyte.compiler.blueprint.compiler.BlueprintCompilationResult;
+import org.devinebyte.compiler.blueprint.compiler.BlueprintCompiler;
+import org.devinebyte.compiler.blueprint.compiler.BlueprintCompilerImpl;
+import org.devinebyte.compiler.blueprint.mapper.AstToBlueprintMapper;
+import org.devinebyte.compiler.blueprint.validation.BlueprintValidator;
 import org.devinebyte.compiler.parser.ast.ProgramNode;
 import org.devinebyte.compiler.parser.lexer.DefaultLexer;
-import org.devinebyte.compiler.parser.lexer.Lexer;
 import org.devinebyte.compiler.parser.lexer.Token;
 import org.devinebyte.compiler.parser.parser.DefaultParser;
-import org.devinebyte.compiler.parser.parser.Parser;
+import org.devinebyte.compiler.parser.semantic.DefaultSemanticAnalyzer;
+import org.devinebyte.compiler.parser.semantic.SemanticResult;
 
 import java.util.List;
 
 /**
- * Coordinates the compiler pipeline.
- *
- * Current pipeline:
- *
- * CompilerConfiguration
- *        ↓
- * ProjectLoader
- *        ↓
- * ProjectModel
- *        ↓
- * SourceLoader
- *        ↓
- * SourceProject
- *        ↓
- * DefaultLexer
- *        ↓
- * DefaultParser
- *        ↓
- * ProgramNode (AST)
- *
- * Future stages:
- *
- * Semantic Analysis
- * Blueprint Compiler
- * Code Generator
- * Artifact Writer
+ * Coordinates the complete compiler pipeline.
  */
 public final class CompilerEngine {
 
@@ -45,8 +25,11 @@ public final class CompilerEngine {
     private final ProjectLoader projectLoader;
     private final SourceLoader sourceLoader;
 
-    private final Lexer lexer;
-    private final Parser parser;
+    private final DefaultLexer lexer;
+    private final DefaultParser parser;
+    private final DefaultSemanticAnalyzer semanticAnalyzer;
+
+    private final BlueprintCompiler blueprintCompiler;
 
     public CompilerEngine(CompilerConfiguration configuration) {
 
@@ -57,50 +40,73 @@ public final class CompilerEngine {
 
         this.lexer = new DefaultLexer();
         this.parser = new DefaultParser();
+        this.semanticAnalyzer = new DefaultSemanticAnalyzer();
+
+        this.blueprintCompiler =
+                new BlueprintCompilerImpl(
+                        new AstToBlueprintMapper(),
+                        new BlueprintValidator()
+                );
     }
 
-    /**
-     * Executes the compiler pipeline.
-     */
     public CompilationResult compile() {
 
         try {
 
-            // Stage 1
             ProjectModel project =
                     projectLoader.load(configuration);
 
-            // Stage 2
             SourceProject sources =
                     sourceLoader.load(project);
 
-            int tokenCount = 0;
+            ProgramNode program =
+                    new ProgramNode();
 
-            ProgramNode lastProgram = null;
-
-            // Stage 3 + 4
             for (SourceFile file : sources.sourceFiles()) {
 
                 List<Token> tokens =
-                        lexer.tokenize(file.contents());
+                        lexer.tokenize(file.content());
 
-                tokenCount += tokens.size();
+                ProgramNode parsed =
+                        parser.parse(tokens);
 
-                lastProgram =
-                        parser.parse(file.contents());
+                program.getDeclarations()
+                        .addAll(parsed.getDeclarations());
+            }
+
+            SemanticResult semantic =
+                    semanticAnalyzer.analyze(
+                            program,
+                            configuration.context()
+                    );
+
+            if (!semantic.success()) {
+
+                return new CompilationResult(
+                        false,
+                        null,
+                        "Semantic analysis failed."
+                );
+            }
+
+            BlueprintCompilationResult blueprint =
+                    blueprintCompiler.compile(
+                            semantic.model().program(),
+                            configuration.context()
+                    );
+
+            if (!blueprint.success()) {
+
+                return new CompilationResult(
+                        false,
+                        null,
+                        "Blueprint compilation failed."
+                );
             }
 
             return new CompilationResult(
                     true,
-                    "Loaded "
-                            + sources.sourceFileCount()
-                            + " source file(s), "
-                            + tokenCount
-                            + " token(s), "
-                            + (lastProgram == null
-                                    ? 0
-                                    : lastProgram.getDeclarations().size())
-                            + " declaration(s).",
+                    "Blueprint compilation completed successfully.",
                     null
             );
 
@@ -113,4 +119,5 @@ public final class CompilerEngine {
             );
         }
     }
+
 }
