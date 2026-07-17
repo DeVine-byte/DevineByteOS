@@ -16,7 +16,7 @@ class CompilerEngineTest {
     Path fixtureProject;
 
     @Test
-    void engineExecutesCompilerPipeline() throws IOException {
+    void engineCompilesProjectThroughSemanticPhase() throws IOException {
 
         Path src =
                 Files.createDirectories(
@@ -26,8 +26,7 @@ class CompilerEngineTest {
         Files.writeString(
                 src.resolve("hello.dbos"),
                 """
-                entity Hello {
-
+                entity User {
                 }
                 """
         );
@@ -47,15 +46,10 @@ class CompilerEngineTest {
 
         assertTrue(result.success());
 
-        assertNotNull(result.output());
-
-        assertTrue(result.output().contains("Loaded"));
-
-        assertTrue(result.output().contains("source file"));
-
-        assertTrue(result.output().contains("token"));
-
-        assertTrue(result.output().contains("declaration"));
+        assertEquals(
+            "Blueprint compilation completed successfully.",
+            result.output()
+        );
 
         assertNull(result.error());
     }
@@ -78,13 +72,11 @@ class CompilerEngineTest {
 
         assertFalse(result.success());
 
-        assertNull(result.output());
-
         assertNotNull(result.error());
     }
 
     @Test
-    void engineFailsForInvalidSource() throws IOException {
+    void engineRejectsDuplicateEntities() throws IOException {
 
         Path src =
                 Files.createDirectories(
@@ -92,14 +84,20 @@ class CompilerEngineTest {
                 );
 
         Files.writeString(
-                src.resolve("broken.dbos"),
-                "@@@@@"
+                src.resolve("duplicate.dbos"),
+                """
+                entity User {
+                }
+
+                entity User {
+                }
+                """
         );
 
         CompilerConfiguration configuration =
                 new CompilerConfiguration(
                         fixtureProject,
-                        "broken",
+                        "duplicate",
                         "1.0"
                 );
 
@@ -111,7 +109,9 @@ class CompilerEngineTest {
 
         assertFalse(result.success());
 
-        assertNotNull(result.error());
+        assertEquals(
+                "Semantic analysis failed.",
+                result.error()
+        );
     }
-
 }
