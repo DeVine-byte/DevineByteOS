@@ -1,24 +1,31 @@
 package org.devinebyte.sdk.internal;
 
 import org.devinebyte.compiler.core.CompilerConfiguration;
+import org.devinebyte.sdk.Request;
 import org.devinebyte.sdk.Session;
 
-/**
- * Maps SDK Session -> CompilerConfiguration.
- */
 public final class ConfigurationMapper {
 
     private ConfigurationMapper() {
     }
 
-    public static CompilerConfiguration map(Session session) {
+    public static CompilerConfiguration map(
+            Session session,
+            Request request
+    ) {
 
         return new CompilerConfiguration(
+
                 session.getProjectRoot(),
-                session.getSourceDirectory(),
-                session.getOutputDirectory(),
+
+                session.getContext(),
+
+                request.getOutputDirectory(),
+
                 session.isIncremental(),
+
                 session.isOptimize()
+
         );
     }
 }
