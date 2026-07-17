@@ -10,6 +10,7 @@ import java.util.List;
 /**
  * Maps compiler CompilationResult -> SDK Result.
  */
+@Deprecated(forRemoval = true);
 public final class ResultMapper {
 
     private ResultMapper() {
