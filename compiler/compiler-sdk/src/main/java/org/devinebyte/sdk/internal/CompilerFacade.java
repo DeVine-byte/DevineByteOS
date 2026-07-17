@@ -11,17 +11,23 @@ import org.devinebyte.sdk.service.CompilationService;
 public final class CompilerFacade implements CompilationService {
 
     @Override
-    public Result compile(Session session, Request request) {
+    public Result compile(
+            Session session,
+            Request request
+    ) {
 
         CompilerConfiguration configuration =
-                ConfigurationMapper.map(session);
+                ConfigurationMapper.map(
+                        session,
+                        request
+                );
 
         CompilerEngine engine =
                 new CompilerEngine(configuration);
 
-        CompilationResult result =
+        CompilationResult compilationResult =
                 engine.compile();
 
-        return ResultMapper.map(result);
+        return ResultMapper.map(compilationResult);
     }
 }
