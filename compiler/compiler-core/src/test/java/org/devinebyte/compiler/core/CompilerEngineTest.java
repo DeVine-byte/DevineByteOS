@@ -16,7 +16,7 @@ class CompilerEngineTest {
     Path fixtureProject;
 
     @Test
-    void engineInvokesLoaderSuccessfully() throws IOException {
+    void engineExecutesCompilerPipeline() throws IOException {
 
         Path src =
                 Files.createDirectories(
@@ -25,7 +25,11 @@ class CompilerEngineTest {
 
         Files.writeString(
                 src.resolve("hello.dbos"),
-                "service Hello {}"
+                """
+                entity Hello {
+
+                }
+                """
         );
 
         CompilerConfiguration configuration =
@@ -43,9 +47,17 @@ class CompilerEngineTest {
 
         assertTrue(result.success());
 
-        assertTrue(
-                result.output().contains("Project loaded")
-        );
+        assertNotNull(result.output());
+
+        assertTrue(result.output().contains("Loaded"));
+
+        assertTrue(result.output().contains("source file"));
+
+        assertTrue(result.output().contains("token"));
+
+        assertTrue(result.output().contains("declaration"));
+
+        assertNull(result.error());
     }
 
     @Test
@@ -55,6 +67,39 @@ class CompilerEngineTest {
                 new CompilerConfiguration(
                         Path.of("missing"),
                         "demo",
+                        "1.0"
+                );
+
+        CompilerEngine engine =
+                new CompilerEngine(configuration);
+
+        CompilationResult result =
+                engine.compile();
+
+        assertFalse(result.success());
+
+        assertNull(result.output());
+
+        assertNotNull(result.error());
+    }
+
+    @Test
+    void engineFailsForInvalidSource() throws IOException {
+
+        Path src =
+                Files.createDirectories(
+                        fixtureProject.resolve("src")
+                );
+
+        Files.writeString(
+                src.resolve("broken.dbos"),
+                "@@@@@"
+        );
+
+        CompilerConfiguration configuration =
+                new CompilerConfiguration(
+                        fixtureProject,
+                        "broken",
                         "1.0"
                 );
 
