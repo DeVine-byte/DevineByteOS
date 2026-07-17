@@ -1,62 +1,106 @@
 package org.devinebyte.compiler.core;
 
 import org.devinebyte.compiler.api.CompilationResult;
+import org.devinebyte.compiler.parser.ast.ProgramNode;
+import org.devinebyte.compiler.parser.lexer.DefaultLexer;
+import org.devinebyte.compiler.parser.lexer.Lexer;
+import org.devinebyte.compiler.parser.lexer.Token;
+import org.devinebyte.compiler.parser.parser.DefaultParser;
+import org.devinebyte.compiler.parser.parser.Parser;
+
+import java.util.List;
 
 /**
  * Coordinates the compiler pipeline.
  *
- * <p>Current pipeline:</p>
+ * Current pipeline:
  *
- * <pre>
  * CompilerConfiguration
- *          ↓
+ *        ↓
  * ProjectLoader
- *          ↓
+ *        ↓
  * ProjectModel
- *          ↓
+ *        ↓
  * SourceLoader
- *          ↓
+ *        ↓
  * SourceProject
- * </pre>
+ *        ↓
+ * DefaultLexer
+ *        ↓
+ * DefaultParser
+ *        ↓
+ * ProgramNode (AST)
  *
- * <p>Future stages (Lexer, Parser, Semantic Analysis,
- * Blueprint Compilation, Code Generation) will be added
- * incrementally.</p>
+ * Future stages:
+ *
+ * Semantic Analysis
+ * Blueprint Compiler
+ * Code Generator
+ * Artifact Writer
  */
 public final class CompilerEngine {
 
     private final CompilerConfiguration configuration;
+
     private final ProjectLoader projectLoader;
     private final SourceLoader sourceLoader;
 
+    private final Lexer lexer;
+    private final Parser parser;
+
     public CompilerEngine(CompilerConfiguration configuration) {
+
         this.configuration = configuration;
+
         this.projectLoader = new ProjectLoader();
         this.sourceLoader = new SourceLoader();
+
+        this.lexer = new DefaultLexer();
+        this.parser = new DefaultParser();
     }
 
     /**
      * Executes the compiler pipeline.
-     *
-     * @return compilation result
      */
     public CompilationResult compile() {
 
         try {
 
-            // Stage 1: Discover project
+            // Stage 1
             ProjectModel project =
                     projectLoader.load(configuration);
 
-            // Stage 2: Load source files
+            // Stage 2
             SourceProject sources =
                     sourceLoader.load(project);
+
+            int tokenCount = 0;
+
+            ProgramNode lastProgram = null;
+
+            // Stage 3 + 4
+            for (SourceFile file : sources.sourceFiles()) {
+
+                List<Token> tokens =
+                        lexer.tokenize(file.contents());
+
+                tokenCount += tokens.size();
+
+                lastProgram =
+                        parser.parse(file.contents());
+            }
 
             return new CompilationResult(
                     true,
                     "Loaded "
                             + sources.sourceFileCount()
-                            + " source file(s).",
+                            + " source file(s), "
+                            + tokenCount
+                            + " token(s), "
+                            + (lastProgram == null
+                                    ? 0
+                                    : lastProgram.getDeclarations().size())
+                            + " declaration(s).",
                     null
             );
 
