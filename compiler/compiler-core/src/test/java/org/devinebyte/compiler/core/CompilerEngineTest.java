@@ -1,12 +1,11 @@
 package org.devinebyte.compiler.core;
 
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-
-import org.devinebyte.compiler.api.CompilationResult;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -38,20 +37,14 @@ class CompilerEngineTest {
         CompilerEngine engine =
                 new CompilerEngine(configuration);
 
-        CompilationResult result =
+        CompilerPipelineResult result =
                 engine.compile();
 
         assertTrue(result.success());
 
-        assertNotNull(result.output());
+        assertEquals(1, result.sourceFiles());
 
-        assertTrue(
-                result.output().startsWith(
-                        "Compilation completed successfully."
-                )
-        );
-
-        assertNull(result.error());
+        assertTrue(result.generatedFiles() >= 0);
     }
 
     @Test
@@ -67,14 +60,12 @@ class CompilerEngineTest {
         CompilerEngine engine =
                 new CompilerEngine(configuration);
 
-        CompilationResult result =
+        CompilerPipelineResult result =
                 engine.compile();
 
         assertFalse(result.success());
 
-        assertNull(result.output());
-
-        assertNotNull(result.error());
+        assertNotNull(result.message());
     }
 
     @Test
@@ -94,11 +85,11 @@ class CompilerEngineTest {
         CompilerEngine engine =
                 new CompilerEngine(configuration);
 
-        CompilationResult result =
+        CompilerPipelineResult result =
                 engine.compile();
 
         assertFalse(result.success());
 
-        assertNotNull(result.error());
+        assertNotNull(result.message());
     }
 }
