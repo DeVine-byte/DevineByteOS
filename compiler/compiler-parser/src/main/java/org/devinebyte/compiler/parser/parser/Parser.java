@@ -1,10 +1,12 @@
 package org.devinebyte.compiler.parser.parser;
-import org.devinebyte.compiler.api.diagnostics.DiagnosticSeverity;
 
 import org.devinebyte.compiler.parser.ast.ProgramNode;
+import org.devinebyte.compiler.parser.lexer.Token;
+
+import java.util.List;
 
 public interface Parser {
 
-    ProgramNode parse(String source);
+    ProgramNode parse(List<Token> tokens);
 
 }
