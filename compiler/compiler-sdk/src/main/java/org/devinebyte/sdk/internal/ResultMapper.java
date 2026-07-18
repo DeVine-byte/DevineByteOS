@@ -1,40 +1,48 @@
 package org.devinebyte.sdk.internal;
 
-import org.devinebyte.compiler.api.CompilationResult;
+import org.devinebyte.compiler.api.diagnostics.Diagnostic;
+import org.devinebyte.compiler.core.CompilerPipelineResult;
 import org.devinebyte.sdk.Result;
 
-import java.util.Collections;
 import java.util.List;
 
 /**
- * Converts compiler results into SDK results.
+ * Converts the internal compiler pipeline result into the public SDK result.
  */
 public final class ResultMapper {
 
     private ResultMapper() {
     }
 
-    public static Result map(CompilationResult compilationResult) {
+    public static Result map(CompilerPipelineResult pipeline) {
 
-        if (compilationResult == null) {
+        if (pipeline == null) {
             return Result.failed(
-                    List.of("Compiler returned null result.")
+                    List.of("Compiler returned null pipeline result.")
             );
         }
 
-        if (!compilationResult.success()) {
+        if (!pipeline.success()) {
 
-            String error = compilationResult.error();
+            List<String> diagnostics =
+                    pipeline.diagnostics()
+                            .stream()
+                            .map(Diagnostic::message)
+                            .toList();
 
-            return Result.failed(
-                    error == null
-                            ? List.of("Compilation failed.")
-                            : List.of(error)
-            );
+            if (diagnostics.isEmpty()) {
+                diagnostics = List.of(
+                        pipeline.message() == null
+                                ? "Compilation failed."
+                                : pipeline.message()
+                );
+            }
+
+            return Result.failed(diagnostics);
         }
 
         return Result.successful(
-                Collections.emptyList()
+                pipeline.artifacts()
         );
     }
 }
