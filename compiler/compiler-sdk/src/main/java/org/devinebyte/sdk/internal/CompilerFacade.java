@@ -25,9 +25,9 @@ public final class CompilerFacade implements CompilationService {
         CompilerEngine engine =
                 new CompilerEngine(configuration);
 
-        CompilationResult compilationResult =
+        CompilationResult compilation =
                 engine.compile();
 
-        return ResultMapper.map(compilationResult);
+        return ResultMapper.map(compilation);
     }
 }
