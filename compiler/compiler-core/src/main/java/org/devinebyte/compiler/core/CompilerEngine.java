@@ -1,8 +1,9 @@
 package org.devinebyte.compiler.core;
 
+import java.util.ArrayList;
 import java.util.List;
 
-import org.devinebyte.compiler.api.CompilationResult;
+import org.devinebyte.compiler.api.diagnostics.Diagnostic;
 import org.devinebyte.compiler.blueprint.compiler.BlueprintCompilationResult;
 import org.devinebyte.compiler.blueprint.compiler.BlueprintCompiler;
 import org.devinebyte.compiler.blueprint.compiler.BlueprintCompilerImpl;
@@ -32,9 +33,7 @@ public final class CompilerEngine {
     private final BlueprintCompiler blueprintCompiler;
     private final CodeGenerator codeGenerator;
 
-    public CompilerEngine(
-            CompilerConfiguration configuration
-    ) {
+    public CompilerEngine(CompilerConfiguration configuration) {
 
         this.configuration = configuration;
 
@@ -51,51 +50,37 @@ public final class CompilerEngine {
                         new BlueprintValidator()
                 );
 
-        this.codeGenerator =
-                new JavaGenerator();
+        this.codeGenerator = new JavaGenerator();
     }
 
-    public CompilationResult compile() {
+    public CompilerPipelineResult compile() {
 
         try {
-
-            // ----------------------------------------------------
-            // Stage 1
-            // ----------------------------------------------------
 
             ProjectModel project =
                     projectLoader.load(configuration);
 
-            // ----------------------------------------------------
-            // Stage 2
-            // ----------------------------------------------------
-
             SourceProject sources =
                     sourceLoader.load(project);
 
-            // ----------------------------------------------------
-            // Stage 3
-            // ----------------------------------------------------
-
             ProgramNode mergedProgram =
                     new ProgramNode();
+
+            int tokenCount = 0;
 
             for (SourceFile file : sources.sourceFiles()) {
 
                 List<Token> tokens =
                         lexer.tokenize(file.content());
 
+                tokenCount += tokens.size();
+
                 ProgramNode parsed =
                         parser.parse(tokens);
 
-                mergedProgram
-                        .getDeclarations()
+                mergedProgram.getDeclarations()
                         .addAll(parsed.getDeclarations());
             }
-
-            // ----------------------------------------------------
-            // Stage 4
-            // ----------------------------------------------------
 
             SemanticResult semantic =
                     semanticAnalyzer.analyze(
@@ -105,16 +90,11 @@ public final class CompilerEngine {
 
             if (!semantic.success()) {
 
-                return new CompilationResult(
-                        false,
-                        null,
-                        "Semantic analysis failed."
+                return CompilerPipelineResult.failure(
+                        "Semantic analysis failed.",
+                        configuration.context().diagnostics()
                 );
             }
-
-            // ----------------------------------------------------
-            // Stage 5
-            // ----------------------------------------------------
 
             BlueprintCompilationResult blueprint =
                     blueprintCompiler.compile(
@@ -124,36 +104,30 @@ public final class CompilerEngine {
 
             if (!blueprint.success()) {
 
-                return new CompilationResult(
-                        false,
-                        null,
-                        "Blueprint compilation failed."
+                return CompilerPipelineResult.failure(
+                        "Blueprint compilation failed.",
+                        configuration.context().diagnostics()
                 );
             }
-
-            // ----------------------------------------------------
-            // Stage 6
-            // ----------------------------------------------------
 
             GenerationResult generation =
                     codeGenerator.generate(
                             blueprint.blueprint()
                     );
 
-            return new CompilationResult(
-                    true,
-                    "Compilation completed successfully. Generated "
-                            + generation.getGeneratedFiles().size()
-                            + " file(s).",
-                    null
+            return CompilerPipelineResult.success(
+                    sources.sourceFileCount(),
+                    tokenCount,
+                    mergedProgram.getDeclarations().size(),
+                    generation.getGeneratedFiles(),
+                    configuration.context().diagnostics()
             );
 
         } catch (Exception ex) {
 
-            return new CompilationResult(
-                    false,
-                    null,
-                    ex.getMessage()
+            return CompilerPipelineResult.failure(
+                    ex.getMessage(),
+                    new ArrayList<>()
             );
         }
     }
