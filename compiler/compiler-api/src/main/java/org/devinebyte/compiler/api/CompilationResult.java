@@ -1,11 +1,14 @@
 package org.devinebyte.compiler.api;
 
-import java.util.List;
-
 import org.devinebyte.compiler.api.diagnostics.Diagnostic;
 
+import java.util.List;
+
 /**
- * Final public compilation result returned by the compiler.
+ * Public compilation result.
+ *
+ * This class is part of the compiler API and must not depend
+ * on compiler-core implementation classes.
  */
 public record CompilationResult(
 
@@ -13,22 +16,19 @@ public record CompilationResult(
 
         String message,
 
-        List<Diagnostic> diagnostics,
-
-        CompilerPipelineResult pipeline
+        List<Diagnostic> diagnostics
 
 ) {
 
     public static CompilationResult success(
             String message,
-            CompilerPipelineResult pipeline
+            List<Diagnostic> diagnostics
     ) {
 
         return new CompilationResult(
                 true,
                 message,
-                pipeline.diagnostics(),
-                pipeline
+                diagnostics == null ? List.of() : List.copyOf(diagnostics)
         );
     }
 
@@ -40,9 +40,7 @@ public record CompilationResult(
         return new CompilationResult(
                 false,
                 message,
-                diagnostics,
-                null
+                diagnostics == null ? List.of() : List.copyOf(diagnostics)
         );
     }
-
 }
