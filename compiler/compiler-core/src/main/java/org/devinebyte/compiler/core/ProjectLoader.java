@@ -18,11 +18,11 @@ public final class ProjectLoader {
             );
         }
 
-        Path sourceDirectory = projectRoot.resolve("src");
+        Path sourceDirectory = configuration.sourceDirectory();
 
         if (!Files.exists(sourceDirectory)) {
             throw new IllegalArgumentException(
-                    "Missing src directory."
+                    "Source directory does not exist: " + sourceDirectory
             );
         }
 
@@ -46,7 +46,6 @@ public final class ProjectLoader {
         }
 
         if (sourceFiles.isEmpty()) {
-
             throw new IllegalStateException(
                     "No source files found."
             );
@@ -56,9 +55,8 @@ public final class ProjectLoader {
                 projectRoot,
                 sourceDirectory,
                 sourceFiles,
-                configuration.projectName(),
-                configuration.version()
+                projectRoot.getFileName().toString(),
+                "0.1.0"
         );
     }
-
 }
