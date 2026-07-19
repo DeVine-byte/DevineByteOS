@@ -9,6 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Maps SDK requests into compiler contexts.
+ */
 public final class RequestMapper {
 
     private RequestMapper() {
@@ -30,7 +33,9 @@ public final class RequestMapper {
             public Map<String, String> options() {
                 return Map.of(
                         "incremental",
-                        Boolean.toString(request.isIncremental())
+                        Boolean.toString(request.isIncremental()),
+                        "optimize",
+                        Boolean.toString(request.isOptimize())
                 );
             }
 
