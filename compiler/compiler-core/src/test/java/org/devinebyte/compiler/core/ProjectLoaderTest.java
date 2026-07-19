@@ -30,8 +30,10 @@ class ProjectLoaderTest {
         CompilerConfiguration configuration =
                 new CompilerConfiguration(
                         tempDir,
-                        "demo",
-                        "1.0"
+                        src,
+                        tempDir.resolve("build"),
+                        false,
+                        false
                 );
 
         ProjectModel model =
@@ -59,8 +61,10 @@ class ProjectLoaderTest {
         CompilerConfiguration configuration =
                 new CompilerConfiguration(
                         tempDir,
-                        "demo",
-                        "1.0"
+                        src,
+                        tempDir.resolve("build"),
+                        false,
+                        false
                 );
 
         ProjectModel model =
@@ -75,11 +79,16 @@ class ProjectLoaderTest {
     @Test
     void rejectsMissingProject() {
 
+        Path missing =
+                tempDir.resolve("missing");
+
         CompilerConfiguration configuration =
                 new CompilerConfiguration(
-                        tempDir.resolve("missing"),
-                        "demo",
-                        "1.0"
+                        missing,
+                        missing.resolve("src"),
+                        missing.resolve("build"),
+                        false,
+                        false
                 );
 
         assertThrows(
@@ -94,8 +103,10 @@ class ProjectLoaderTest {
         CompilerConfiguration configuration =
                 new CompilerConfiguration(
                         tempDir,
-                        "demo",
-                        "1.0"
+                        tempDir.resolve("src"),
+                        tempDir.resolve("build"),
+                        false,
+                        false
                 );
 
         assertThrows(
@@ -107,15 +118,18 @@ class ProjectLoaderTest {
     @Test
     void rejectsEmptyProject() throws IOException {
 
-        Files.createDirectories(
-                tempDir.resolve("src")
-        );
+        Path src =
+                Files.createDirectories(
+                        tempDir.resolve("src")
+                );
 
         CompilerConfiguration configuration =
                 new CompilerConfiguration(
                         tempDir,
-                        "demo",
-                        "1.0"
+                        src,
+                        tempDir.resolve("build"),
+                        false,
+                        false
                 );
 
         assertThrows(
@@ -123,5 +137,4 @@ class ProjectLoaderTest {
                 () -> new ProjectLoader().load(configuration)
         );
     }
-
 }
