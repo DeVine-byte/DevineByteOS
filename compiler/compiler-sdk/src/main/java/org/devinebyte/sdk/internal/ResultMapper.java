@@ -1,13 +1,10 @@
 package org.devinebyte.sdk.internal;
 
-import org.devinebyte.compiler.api.diagnostics.Diagnostic;
 import org.devinebyte.compiler.core.CompilerPipelineResult;
 import org.devinebyte.sdk.Result;
 
-import java.util.List;
-
 /**
- * Converts the internal compiler pipeline result into the public SDK result.
+ * Maps the internal compiler pipeline result into the public SDK result.
  */
 public final class ResultMapper {
 
@@ -18,27 +15,29 @@ public final class ResultMapper {
 
         if (pipeline == null) {
             return Result.failed(
-                    List.of("Compiler returned null pipeline result.")
+                    java.util.List.of("Compiler returned no result.")
             );
         }
 
         if (!pipeline.success()) {
 
-            List<String> diagnostics =
-                    pipeline.diagnostics()
-                            .stream()
-                            .map(Diagnostic::message)
-                            .toList();
+            if (pipeline.hasDiagnostics()) {
 
-            if (diagnostics.isEmpty()) {
-                diagnostics = List.of(
-                        pipeline.message() == null
-                                ? "Compilation failed."
-                                : pipeline.message()
+                return Result.failed(
+                        pipeline.diagnostics()
+                                .stream()
+                                .map(Object::toString)
+                                .toList()
                 );
             }
 
-            return Result.failed(diagnostics);
+            return Result.failed(
+                    java.util.List.of(
+                            pipeline.message() == null
+                                    ? "Compilation failed."
+                                    : pipeline.message()
+                    )
+            );
         }
 
         return Result.successful(
