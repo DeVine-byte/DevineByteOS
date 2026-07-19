@@ -14,7 +14,7 @@ public class GenerationResult {
     }
 
     public List<Path> getGeneratedFiles() {
-        return generatedFiles;
+        return List.copyOf(generatedFiles);
     }
 
 }
