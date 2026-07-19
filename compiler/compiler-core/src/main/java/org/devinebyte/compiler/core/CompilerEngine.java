@@ -1,14 +1,11 @@
 package org.devinebyte.compiler.core;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.devinebyte.compiler.api.diagnostics.Diagnostic;
+import org.devinebyte.compiler.api.CompilerContext;
 import org.devinebyte.compiler.blueprint.compiler.BlueprintCompilationResult;
 import org.devinebyte.compiler.blueprint.compiler.BlueprintCompiler;
 import org.devinebyte.compiler.blueprint.compiler.BlueprintCompilerImpl;
 import org.devinebyte.compiler.blueprint.mapper.AstToBlueprintMapper;
-import org.devinebyte.compiler.blueprint.validation.BlueprintValidator;
+import org.devinebyte.compiler.blueprint.validation.DefaultBlueprintValidator;
 import org.devinebyte.compiler.generator.engine.CodeGenerator;
 import org.devinebyte.compiler.generator.engine.GenerationResult;
 import org.devinebyte.compiler.generator.java.JavaGenerator;
@@ -19,9 +16,12 @@ import org.devinebyte.compiler.parser.parser.DefaultParser;
 import org.devinebyte.compiler.parser.semantic.DefaultSemanticAnalyzer;
 import org.devinebyte.compiler.parser.semantic.SemanticResult;
 
+import java.util.List;
+
 public final class CompilerEngine {
 
     private final CompilerConfiguration configuration;
+    private final CompilerContext context;
 
     private final ProjectLoader projectLoader;
     private final SourceLoader sourceLoader;
@@ -33,9 +33,13 @@ public final class CompilerEngine {
     private final BlueprintCompiler blueprintCompiler;
     private final CodeGenerator codeGenerator;
 
-    public CompilerEngine(CompilerConfiguration configuration) {
+    public CompilerEngine(
+            CompilerConfiguration configuration,
+            CompilerContext context
+    ) {
 
         this.configuration = configuration;
+        this.context = context;
 
         this.projectLoader = new ProjectLoader();
         this.sourceLoader = new SourceLoader();
@@ -47,10 +51,11 @@ public final class CompilerEngine {
         this.blueprintCompiler =
                 new BlueprintCompilerImpl(
                         new AstToBlueprintMapper(),
-                        new BlueprintValidator()
+                        new DefaultBlueprintValidator()
                 );
 
-        this.codeGenerator = new JavaGenerator();
+        this.codeGenerator =
+                new JavaGenerator();
     }
 
     public CompilerPipelineResult compile() {
@@ -78,35 +83,36 @@ public final class CompilerEngine {
                 ProgramNode parsed =
                         parser.parse(tokens);
 
-                mergedProgram.getDeclarations()
+                mergedProgram
+                        .getDeclarations()
                         .addAll(parsed.getDeclarations());
             }
 
             SemanticResult semantic =
                     semanticAnalyzer.analyze(
                             mergedProgram,
-                            configuration.context()
+                            context
                     );
 
             if (!semantic.success()) {
 
                 return CompilerPipelineResult.failure(
                         "Semantic analysis failed.",
-                        configuration.context().diagnostics()
+                        context.diagnostics()
                 );
             }
 
             BlueprintCompilationResult blueprint =
                     blueprintCompiler.compile(
                             semantic.model().program(),
-                            configuration.context()
+                            context
                     );
 
             if (!blueprint.success()) {
 
                 return CompilerPipelineResult.failure(
                         "Blueprint compilation failed.",
-                        configuration.context().diagnostics()
+                        context.diagnostics()
                 );
             }
 
@@ -120,14 +126,16 @@ public final class CompilerEngine {
                     tokenCount,
                     mergedProgram.getDeclarations().size(),
                     generation.getGeneratedFiles(),
-                    configuration.context().diagnostics()
+                    context.diagnostics()
             );
 
         } catch (Exception ex) {
 
             return CompilerPipelineResult.failure(
                     ex.getMessage(),
-                    new ArrayList<>()
+                    context == null
+                            ? List.of()
+                            : context.diagnostics()
             );
         }
     }
