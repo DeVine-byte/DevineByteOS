@@ -15,17 +15,11 @@ public final class ConfigurationMapper {
     ) {
 
         return new CompilerConfiguration(
-
                 session.getProjectRoot(),
-
-                session.getContext(),
-
+                session.getSourceDirectory(),
                 request.getOutputDirectory(),
-
                 session.isIncremental(),
-
                 session.isOptimize()
-
         );
     }
 }
