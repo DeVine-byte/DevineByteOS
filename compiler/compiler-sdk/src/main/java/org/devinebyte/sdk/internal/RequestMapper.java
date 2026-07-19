@@ -5,12 +5,10 @@ import org.devinebyte.compiler.api.diagnostics.Diagnostic;
 import org.devinebyte.sdk.Request;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Maps SDK Request -> CompilerContext.
- */
 public final class RequestMapper {
 
     private RequestMapper() {
@@ -19,6 +17,9 @@ public final class RequestMapper {
     public static CompilerContext map(Request request) {
 
         return new CompilerContext() {
+
+            private final List<Diagnostic> diagnostics =
+                    new ArrayList<>();
 
             @Override
             public File workingDirectory() {
@@ -35,7 +36,7 @@ public final class RequestMapper {
 
             @Override
             public List<Diagnostic> diagnostics() {
-                return List.of();
+                return diagnostics;
             }
         };
     }
