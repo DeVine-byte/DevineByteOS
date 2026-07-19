@@ -1,5 +1,6 @@
 package org.devinebyte.sdk.internal;
 
+import org.devinebyte.compiler.api.CompilerContext;
 import org.devinebyte.compiler.core.CompilerConfiguration;
 import org.devinebyte.compiler.core.CompilerEngine;
 import org.devinebyte.compiler.core.CompilerPipelineResult;
@@ -22,8 +23,14 @@ public final class CompilerFacade implements CompilationService {
                         request
                 );
 
+        CompilerContext context =
+                RequestMapper.map(request);
+
         CompilerEngine engine =
-                new CompilerEngine(configuration);
+                new CompilerEngine(
+                        configuration,
+                        context
+                );
 
         CompilerPipelineResult pipeline =
                 engine.compile();
