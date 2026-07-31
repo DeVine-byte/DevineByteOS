@@ -1,0 +1,14 @@
+package io.devinebyte.compiler.blueprint.model;
+
+import java.util.List;
+import java.util.Set;
+
+public record ModuleIR(
+    String id,
+    String name,
+    boolean enabled,
+    Set<String> dependencies,
+    List<EntityIR> entities,
+    List<EventIR> events,
+    List<WorkflowIR> workflows
+) {}

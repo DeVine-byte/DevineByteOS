@@ -1,0 +1,18 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+dependencies {
+    implementation project(':runtime-bootstrap')
+    implementation project(':runtime-tenant')
+    implementation project(':runtime-config')
+    implementation project(':runtime-core')
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2'
+    implementation 'jakarta.inject:jakarta.inject-api:2.0.1'
+}
+
+application {
+    mainClass = 'io.devinebyte.runtime.Main'
+}

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="io.devinebyte.compiler.tests.EndToEndDbpkgTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-07-30T11:03:23.830Z" hostname="localhost" time="0.975">
+  <properties/>
+  <testcase name="producesValidDbpkgStructure()" classname="io.devinebyte.compiler.tests.EndToEndDbpkgTest" time="0.969"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

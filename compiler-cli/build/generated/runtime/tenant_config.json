@@ -1,0 +1,5 @@
+{
+  "lifecycle" : "ACTIVE",
+  "tenantId" : "acme",
+  "version" : "1.0.0"
+}

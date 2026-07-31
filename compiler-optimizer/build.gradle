@@ -1,0 +1,16 @@
+plugins {
+    id 'java'
+}
+
+dependencies {
+    implementation project(':compiler-core')
+    implementation project(':compiler-blueprint')
+    implementation project(':compiler-dsl')
+    implementation 'jakarta.inject:jakarta.inject-api:2.0.1'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}

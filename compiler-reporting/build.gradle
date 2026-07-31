@@ -1,0 +1,27 @@
+plugins {
+    id 'java'
+}
+
+group = 'io.devinebyte.compiler'
+version = '1.0.0'
+
+java {
+    toolchain { languageVersion = JavaLanguageVersion.of(21) }
+}
+
+dependencies {
+    implementation project(':compiler-core')
+    implementation project(':compiler-contracts')
+    implementation project(':compiler-blueprint')
+    implementation project(':compiler-dsl')
+
+    implementation 'jakarta.inject:jakarta.inject-api:2.0.1'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.2'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.17.2' // <-- ADD
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.3'
+}
+
+tasks.test {
+    useJUnitPlatform()
+}

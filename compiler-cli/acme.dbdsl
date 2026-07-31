@@ -1,0 +1,25 @@
+module Sales enabled {
+  entity Order {
+    id: String;
+    customerId: String;
+    total: Number;
+    status: String;
+  }
+  
+  event OrderCreated {
+    payload: { orderId: String, total: Number }
+  }
+  
+  workflow FulfillOrder {
+    step Validate -> step ReserveInventory -> step Ship
+  }
+  
+  kpi OrderVolume: count(Order) per day
+}
+
+module Inventory enabled {
+  entity Stock {
+    sku: String;
+    qty: Number;
+  }
+}

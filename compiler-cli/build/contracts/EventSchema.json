@@ -1,0 +1,12 @@
+[ {
+  "name" : "OrderCreated",
+  "version" : "1.0",
+  "fields" : {
+    "eventId" : "UUID",
+    "total" : "STRING",
+    "orderId" : "STRING",
+    "tenantId" : "STRING",
+    "version" : "STRING",
+    "timestamp" : "DATETIME"
+  }
+} ]

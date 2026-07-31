@@ -1,0 +1,45 @@
+plugins {
+    id 'java'
+}
+
+group = 'io.devinebyte'
+version = '1.0.0'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Runtime deps
+    implementation project(':runtime-core')
+    implementation project(':compiler-packaging')
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.2'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.17.2'
+
+    // Test deps - THIS IS THE FIX
+    testImplementation project(':compiler-cli')
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testImplementation 'org.assertj:assertj-core:3.25.3'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher' // <-- ADD THIS
+}
+
+tasks.test {
+    useJUnitPlatform()
+    dependsOn ':compiler-cli:run'
+
+    // FIX: point to execution/ not build/output/
+    systemProperty 'dbpkg.path',
+        "${rootProject.projectDir}/execution/acme/tenant-acme-v1.0.0.dbpkg"
+    systemProperty 'tenant.id', 'acme'
+
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+        showStandardStreams = true
+    }
+}

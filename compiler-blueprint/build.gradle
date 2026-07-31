@@ -1,0 +1,5 @@
+dependencies {
+    implementation project(':compiler-core')
+    implementation project(':compiler-audit')
+    implementation project(':compiler-dsl')
+}

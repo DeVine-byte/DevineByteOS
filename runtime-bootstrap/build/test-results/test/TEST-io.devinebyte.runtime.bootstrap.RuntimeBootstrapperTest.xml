@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="io.devinebyte.runtime.bootstrap.RuntimeBootstrapperTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-07-30T21:19:39.173Z" hostname="localhost" time="0.786">
+  <properties/>
+  <testcase name="boot_succeedsForCorrectTenant()" classname="io.devinebyte.runtime.bootstrap.RuntimeBootstrapperTest" time="0.158"/>
+  <testcase name="boot_respectsMultiTenantFlag()" classname="io.devinebyte.runtime.bootstrap.RuntimeBootstrapperTest" time="0.023"/>
+  <system-out><![CDATA[MANIFEST: tenant=acme multiTenant=false
+MANIFEST: tenant=acme multiTenant=false
+STRICT: boot failed with DBRT007 as expected
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

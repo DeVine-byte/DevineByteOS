@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "1.0",
+  "tenantId": "template",
+  "version": "0.1.0",
+  "builtAt": "2026-07-30T10:00:00Z",
+  "builtBy": "cli",
+  "sha256": "af5c38eba5e2280457c6a7fba63e2d29aed0a26d4f814dc2e50544df9fbc8176",
+  "signature": "fake"
+}

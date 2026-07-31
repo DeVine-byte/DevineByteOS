@@ -1,0 +1,9 @@
+[ {
+  "path" : "/api/order",
+  "method" : "POST",
+  "commandOrQuery" : "CreateOrder"
+}, {
+  "path" : "/api/stock",
+  "method" : "POST",
+  "commandOrQuery" : "CreateStock"
+} ]

@@ -1,0 +1,12 @@
+module Sales depends on Inventory enable {
+  entity Order { id: String; status: String; }
+  workflow FulfillOrder { 
+    ReserveInventory;
+    OrderCreated;
+  }
+}
+
+module Inventory enable {
+  entity Stock { sku: String; qty: Int; }
+  event OrderCreated();
+}
