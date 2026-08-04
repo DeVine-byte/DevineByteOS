@@ -44,13 +44,14 @@ public class PackageBuilder {
             "1.0", // schemaVersion
             content.tenant().tenantId(), // tenantId
             content.version(), // version
-            Instant.now(), // builtAt
-            "devinebyte-compiler-1.0.0", // builtBy
-            checksum, // sha256
-            "", // signature
-            content.moduleGraph(),
-            Map.of("contracts", "4"),
-            content.multiTenant() // NEW: Pass multiTenant
+            Instant.now(), // compiledAt
+            "devinebyte-compiler-1.0.0", // compiler
+            checksum, // sourceHash
+            "", // entrypoint
+            content.moduleGraph(), // moduleGraph
+            Map.of("contracts", "4"), // metadata
+            content.multiTenant(), // strictMode
+            Map.of() // keywordAliases - empty. Aliases are compile-time only
         );
     }
 
@@ -94,7 +95,8 @@ public class PackageBuilder {
         map.put("signature", manifest.signature());
         map.put("moduleGraph", manifest.moduleGraph());
         map.put("metadata", manifest.metadata());
-        map.put("multiTenant", manifest.multiTenant()); // NEW: Write to manifest.json
+        map.put("multiTenant", manifest.multiTenant());
+        map.put("keywordAliases", manifest.keywordAliases()); // write empty object {}
 
         writeJson(zos, "manifest.json", map);
     }

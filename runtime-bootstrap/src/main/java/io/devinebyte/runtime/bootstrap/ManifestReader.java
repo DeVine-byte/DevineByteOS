@@ -10,6 +10,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.io.InputStream;
 import java.time.Instant;
+import java.util.Map; // ADD
 
 @Singleton
 public class ManifestReader {
@@ -26,9 +27,15 @@ public class ManifestReader {
         String builtBy,
         @JsonProperty("sha256") String checksumSha256,
         String signature,
-        @JsonProperty("multiTenant") boolean multiTenant // NEW
+        @JsonProperty("multiTenant") boolean multiTenant,
+        Map<String, String> keywordAliases // ADD
     ) {
         public String checksumSha256() { return checksumSha256; }
+        
+        // Jackson needs this for default
+        public Manifest {
+            keywordAliases = keywordAliases == null ? Map.of() : keywordAliases;
+        }
     }
 
     public Manifest read(TenantContext tenant, InputStream manifestStream, DiagnosticCollector diagnostics) {
@@ -42,7 +49,8 @@ public class ManifestReader {
                 node.get("builtBy").asText(),
                 node.get("sha256").asText(),
                 node.get("signature").asText(),
-                node.path("multiTenant").asBoolean(true) // default true for v1
+                node.path("multiTenant").asBoolean(true),
+                mapper.convertValue(node.path("keywordAliases"), Map.class) // ADD
             );
         } catch (Exception e) {
             diagnostics.fatal("DBRT001", "Failed to parse /manifest.json: " + e.getMessage(), tenant.tenantId());

@@ -1,0 +1,53 @@
+department Emergency enabled {
+  patient Patient {
+    id: String;
+    name: String;
+    dob: Date;
+    bloodType: String;
+    status: String;
+  }
+
+  patient Doctor {
+    id: String;
+    name: String;
+    specialty: String;
+  }
+
+  signal PatientAdmitted {
+    payload: { patientId: String, triageLevel: Number, timestamp: DateTime }
+  }
+
+  signal PatientDischarged {
+    payload: { patientId: String, dischargeNotes: String, timestamp: DateTime }
+  }
+
+  protocol TriageAndAdmit {
+    step Register -> step Triage -> step AssignBed -> step NotifyDoctor
+  }
+
+  protocol DischargeProtocol {
+    step FinalCheck -> step Billing -> step Release
+  }
+
+  metric AdmissionRate: count(PatientAdmitted) per hour
+  metric AvgWaitTime: avg(Triage.duration) per day
+}
+
+department Pharmacy enabled {
+  patient Medication {
+    id: String;
+    name: String;
+    dosage: String;
+    stock: Number;
+  }
+
+  signal MedicationDispensed {
+    payload: { patientId: String, medicationId: String, qty: Number }
+  }
+
+  protocol FulfillPrescription {
+    step Verify -> step PickMedication -> step Dispense
+  }
+
+  metric StockOutRisk: count(Medication where stock < 10)
+}

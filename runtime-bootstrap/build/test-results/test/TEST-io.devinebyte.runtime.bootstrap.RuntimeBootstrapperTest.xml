@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="io.devinebyte.runtime.bootstrap.RuntimeBootstrapperTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-07-30T21:19:39.173Z" hostname="localhost" time="0.786">
+<testsuite name="io.devinebyte.runtime.bootstrap.RuntimeBootstrapperTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-08-03T20:23:26.569Z" hostname="localhost" time="1.09">
   <properties/>
-  <testcase name="boot_succeedsForCorrectTenant()" classname="io.devinebyte.runtime.bootstrap.RuntimeBootstrapperTest" time="0.158"/>
-  <testcase name="boot_respectsMultiTenantFlag()" classname="io.devinebyte.runtime.bootstrap.RuntimeBootstrapperTest" time="0.023"/>
-  <system-out><![CDATA[MANIFEST: tenant=acme multiTenant=false
-MANIFEST: tenant=acme multiTenant=false
-STRICT: boot failed with DBRT007 as expected
+  <testcase name="boot_succeedsForCorrectTenant()" classname="io.devinebyte.runtime.bootstrap.RuntimeBootstrapperTest" time="0.386"/>
+  <testcase name="boot_respectsMultiTenantFlag()" classname="io.devinebyte.runtime.bootstrap.RuntimeBootstrapperTest" time="0.098"/>
+  <system-out><![CDATA[MANIFEST: tenant=acme multiTenant=true
+[DBRT] Topological Load Order: []
+MANIFEST: tenant=acme multiTenant=true
+[DBRT] Topological Load Order: []
+TEMPLATE: boot succeeded for wrong-tenant as expected
 ]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

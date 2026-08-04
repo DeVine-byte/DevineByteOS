@@ -1,0 +1,7 @@
+{
+  "department": "module",
+  "patient": "entity",
+  "signal": "event",
+  "protocol": "workflow",
+  "metric": "kpi"
+}

@@ -4,10 +4,13 @@ plugins {
 }
 
 dependencies {
+    implementation project(':runtime-core')
+    implementation project(':runtime-module')
+    implementation project(':runtime-config')
     implementation project(':runtime-bootstrap')
     implementation project(':runtime-tenant')
-    implementation project(':runtime-config')
-    implementation project(':runtime-core')
+    implementation project(':runtime-event') // FIXED typo
+    implementation 'com.google.inject:guice:5.1.0' // ADD THIS for Guice.createInjector
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2'
     implementation 'jakarta.inject:jakarta.inject-api:2.0.1'

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="io.devinebyte.compiler.tests.EndToEndDbpkgTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-07-30T11:03:23.830Z" hostname="localhost" time="0.975">
+<testsuite name="io.devinebyte.compiler.tests.EndToEndDbpkgTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-08-03T19:14:31.979Z" hostname="localhost" time="0.682">
   <properties/>
-  <testcase name="producesValidDbpkgStructure()" classname="io.devinebyte.compiler.tests.EndToEndDbpkgTest" time="0.969"/>
+  <testcase name="producesValidDbpkgStructure()" classname="io.devinebyte.compiler.tests.EndToEndDbpkgTest" time="0.68"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

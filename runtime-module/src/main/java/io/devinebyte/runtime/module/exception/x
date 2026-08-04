@@ -1,0 +1,20 @@
+// ModuleLoadException.java
+package io.devinebyte.runtime.module.exception;
+public class ModuleLoadException extends RuntimeException {
+    public ModuleLoadException(String message) { super(message); }
+}
+
+// ModuleDependencyCycleException.java
+package io.devinebyte.runtime.module.exception;
+public class ModuleDependencyCycleException extends RuntimeException {
+    public ModuleDependencyCycleException(String message) { super(message); }
+}
+
+// ModuleDisabledAccessException.java
+package io.devinebyte.runtime.module.exception;
+public class ModuleDisabledAccessException extends RuntimeException {
+    public ModuleDisabledAccessException(String code, String message, String tenantId) { 
+        super("[" + code + "] " + message + " tenant=" + tenantId); 
+    }
+}
+

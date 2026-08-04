@@ -1,4 +1,3 @@
-
 package io.devinebyte.compiler.packaging.model;
 
 import io.devinebyte.runtime.config.ModuleGraph;
@@ -15,5 +14,10 @@ public record Manifest(
     String signature,
     ModuleGraph moduleGraph,
     Map<String, String> metadata,
-    boolean multiTenant // NEW: HYBRID MODE FLAG
-) {}
+    boolean multiTenant,
+    Map<String, String> keywordAliases // ADD
+) {
+    public Manifest {
+        keywordAliases = keywordAliases == null ? Map.of() : keywordAliases;
+    }
+}

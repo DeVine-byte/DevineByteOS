@@ -52,7 +52,6 @@ public class PackagingPhase implements CompilerPhase {
 
         validateNoCycles(graph, context);
 
-        // HYBRID MODE: Read strictMode flag. Default false = multiTenant true
         Boolean strictModeFlag = context.get("strictMode");
         boolean strictMode = strictModeFlag!= null && strictModeFlag;
         boolean multiTenant =!strictMode;
@@ -64,7 +63,7 @@ public class PackagingPhase implements CompilerPhase {
             workflows!= null? workflows : List.of(), projections!= null? projections : List.of(),
             dashboards!= null? dashboards : List.of(), bootstrap!= null? bootstrap : new byte[0],
             config!= null? config : Map.of(), flags!= null? flags : Map.of(), graph,
-            multiTenant // NEW: Pass multiTenant flag to PackageContent
+            multiTenant
         );
 
         try {
@@ -89,7 +88,7 @@ public class PackagingPhase implements CompilerPhase {
     private void validateNoCycles(ModuleGraph graph, CompilationContext context) {
         if (graph == null) return;
         Map<String, Set<String>> deps = graph.modules().entrySet().stream()
-       .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().dependsOn()));
+      .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().dependsOn()));
         Set<String> visited = new HashSet<>();
         Set<String> recStack = new HashSet<>();
         for (String module : deps.keySet()) {

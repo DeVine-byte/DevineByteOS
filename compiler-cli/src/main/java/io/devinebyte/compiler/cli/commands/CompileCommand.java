@@ -1,10 +1,13 @@
 package io.devinebyte.compiler.cli.commands;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.devinebyte.compiler.cli.util.CliPrinter;
 import io.devinebyte.compiler.core.context.CompilationContext;
 import io.devinebyte.compiler.core.context.TenantContext;
 import io.devinebyte.compiler.core.context.TenantLifecycle;
 import io.devinebyte.compiler.core.diagnostics.DiagnosticCollector;
+import io.devinebyte.compiler.dsl.KeywordDictionary; // NEW
 import io.devinebyte.compiler.dsl.ast.AstNode;
 import io.devinebyte.compiler.dsl.lexer.Lexer;
 import io.devinebyte.compiler.dsl.lexer.Token;
@@ -16,6 +19,7 @@ import picocli.CommandLine.Option;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
@@ -40,9 +44,10 @@ public class CompileCommand implements Callable<Integer> {
     private Path outputDir;
 
     @Option(names = {"--strict"}, description = "Enterprise mode: 1 dbpkg = 1 tenant. Sets multiTenant: false")
-    private boolean strictMode = false; // NEW: HYBRID TOGGLE
+    private boolean strictMode = false;
 
     private final CompilerOrchestrator orchestrator = new CompilerOrchestrator();
+    private final ObjectMapper mapper = new ObjectMapper(); // NEW
 
     @Override
     public Integer call() {
@@ -67,34 +72,30 @@ public class CompileCommand implements Callable<Integer> {
             TenantContext tenant = new TenantContext(tenantId, TenantLifecycle.ACTIVE, Set.of("SALES", "INVENTORY"));
             CompilationContext context = new CompilationContext(tenant, diagnostics);
 
-            // NEW: Pass strictMode flag down the pipeline
             context.put("strictMode", strictMode);
 
             String source = Files.readString(dslFile);
-            CliPrinter.info("=== FILE CONTENT ===\n" + source + "\n==================");
 
-            Lexer lexer = new Lexer(source);
+            // NEW: Load tenant keyword aliases
+            Path aliasPath = repoRoot.resolve("tenants").resolve(tenantId).resolve("aliases.json");
+            Map<String, String> keywordAliases = Files.exists(aliasPath) 
+                ? mapper.readValue(Files.readString(aliasPath), new TypeReference<>() {}) 
+                : Map.of();
+            context.put("keywordAliases", keywordAliases);
+            context.put("sourceCode", source); // NEW: Lexer reads from here
+
+            // NEW: Create KeywordDictionary and pass to Lexer
+            KeywordDictionary keywordDictionary = new KeywordDictionary();
+            Lexer lexer = new Lexer(keywordDictionary);
             List<Token> tokens = lexer.scanTokens(context);
-
-            CliPrinter.info("=== TOKEN DUMP ===");
-            for (Token token : tokens) {
-                System.out.printf("%-12s '%s' line:%d col:%d%n", token.type(), token.lexeme(), token.line(), token.column());
-            }
-            System.out.println("==================");
 
             Parser parser = new Parser(tokens);
             List<AstNode> ast = parser.parse(context);
 
-            System.out.println("=== AST DUMP ===");
-            System.out.println(ast);
-            System.out.println("Root AST nodes count: " + (ast != null ? ast.size() : 0));
-            System.out.println("================");
-
             context.put("ast", ast);
-            context.put("outputDir", baseOutputDir); // NEW: pass outputDir so PackagingPhase uses it
+            context.put("outputDir", baseOutputDir);
 
-            // Pass strictMode to orchestrator
-            Path dbpkg = orchestrator.compile(dslFile, tenantId, version, baseOutputDir, strictMode); // UPDATED SIGNATURE
+            Path dbpkg = orchestrator.compile(dslFile, tenantId, version, baseOutputDir, strictMode);
             CliPrinter.success("Compilation complete: " + dbpkg.toAbsolutePath());
 
             if (diagnostics.hasErrors()) {

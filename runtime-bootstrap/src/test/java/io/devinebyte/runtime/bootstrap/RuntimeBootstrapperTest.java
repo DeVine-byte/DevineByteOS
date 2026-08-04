@@ -3,6 +3,8 @@ package io.devinebyte.runtime.bootstrap;
 import io.devinebyte.runtime.core.context.TenantContext;
 import io.devinebyte.runtime.core.context.TenantLifecycle;
 import io.devinebyte.runtime.core.diagnostics.DiagnosticCollector;
+import io.devinebyte.runtime.module.ModuleLoader;        // NEW
+import io.devinebyte.runtime.module.ModuleRegistry;      // NEW
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -15,8 +17,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class RuntimeBootstrapperTest {
 
-    private final RuntimeBootstrapper bootstrapper = 
-        new RuntimeBootstrapper(new DbpkgVerifier(true), new ManifestReader());
+    // FIX: pass all 4 dependencies now
+    private final RuntimeBootstrapper bootstrapper = new RuntimeBootstrapper(
+        new DbpkgVerifier(true),
+        new ManifestReader(),
+        new ModuleLoader(new DiagnosticCollector()),
+        new ModuleRegistry()
+    );
 
     private Path dbpkgPath;
     private ManifestReader.Manifest manifest; // pre-read it
@@ -54,7 +61,7 @@ class RuntimeBootstrapperTest {
             assertTrue(result.success(), "Template dbpkg should allow any tenant. Diagnostics: " + result.diagnostics().getAll());
             System.out.println("TEMPLATE: boot succeeded for wrong-tenant as expected");
         } else {
-            // STRICT mode  
+            // STRICT mode
             assertFalse(result.success(), "Strict dbpkg should block wrong tenant");
             assertTrue(result.diagnostics().getAll().stream().anyMatch(d -> "DBRT007".equals(d.code())),
                 "Expected DBRT007 Tenant Mismatch error");

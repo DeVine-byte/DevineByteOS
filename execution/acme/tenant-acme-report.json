@@ -4,53 +4,53 @@
   "success" : true,
   "phaseTimings" : [ {
     "phaseName" : "semantic",
-    "duration" : 0.007865423,
+    "duration" : 0.006261423,
     "success" : true
   }, {
     "phaseName" : "audit",
-    "duration" : 0.026051885,
+    "duration" : 0.026090654,
     "success" : true
   }, {
     "phaseName" : "blueprint",
-    "duration" : 0.038798538,
+    "duration" : 0.030733192,
     "success" : true
   }, {
     "phaseName" : "contracts",
-    "duration" : 0.189581807,
+    "duration" : 0.180009154,
     "success" : true
   }, {
     "phaseName" : "workflow",
-    "duration" : 0.032335962,
+    "duration" : 0.028953462,
     "success" : true
   }, {
     "phaseName" : "projection",
-    "duration" : 0.003426769,
+    "duration" : 0.007937500,
     "success" : true
   }, {
     "phaseName" : "generator",
-    "duration" : 0.046935000,
+    "duration" : 0.049781962,
     "success" : true
   }, {
     "phaseName" : "reporting",
-    "duration" : 0.000928231,
+    "duration" : 0.000743000,
     "success" : true
   }, {
     "phaseName" : "packaging",
-    "duration" : 0.145381500,
+    "duration" : 0.128727039,
     "success" : true
   } ],
   "dependencyGraph" : {
     "edges" : [ ],
-    "topologicalOrder" : [ "Sales", "Inventory" ]
+    "topologicalOrder" : [ "inventory", "sales" ]
   },
   "moduleCounts" : {
-    "events" : 1,
-    "kpis" : 0,
     "entities" : 2,
-    "Sales" : 2,
-    "workflows" : 1,
+    "kpis" : 0,
+    "inventory" : 2,
+    "events" : 1,
     "modules" : 2,
-    "Inventory" : 2
+    "workflows" : 1,
+    "sales" : 2
   },
   "warnings" : [ "SEMANTIC_COMPLETE: Semantic analysis finished", "GAP_ANALYSIS_COMPLETE: Found 0 gaps", "RISK_ANALYSIS_COMPLETE: Found 1 risks", "RECOMMENDATION_COMPLETE: Generated 1 recommendations", "BLUEPRINT_START: Compiling Blueprint for tenant acme", "TREE_SHAKE: Enabled modules: [INVENTORY, SALES]", "CONTRACT_VALIDATION: Contract validation complete. 0 violations", "CONTRACTS: Generating 4 contract schemas for tenant acme", "WORKFLOW: Compiling 1 workflows for tenant acme", "WORKFLOW: Wrote 1 state machines to build/workflows/", "PROJECTION: Dashboard module disabled for tenant acme. Skipping.", "GENERATOR: Generated domain, runtime, bootstrap for tenant acme", "PKG_003: Dependency validation: No cycles found", "PKG_001: Package built: /data/data/com.termux/files/home/DevineByteOS/execution/acme/tenant-acme-v1.0.0.dbpkg", "REPORT: Found 1 workflows in final blueprint" ],
   "errors" : [ ],

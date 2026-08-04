@@ -59,10 +59,6 @@ public class ReportCollector {
         // 2. GET BLUEPRINT FROM PIPELINE OUTPUT
         BlueprintIR blueprint = (BlueprintIR) input.output();
         if (blueprint != null) {
-            System.out.println("[DEBUG] enabledModules: " + blueprint.enabledModules());
-            System.out.println("[DEBUG] modules: " + blueprint.modules().size());
-            System.out.println("[DEBUG] workflows: " + blueprint.workflows().size());
-
             this.dependencyGraph = graphBuilder.build(blueprint);
 
             // GLOBAL TOTALS - FROM TOP LEVEL LISTS

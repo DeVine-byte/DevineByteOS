@@ -1,20 +1,50 @@
 package io.devinebyte.compiler.dsl.lexer;
 
 import io.devinebyte.compiler.core.context.CompilationContext;
+import io.devinebyte.compiler.dsl.KeywordDictionary;
+import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Singleton
 public class Lexer {
-    private final String source;
+    private final KeywordDictionary dict;
+    private String source;
     private final List<Token> tokens = new ArrayList<>();
     private int start = 0, current = 0, line = 1, column = 1;
 
-    public Lexer(String source) { this.source = source.replace("\uFEFF", ""); }
+    @Inject
+    public Lexer(KeywordDictionary dict) {
+        this.dict = dict;
+        this.source = "";
+    }
 
     public List<Token> scanTokens(CompilationContext context) {
-        while (!isAtEnd()) { start = current; scanToken(context); }
+        // Load tenant keyword aliases from attributes before scanning
+        @SuppressWarnings("unchecked")
+        Map<String, String> aliases = context.get("keywordAliases");
+        if (aliases != null) {
+            dict.loadAliases(aliases);
+        } else {
+            dict.reset(); // use base keywords only
+        }
+
+        // Reset state for new scan
+        this.source = context.get("sourceCode");
+        if (this.source == null) this.source = "";
+        this.source = this.source.replace("\uFEFF", "");
+        this.tokens.clear();
+        this.start = 0;
+        this.current = 0;
+        this.line = 1;
+        this.column = 1;
+
+        while (!isAtEnd()) {
+            start = current;
+            scanToken(context);
+        }
         tokens.add(new Token(TokenType.EOF, "", line, column));
         return tokens;
     }
@@ -45,36 +75,70 @@ public class Lexer {
         while (isAlphaNumeric(peek())) advance();
         String text = source.substring(start, current);
 
-        TokenType type = switch (text) {
-            case "module" -> TokenType.MODULE;
-            case "entity" -> TokenType.ENTITY;
-            case "event" -> TokenType.EVENT;
-            case "workflow" -> TokenType.WORKFLOW;
-            case "kpi" -> TokenType.KPI;
-            case "enabled", "enable" -> TokenType.ENABLE;   // FIX: accept both
-            case "disabled", "disable" -> TokenType.DISABLE; // FIX: accept both
-            case "depends" -> TokenType.DEPENDS;
-            case "on" -> TokenType.ON;
-            default -> TokenType.IDENTIFIER;
-        };
+        // CHANGED: use dictionary instead of hardcoded switch
+        TokenType type = dict.lookup(text);
         addToken(type);
     }
 
-    private void number() { while (isDigit(peek())) advance(); addToken(TokenType.NUMBER); }
-
-    private void string(CompilationContext context) {
-        while (peek() != '"' && !isAtEnd()) { if (peek() == '\n') { line++; column = 1; } advance(); }
-        if (isAtEnd()) { context.diagnostics().addError("LEXER_002", "Unterminated string"); return; }
-        advance(); addToken(TokenType.STRING, source.substring(start + 1, current - 1));
+    private void number() {
+        while (isDigit(peek())) advance();
+        addToken(TokenType.NUMBER);
     }
 
-    private boolean match(char expected) { if (isAtEnd() || source.charAt(current) != expected) return false; current++; column++; return true; }
-    private char peek() { return isAtEnd()? '\0' : source.charAt(current); }
-    private boolean isAlpha(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'; }
-    private boolean isDigit(char c) { return c >= '0' && c <= '9'; }
-    private boolean isAlphaNumeric(char c) { return isAlpha(c) || isDigit(c); }
-    private char advance() { current++; column++; return source.charAt(current - 1); }
-    private boolean isAtEnd() { return current >= source.length(); }
-    private void addToken(TokenType type) { addToken(type, null); }
-    private void addToken(TokenType type, String literal) { tokens.add(new Token(type, literal != null? literal : source.substring(start, current), line, column)); }
+    private void string(CompilationContext context) {
+        while (peek() != '"' && !isAtEnd()) {
+            if (peek() == '\n') {
+                line++;
+                column = 1;
+            }
+            advance();
+        }
+        if (isAtEnd()) {
+            context.diagnostics().addError("LEXER_002", "Unterminated string");
+            return;
+        }
+        advance();
+        addToken(TokenType.STRING, source.substring(start + 1, current - 1));
+    }
+
+    private boolean match(char expected) {
+        if (isAtEnd() || source.charAt(current) != expected) return false;
+        current++;
+        column++;
+        return true;
+    }
+
+    private char peek() {
+        return isAtEnd()? '\0' : source.charAt(current);
+    }
+
+    private boolean isAlpha(char c) {
+        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
+    }
+
+    private boolean isDigit(char c) {
+        return c >= '0' && c <= '9';
+    }
+
+    private boolean isAlphaNumeric(char c) {
+        return isAlpha(c) || isDigit(c);
+    }
+
+    private char advance() {
+        current++;
+        column++;
+        return source.charAt(current - 1);
+    }
+
+    private boolean isAtEnd() {
+        return current >= source.length();
+    }
+
+    private void addToken(TokenType type) {
+        addToken(type, null);
+    }
+
+    private void addToken(TokenType type, String literal) {
+        tokens.add(new Token(type, literal != null ? literal : source.substring(start, current), line, column));
+    }
 }

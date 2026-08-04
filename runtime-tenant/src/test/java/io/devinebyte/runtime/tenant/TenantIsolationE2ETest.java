@@ -8,6 +8,9 @@ import io.devinebyte.runtime.bootstrap.RuntimeBootstrapper;
 import io.devinebyte.runtime.config.ConfigurationManager;
 import io.devinebyte.runtime.core.context.TenantContext;
 import io.devinebyte.runtime.core.context.TenantLifecycle;
+import io.devinebyte.runtime.core.diagnostics.DiagnosticCollector; // NEW
+import io.devinebyte.runtime.module.ModuleLoader; // NEW
+import io.devinebyte.runtime.module.ModuleRegistry; // NEW
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -27,9 +30,22 @@ class TenantIsolationE2ETest {
         Path dbpkg = tmp.resolve("app.dbpkg");
         createFakeDbpkg(dbpkg);
 
-        RuntimeBootstrapper bootstrapper = new RuntimeBootstrapper(new DbpkgVerifier(true), new ManifestReader());
+        DiagnosticCollector diagnostics = new DiagnosticCollector();
+        ModuleLoader moduleLoader = new ModuleLoader(diagnostics);
+        ModuleRegistry moduleRegistry = new ModuleRegistry();
+
+        RuntimeBootstrapper bootstrapper = new RuntimeBootstrapper(
+            new DbpkgVerifier(true),
+            new ManifestReader(),
+            moduleLoader,
+            moduleRegistry
+        );
         ConfigurationManager configManager = new ConfigurationManager(new ObjectMapper());
-        TenantRuntimeFactory factory = new TenantRuntimeFactory(configManager);
+        TenantRuntimeFactory factory = new TenantRuntimeFactory(
+            configManager,
+            moduleLoader,
+            moduleRegistry
+        );
 
         // Boot tenant 1 from same dbpkg
         TenantContext t1 = new TenantContext("acme-corp", TenantLifecycle.ACTIVE, Set.of());
@@ -60,14 +76,28 @@ class TenantIsolationE2ETest {
           "builtAt": "%s",
           "builtBy": "test",
           "sha256": "fake",
-          "signature": "fake"
+          "signature": "fake",
+          "multiTenant": true
         }
         """.formatted(Instant.now().toString());
+
+        String moduleGraph = """
+        {
+          "modules": {
+            "SALES": { "enabled": true, "dependsOn": [] }
+          }
+        }
+        """;
 
         try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(dbpkg.toFile()))) {
             zos.putNextEntry(new ZipEntry("manifest.json"));
             zos.write(manifest.getBytes());
             zos.closeEntry();
+
+            zos.putNextEntry(new ZipEntry("runtime/module_graph.json")); // NEW: required for boot
+            zos.write(moduleGraph.getBytes());
+            zos.closeEntry();
+
             for (String dir : io.devinebyte.runtime.bootstrap.DbpkgStructure.required().requiredDirectories()) {
                 zos.putNextEntry(new ZipEntry(dir + "/"));
                 zos.closeEntry();

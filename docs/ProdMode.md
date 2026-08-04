@@ -1,106 +1,123 @@
 # DevineByteOS - Production Changes Checklist
-`grep TODO: PROD` before every release
+Run `grep "TODO: PROD"` before every release. Zero TODOs allowed.
 
-## 1. CLI - Hardcoded DSL Path
-**DEV:** `Path dslPath = Path.of("acme.dbdsl");`
-**PROD:** Accept `--dsl /path/to/tenant.dsl --tenant acme --version 1.0.0 --out /var/lib/devinebyte/build`
+## 1. CLI - Argument Parsing
+**DEV:** Positional args + hardcoded DSL path. `gradle :compiler-cli:run`
+**PROD:** Use `picocli`. Fat jar: `dbos compile --dsl <path> --tenant <id> --version <semver> --out <dir> [--strict] [--multi-tenant]`
 **File:** `compiler-cli/Cli.java`
 **STATUS:** TODO
-**TODO: PROD** Add picocli for arg parsing. Add `--multi-tenant` flag to set manifest.multiTenant
+**TODO: PROD** Add picocli. Validate semver. `--strict` sets `multiTenant=false`
 
-## 2. CLI/Runtime - System.out.println Diagnostics
-**DEV:** `System.out.println("[INFO] Compiling...")` `=== TOKEN DUMP ===` `=== AST DUMP ===`
-**PROD:** Remove ALL stdout. Use structured logger: SLF4J + Logback JSON.
-Reason: When compiling 100 tenants in parallel, stdout will be interleaved and useless.
-Keep only: `log.info("PKG_001", kv("tenant", tenantId), kv("path", dbpkgPath), kv("sha256", hash))`
-**Files:** `compiler-cli/*`, `compiler-core/*`, all `System.out.println`
+## 2. Logging - Remove All Stdout
+**DEV:** `System.out.println("[INFO]")` `=== TOKEN DUMP ===` `=== AST DUMP ===`
+**PROD:** SLF4J + Logback JSON. 1 log line per phase.
+Example: `log.info("PKG_001", kv("tenant","acme"), kv("path",dbpkg), kv("sha256",hash), kv("duration_ms", 151))`
+**Files:** `compiler-*/*`, `runtime-*/*`
 **STATUS:** TODO
-**TODO: PROD** Add `logback-spring.xml` with JSON layout
+**TODO: PROD** Add `logback-spring.xml` with JSON layout. Gate debug dumps behind `--debug`.
 
-## 3. Runtime - Checksum Skip Flag ✅ DONE FOR DEV
-**DEV:** `new DbpkgVerifier(true)` when `--skip-verify` flag present in `Main.java`
-**PROD:** `new DbpkgVerifier()` Always verify SHA256 + Signature. Remove `--skip-verify` flag.
-**File:** `runtime-main/Main.java`, `runtime-bootstrap/DbpkgVerifier.java`
+## 3. Runtime - Security: Remove Skip-Verify
+**DEV:** `--skip-verify` flag bypasses SHA256
+**PROD:** Always verify `manifest.sha256` + `manifest.signature` Ed25519. Remove flag.
+**Files:** `runtime-main/Main.java`, `runtime-bootstrap/DbpkgVerifier.java`
 **STATUS:** TODO
-**TODO: PROD** Remove flag parsing. Add Ed25519 signature verification.
+**TODO: PROD** Add public key pinning. Fail on `DBRT004: SignatureInvalid`
 
-## 4. Runtime - Hardcoded Dbpkg Path
-**DEV:** `Path.of(args)` passed from CLI / test
-**PROD:** Read from `DBPKG_ROOT=/var/lib/devinebyte/tenants/{tenant}/current.dbpkg` or Tenant Registry DB
+## 4. Runtime - Dbpkg Location
+**DEV:** Path passed via CLI `--dbpkg /home/...`
+**PROD:** Read from `DBPKG_ROOT=/var/lib/devinebyte/tenants/{tenant}/current.dbpkg` or Tenant Registry gRPC
 **File:** `runtime-bootstrap/BootstrapConfig.java` [new]
+**STATUS:** TODO
+**TODO: PROD** Add config. Support hot-swap via symlink.
+
+## 5. Build - Distribution
+**DEV:** `gradle :runtime-main:run`
+**PROD:** `application` plugin. `dbos` binary in `/usr/bin`. `distZip` + `deb` package
+**File:** `runtime-main/build.gradle`, `compiler-cli/build.gradle`
+**STATUS:** TODO
+**TODO: PROD** No gradle in prod. Add systemd unit.
+
+## 6. TenantContext - Source of Truth
+**DEV:** From `module_graph.json` fallback
+**PROD:** Source of truth = `manifest.json.enabledModules`. If missing, fallback to `module_graph.json.enabled=true`
+**Files:** `runtime-main/Main.java`, `runtime-bootstrap/ManifestReader.java`, `Manifest` record
+**STATUS:** PARTIAL
+**TODO: PROD** Add `enabledModules: List<String>` to `Manifest`. Works in both multi and single tenant.
+
+## 7. Packaging - Versioned Filename
+**DEV:** `tenant-acme-v1.0.0.dbpkg` hardcoded
+**PROD:** `tenant-{tenantId}-v{manifest.version}.dbpkg`. Example: `tenant-acme-v2.0.0.dbpkg`
+**File:** `compiler-packaging/builder/PackageBuilder.java`
+**STATUS:** TODO
+**TODO: PROD** Use `manifest.version()`. Validate semver. Support rollback.
+
+## 8. Packaging - Streaming Hash
+**DEV:** Hash computed after writing zip to disk = 2x I/O
+**PROD:** `DigestOutputStream` while writing. Write `sha256` to `manifest.json` before closing
+**File:** `compiler-packaging/builder/PackageBuilder.java`
 **STATUS:** TODO
 **TODO: PROD**
 
-## 5. Build - Gradle CLI Tasks
-**DEV:** `gradle :runtime-main:run --args="..."`
-**PROD:** Remove. Use `dbos run --dbpkg <path> --tenant <id>` fat jar. Don't expose gradle to ops.
-**Files:** `runtime-main/build.gradle` add `application` plugin + `distZip`
-**STATUS:** TODO
-
-## 6. TenantContext Modules ✅ PARTIAL
-**DEV:** `Set.of("SALES", "INVENTORY")` hardcoded in tests. `Set.of()` in Main.java
-**PROD:** Read from `manifest.json.enabledModules` or tenant DB at bootstrap time
-**File:** `runtime-main/Main.java`, `runtime-bootstrap/ManifestReader.java`
-**STATUS:** PARTIAL - `ManifestReader` now parses manifest but doesn't read `enabledModules` yet
-**TODO: PROD** Add `enabledModules: [String]` to `Manifest` record and `manifest.json`
-
-## 7. Test/Debug Dumps
-**DEV:** `System.out.println("✅ Booted tenant:...")`
-**PROD:** Gate behind `--debug` flag. Default OFF. Use structured logs.
-**File:** `runtime-main/Main.java`
-**STATUS:** TODO
-
-## 8. Generator - Hardcoded Output Path
-**DEV:** `Path base = Path.of("build/generated");`
-**PROD:** Use `--out` arg from CLI. Default: `/tmp/devinebyte-build/{tenant}/{version}`
+## 9. Generator - Output Path
+**DEV:** `build/generated`
+**PROD:** `--out /tmp/devinebyte-build/{tenant}/{version}` from CLI
 **File:** `compiler-generator/phase/GeneratorPhase.java`
 **STATUS:** TODO
+**TODO: PROD**
 
-## 9. Packaging - In-Memory Hash
-**DEV:** Hash computed after zip is written to disk
-**PROD:** Stream hash while writing to avoid double I/O. Use `DigestOutputStream`
-**File:** `compiler-packaging/builder/PackageBuilder.java`
-**STATUS:** TODO
-
-## 10. Contracts - Placeholder Schemas
-**DEV:** `contracts/*.json` are 3 bytes `{}` placeholder
-**PROD:** Generate real JSON Schema v2020-12 from `EntitySchema`, `EventSchema` with `$id`, `$defs`, validation rules
-**Files:** `compiler-contracts/generator/*SchemaGenerator.java`
-**STATUS:** TODO
-
-## 11. ModuleGraph - No Dependency Validation
-**DEV:** `dependsOn: []` always empty in `ModuleDefinition`
-**PROD:** Validate no cycles in `module_graph.json` at packaging time. Fail fast.
+## 10. ModuleGraph - Dependency Validation
+**DEV:** No cycle check. `topologicalOrder` wrong in report: `[inventory, sales]`
+**PROD:** Fail at packaging if cycle detected. `topologicalOrder` must be correct for runtime loader
 **File:** `compiler-packaging/phase/PackagingPhase.java`
 **STATUS:** TODO
+**TODO: PROD** Add Kahn's algorithm. Error: `PKG_004: DependencyCycle`
 
-## 12. Runtime - Multi-tenant Bootstrap ✅ DONE FOR DEV
-**DEV:** `new TenantContext(tenantArg, TenantLifecycle.ACTIVE, Set.of())` from CLI args
-**PROD:** Load TenantContext from Registry + DB. Enforce isolation, quotas, feature flags.
-**File:** `runtime-main/Main.java`
-**STATUS:** DONE DEV - `RuntimeBootstrapper` now supports `manifest.multiTenant` flag
-Logic: If `multiTenant=false` then enforce `manifest.tenantId == runtime.tenantId`. Else allow template.
-Error Code: `DBRT007` Tenant Mismatch
-**TODO: PROD** Move tenant validation to DB/Registry layer
-
-## 13. Manifest Schema ✅ NEW
-**DEV:** `Manifest` record added in `runtime-bootstrap/ManifestReader.java`
-Fields: `schemaVersion, tenantId, version, builtAt, builtBy, sha256, signature, multiTenant`
-**PROD:** Add `enabledModules`, `minRuntimeVersion`, `dependencies`
+## 11. Manifest Schema v2
+**DEV:** `schemaVersion, tenantId, version, builtAt, builtBy, sha256, signature, multiTenant`
+**PROD:** Add `enabledModules`, `minRuntimeVersion`, `dependencies: Map<String, String>`, `features: Map<String, Boolean>`
 **File:** `runtime-bootstrap/ManifestReader.java`
-**STATUS:** DONE DEV
-**TODO: PROD** Version the schema and add migration logic
+**STATUS:** TODO
+**TODO: PROD** Version schema. Add migration from v1 -> v2.
 
-## 14. DBSL Language Spec ✅ NEW
-**DEV:** Keywords: `module, enabled, entity, event, workflow, step, kpi`
-Types: `String, Number`
-**PROD:** Add `service, policy, permission, relation`. Add comments. Add validation DSL
-**File:** `docs/DBSL_SPEC.md`
-**STATUS:** DONE DEV - v1.0.0-alpha spec written
-**TODO: PROD** Implement parser for new keywords
+## 12. Multi-Tenant / Single-Tenant Enforcement
+**DEV:** CLI flag ignored at runtime
+**PROD:** If `manifest.multiTenant=false` and `--strict` then enforce `runtime.tenantId == manifest.tenantId` else `DBRT007: TenantMismatch`
+If `manifest.multiTenant=true` then allow any `runtime.tenantId` from Registry
+**File:** `runtime-bootstrap/RuntimeBootstrapper.java`
+**STATUS:** PARTIAL
+**TODO: PROD** Add the DBRT007 check. Move quota/feature validation to Registry.
 
-## 15. Error Codes Registry ✅ NEW
-**DEV:** Ad-hoc codes: `DBSL001-004, GAP001, RISK001, CTRT001, WF001, PKG001-003, DBRT001-008`
-**PROD:** Central `ErrorCode` enum with i18n messages. Map to HTTP 400/500
+## 13. Contracts - Real JSON Schema
+**DEV:** `{}` placeholder
+**PROD:** Generate JSON Schema 2020-12 with `$id`, `$defs`, `required`, `type`, validation rules from DBSL
+**Files:** `compiler-contracts/generator/*SchemaGenerator.java`
+**STATUS:** TODO
+**TODO: PROD**
+
+## 14. tenant_config.json - Optional Runtime Override [REMOVED REQUIREMENT]
+**DEV:** File not generated
+**PROD:** Optional. Used only for multi-tenant templates. If present, it overrides `manifest.enabledModules`
+**File:** `compiler-generator/phase/BootstrapGeneratorPhase.java`
+**STATUS:** TODO
+**TODO: PROD** No longer required for `--strict`. Only for SaaS multi-tenant.
+
+## 15. Error Codes - Central Registry
+**DEV:** Ad-hoc strings: `DBRT003`, `PKG001`
+**PROD:** `ErrorCode` enum with code, httpStatus, i18n message, remediation
 **File:** `runtime-core/diagnostics/ErrorCodes.java` [new]
 **STATUS:** TODO
+**TODO: PROD** Map to gRPC status codes.
+
+## 16. DBSL Language v1.0.0
+**DEV:** `module, entity, event, workflow, String, Int`
+**PROD:** Add `service, policy, permission, relation, comment //`, validation DSL `@NotNull`
+**File:** `docs/DBSL_SPEC.md`, `compiler-dsl/grammar/DBSL.g4`
+**STATUS:** TODO
+**TODO: PROD**
+
+## 17. Observability
+**DEV:** None
+**PROD:** OpenTelemetry traces for each compile phase + runtime boot. Metrics: `dbos_boot_duration_seconds`, `dbos_module_count`
+**File:** `runtime-core/observability/*`
+**STATUS:** TODO
+**TODO: PROD**
