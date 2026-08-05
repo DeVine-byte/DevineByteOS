@@ -21,14 +21,14 @@ Example: `log.info("PKG_001", kv("tenant","acme"), kv("path",dbpkg), kv("sha256"
 **PROD:** Always verify `manifest.sha256` + `manifest.signature` Ed25519. Remove flag.
 **Files:** `runtime-main/Main.java`, `runtime-bootstrap/DbpkgVerifier.java`
 **STATUS:** TODO
-**TODO: PROD** Add public key pinning. Fail on `DBRT004: SignatureInvalid`
+**TODO: PROD** Add public key pinning. Fail on `DBRT004: SignatureInvalid`. Remove `--skip-verify` from Main.java
 
 ## 4. Runtime - Dbpkg Location
 **DEV:** Path passed via CLI `--dbpkg /home/...`
 **PROD:** Read from `DBPKG_ROOT=/var/lib/devinebyte/tenants/{tenant}/current.dbpkg` or Tenant Registry gRPC
-**File:** `runtime-bootstrap/BootstrapConfig.java` [new]
+**File:** `runtime-bootstrap/BootstrapConfig.java` [new], `runtime-main/Main.java:74`
 **STATUS:** TODO
-**TODO: PROD** Add config. Support hot-swap via symlink.
+**TODO: PROD** Add config. Remove hardcoded `/data/data/com.termux/files/home/DevineByteOS/data/tenants`. Support hot-swap via symlink.
 
 ## 5. Build - Distribution
 **DEV:** `gradle :runtime-main:run`
@@ -41,7 +41,7 @@ Example: `log.info("PKG_001", kv("tenant","acme"), kv("path",dbpkg), kv("sha256"
 **DEV:** From `module_graph.json` fallback
 **PROD:** Source of truth = `manifest.json.enabledModules`. If missing, fallback to `module_graph.json.enabled=true`
 **Files:** `runtime-main/Main.java`, `runtime-bootstrap/ManifestReader.java`, `Manifest` record
-**STATUS:** PARTIAL
+**STATUS:** TODO
 **TODO: PROD** Add `enabledModules: List<String>` to `Manifest`. Works in both multi and single tenant.
 
 ## 7. Packaging - Versioned Filename
@@ -84,7 +84,7 @@ Example: `log.info("PKG_001", kv("tenant","acme"), kv("path",dbpkg), kv("sha256"
 **PROD:** If `manifest.multiTenant=false` and `--strict` then enforce `runtime.tenantId == manifest.tenantId` else `DBRT007: TenantMismatch`
 If `manifest.multiTenant=true` then allow any `runtime.tenantId` from Registry
 **File:** `runtime-bootstrap/RuntimeBootstrapper.java`
-**STATUS:** PARTIAL
+**STATUS:** TODO
 **TODO: PROD** Add the DBRT007 check. Move quota/feature validation to Registry.
 
 ## 13. Contracts - Real JSON Schema
@@ -121,3 +121,24 @@ If `manifest.multiTenant=true` then allow any `runtime.tenantId` from Registry
 **File:** `runtime-core/observability/*`
 **STATUS:** TODO
 **TODO: PROD**
+
+## 18. Runtime - Event Bus + No DI Framework [DONE]
+**DEV:** Guice, Spring, DI containers
+**PROD:** Pure Java `new`. `SimpleEventBus` + `FileEventStore` + `ModuleIsolationGuard`
+**Files:** `runtime-event/*`, `runtime-main/Main.java`
+**STATUS:** DONE
+**NOTES:** Verified hash-chained `events.log` with sequence 1. `sourceModule` enforcement works. No Guice in classpath. Workflow fanout added via manual dispatch in Main.
+
+## 19. Compiler - Keyword Dictionary [DONE]
+**DEV:** Hardcoded industry keywords: `hospital`, `logistics`
+**PROD:** `KeywordDictionary` with base + aliases loaded from `CompilationContext`. Lexer uses `dict.lookup()`
+**Files:** `compiler-dsl/KeywordDictionary.java`, `compiler-dsl/lexer/Lexer.java`
+**STATUS:** DONE
+**NOTES:** Industry agnostic. `reset()` + `loadAliases()` supports multi-tenant keyword overrides.
+
+## 20. Runtime - Remove Jakarta DI Annotations [DONE]
+**DEV:** `@Singleton`, `@Inject` in `KeywordDictionary`, `Lexer`
+**PROD:** Pure Java `new`. No DI framework in runtime or compiler
+**Files:** `compiler-dsl/*`
+**STATUS:** DONE
+**NOTES:** Annotations still present but not used. Remove `jakarta.inject` dep in next cleanup.

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="io.devinebyte.runtime.event.TenantIsolationEventTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-08-04T12:20:10.474Z" hostname="localhost" time="0.023">
+<testsuite name="io.devinebyte.runtime.event.TenantIsolationEventTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-08-05T10:50:51.489Z" hostname="localhost" time="0.035">
   <properties/>
-  <testcase name="tenantA_cannotReadTenantB_Events(Path)" classname="io.devinebyte.runtime.event.TenantIsolationEventTest" time="0.02"/>
+  <testcase name="tenantA_cannotReadTenantB_Events(Path)" classname="io.devinebyte.runtime.event.TenantIsolationEventTest" time="0.028"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

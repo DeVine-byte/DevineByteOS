@@ -1,0 +1,29 @@
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(':runtime-core')
+    implementation project(':runtime-event')
+    implementation project(':runtime-module')
+    implementation project(':compiler-workflow')
+
+    // Pin versions to match runtime-main transitive deps
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.2'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.17.2'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+tasks.test {
+    useJUnitPlatform()
+}

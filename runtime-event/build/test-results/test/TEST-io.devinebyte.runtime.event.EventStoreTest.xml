@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="io.devinebyte.runtime.event.EventStoreTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-08-04T12:20:10.448Z" hostname="localhost" time="0.023">
+<testsuite name="io.devinebyte.runtime.event.EventStoreTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-08-05T10:50:51.451Z" hostname="localhost" time="0.029">
   <properties/>
-  <testcase name="append_createsTenantFile(Path)" classname="io.devinebyte.runtime.event.EventStoreTest" time="0.018"/>
+  <testcase name="append_createsTenantFile(Path)" classname="io.devinebyte.runtime.event.EventStoreTest" time="0.026"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

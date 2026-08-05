@@ -10,6 +10,11 @@ dependencies {
     implementation project(':runtime-bootstrap')
     implementation project(':runtime-tenant')
     implementation project(':runtime-event') // FIXED typo
+    implementation project(':runtime-workflow')
+    implementation project(':runtime-projection')
+    implementation project(':compiler-workflow')
+   
+
     implementation 'com.google.inject:guice:5.1.0' // ADD THIS for Guice.createInjector
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2'

@@ -20,6 +20,11 @@ public record TenantContext(
         }
     }
 
+    // Factory for replay where we only know the tenantId
+    public static TenantContext of(String tenantId) {
+        return new TenantContext(tenantId, TenantLifecycle.ACTIVE, Set.of());
+    }
+
     public boolean isModuleEnabled(String moduleId) {
         return enabledModules.contains(moduleId);
     }
