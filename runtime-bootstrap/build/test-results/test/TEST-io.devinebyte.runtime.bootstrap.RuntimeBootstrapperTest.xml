@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="io.devinebyte.runtime.bootstrap.RuntimeBootstrapperTest" tests="2" skipped="0" failures="2" errors="0" timestamp="2026-08-14T08:06:52" hostname="DESKTOP-EE228O3" time="0.044">
+  <properties/>
+  <testcase name="boot_succeedsForCorrectTenant()" classname="io.devinebyte.runtime.bootstrap.RuntimeBootstrapperTest" time="0.036">
+    <failure message="org.opentest4j.AssertionFailedError: expected: not &lt;null&gt;" type="org.opentest4j.AssertionFailedError">org.opentest4j.AssertionFailedError: expected: not &lt;null&gt;
+	at app//org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:152)
+	at app//org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
+	at app//org.junit.jupiter.api.AssertNotNull.failNull(AssertNotNull.java:49)
+	at app//org.junit.jupiter.api.AssertNotNull.assertNotNull(AssertNotNull.java:35)
+	at app//org.junit.jupiter.api.AssertNotNull.assertNotNull(AssertNotNull.java:30)
+	at app//org.junit.jupiter.api.Assertions.assertNotNull(Assertions.java:304)
+	at app//io.devinebyte.runtime.bootstrap.RuntimeBootstrapperTest.setup(RuntimeBootstrapperTest.java:43)
+	at java.base@21.0.11/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base@21.0.11/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base@21.0.11/java.util.ArrayList.forEach(ArrayList.java:1596)
+</failure>
+  </testcase>
+  <testcase name="boot_respectsMultiTenantFlag()" classname="io.devinebyte.runtime.bootstrap.RuntimeBootstrapperTest" time="0.006">
+    <failure message="org.opentest4j.AssertionFailedError: expected: not &lt;null&gt;" type="org.opentest4j.AssertionFailedError">org.opentest4j.AssertionFailedError: expected: not &lt;null&gt;
+	at app//org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:152)
+	at app//org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
+	at app//org.junit.jupiter.api.AssertNotNull.failNull(AssertNotNull.java:49)
+	at app//org.junit.jupiter.api.AssertNotNull.assertNotNull(AssertNotNull.java:35)
+	at app//org.junit.jupiter.api.AssertNotNull.assertNotNull(AssertNotNull.java:30)
+	at app//org.junit.jupiter.api.Assertions.assertNotNull(Assertions.java:304)
+	at app//io.devinebyte.runtime.bootstrap.RuntimeBootstrapperTest.setup(RuntimeBootstrapperTest.java:43)
+	at java.base@21.0.11/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base@21.0.11/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base@21.0.11/java.util.ArrayList.forEach(ArrayList.java:1596)
+</failure>
+  </testcase>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

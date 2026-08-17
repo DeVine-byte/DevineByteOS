@@ -3,8 +3,15 @@
   "version" : "1.0",
   "fields" : {
     "eventId" : "UUID",
-    "total" : "STRING",
-    "orderId" : "STRING",
+    "tenantId" : "STRING",
+    "version" : "STRING",
+    "timestamp" : "DATETIME"
+  }
+}, {
+  "name" : "SystemBooted",
+  "version" : "1.0",
+  "fields" : {
+    "eventId" : "UUID",
     "tenantId" : "STRING",
     "version" : "STRING",
     "timestamp" : "DATETIME"

@@ -2,31 +2,22 @@
   "workflowName" : "FulfillOrder",
   "version" : "1.0.0",
   "states" : [ {
-    "name" : "Validate",
+    "name" : "ReserveInventory",
     "isInitial" : true,
     "isFinal" : false,
     "transitions" : [ {
-      "triggerEvent" : "ValidateCompleted",
-      "targetState" : "ReserveInventory",
-      "action" : "Validate"
-    } ]
-  }, {
-    "name" : "ReserveInventory",
-    "isInitial" : false,
-    "isFinal" : false,
-    "transitions" : [ {
       "triggerEvent" : "ReserveInventoryCompleted",
-      "targetState" : "Ship",
+      "targetState" : "OrderCreated",
       "action" : "ReserveInventory"
     } ]
   }, {
-    "name" : "Ship",
+    "name" : "OrderCreated",
     "isInitial" : false,
     "isFinal" : true,
     "transitions" : [ {
-      "triggerEvent" : "ShipCompleted",
+      "triggerEvent" : "OrderCreatedCompleted",
       "targetState" : "END",
-      "action" : "Ship"
+      "action" : "OrderCreated"
     } ]
   } ]
 } ]

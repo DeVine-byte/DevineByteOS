@@ -3,8 +3,15 @@
     "INVENTORY" : {
       "moduleId" : "INVENTORY",
       "enabled" : true,
-      "dependsOn" : [ ],
+      "dependsOn" : [ "sales" ],
       "exposesEvents" : [ ],
+      "subscribesToEvents" : [ ]
+    },
+    "RUNTIME" : {
+      "moduleId" : "RUNTIME",
+      "enabled" : true,
+      "dependsOn" : [ ],
+      "exposesEvents" : [ "SystemBooted" ],
       "subscribesToEvents" : [ ]
     },
     "SALES" : {

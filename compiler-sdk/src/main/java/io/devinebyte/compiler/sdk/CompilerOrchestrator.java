@@ -43,9 +43,16 @@ import io.devinebyte.compiler.reporting.collector.DependencyGraphBuilder;
 import io.devinebyte.compiler.reporting.writer.JsonReportWriter;
 import io.devinebyte.compiler.reporting.model.CompilationReport;
 
+import java.io.IOException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.security.MessageDigest;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -79,9 +86,9 @@ public class CompilerOrchestrator {
         var ast = parser.parse(context);
 
         Map<String, ModuleGraph.ModuleDefinition> moduleDefs = ast.stream()
-          .filter(n -> n instanceof ModuleNode)
-          .map(n -> (ModuleNode) n)
-          .collect(Collectors.toMap(
+           .filter(n -> n instanceof ModuleNode)
+           .map(n -> (ModuleNode) n)
+           .collect(Collectors.toMap(
                 ModuleNode::name,
                 m -> new ModuleGraph.ModuleDefinition(
                     m.name(),
@@ -93,9 +100,9 @@ public class CompilerOrchestrator {
             ));
 
         Set<String> enabledModules = moduleDefs.entrySet().stream()
-          .filter(e -> e.getValue().enabled())
-          .map(Map.Entry::getKey)
-          .collect(Collectors.toSet());
+           .filter(e -> e.getValue().enabled())
+           .map(Map.Entry::getKey)
+           .collect(Collectors.toSet());
 
         tenant = new TenantContext(tenantId, TenantLifecycle.ACTIVE, enabledModules);
         context = new CompilationContext(tenant, diagnostics);
@@ -134,7 +141,7 @@ public class CompilerOrchestrator {
 
         collector.startPhase("contracts");
         new ContractsPhase(new EventSchemaGenerator(), new EntitySchemaGenerator(), new WorkflowSchemaGenerator(), new APISchemaGenerator())
-          .execute(context, blueprintResult);
+           .execute(context, blueprintResult);
         collector.endPhase("contracts",!context.diagnostics().hasErrors());
 
         collector.startPhase("workflow");
@@ -147,7 +154,7 @@ public class CompilerOrchestrator {
 
         collector.startPhase("generator");
         new GeneratorPhase(new DomainGenerator(), new RuntimeConfigGenerator(), new RuntimeBootstrapGenerator())
-          .execute(context, blueprintResult);
+           .execute(context, blueprintResult);
         collector.endPhase("generator",!context.diagnostics().hasErrors());
 
         collector.startPhase("reporting");
@@ -156,7 +163,17 @@ public class CompilerOrchestrator {
 
         collector.startPhase("packaging");
         CompilerResult<Path> packagingResult = new PackagingPhase(new PackageBuilder())
-          .execute(context, blueprintResult);
+           .execute(context, blueprintResult);
+
+        Path dbpkg = packagingResult.output();
+
+        addManifestToZip(dbpkg, tenantId, version, keywordAliases);
+
+        Path runtimeDir = Paths.get("build/generated/runtime");
+        if (Files.exists(runtimeDir)) {
+            addRuntimeToZip(dbpkg, runtimeDir);
+        }
+
         collector.endPhase("packaging",!context.diagnostics().hasErrors());
 
         if (diagnostics.hasErrors()) {
@@ -164,10 +181,69 @@ public class CompilerOrchestrator {
             throw new RuntimeException("Compilation completed with errors.");
         }
 
-        CompilationReport report = collector.build(context, blueprintResult, true, packagingResult.output().toString());
+        CompilationReport report = collector.build(context, blueprintResult, true, dbpkg.toString());
         Path reportPath = writer.write(context, report);
 
-        return packagingResult.output();
+        return dbpkg;
+    }
+
+    private void addManifestToZip(Path zipFile, String tenantId, String version, Map<String, String> keywordAliases) throws IOException {
+        // BUILD MANIFEST FROM SCRATCH - all 9 fields ManifestReader needs
+        Map<String, Object> manifest = new HashMap<>();
+
+        manifest.put("schemaVersion", "1.0"); // 1
+        manifest.put("tenantId", tenantId); // 2
+        manifest.put("version", version); // 3
+        manifest.put("builtAt", Instant.now().toString()); // 4
+        manifest.put("builtBy", "devine-byte-compiler"); // 5
+        manifest.put("sha256", "TBD"); // 6 placeholder for pass 1
+        manifest.put("signature", "dev"); // 7
+        manifest.put("multiTenant", true); // 8
+        manifest.put("keywordAliases", keywordAliases); // 9
+
+        Map<String, String> env = Map.of("create", "true");
+
+        // PASS 1: write with TBD
+        try (FileSystem fs = FileSystems.newFileSystem(zipFile, env)) {
+            Files.writeString(fs.getPath("/manifest.json"), objectMapper.writeValueAsString(manifest));
+        }
+
+        // PASS 2: compute real sha256 and overwrite
+        String sha256 = computeSha256(zipFile);
+        manifest.put("sha256", sha256);
+        try (FileSystem fs = FileSystems.newFileSystem(zipFile, env)) {
+            Files.writeString(fs.getPath("/manifest.json"), objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(manifest));
+        }
+    }
+
+    private String computeSha256(Path path) throws IOException {
+        try (var in = Files.newInputStream(path)) {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] buf = new byte[8192];
+            int n;
+            while ((n = in.read(buf)) > 0) digest.update(buf, 0, n);
+            byte[] hash = digest.digest();
+            StringBuilder sb = new StringBuilder();
+            for (byte b : hash) sb.append(String.format("%02x", b));
+            return sb.toString();
+        } catch (Exception e) {
+            throw new IOException("Failed to compute sha256", e);
+        }
+    }
+
+    private void addRuntimeToZip(Path zipFile, Path runtimeDir) throws IOException {
+        Map<String, String> env = Map.of("create", "true");
+        try (FileSystem fs = FileSystems.newFileSystem(zipFile, env)) {
+            Files.walk(runtimeDir).filter(Files::isRegularFile).forEach(path -> {
+                try {
+                    Path target = fs.getPath("/runtime/" + runtimeDir.relativize(path).toString().replace("\\", "/"));
+                    Files.createDirectories(target.getParent());
+                    Files.copy(path, target, StandardCopyOption.REPLACE_EXISTING);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        }
     }
 
     public Path compile(Path dslFile, String tenantId, String version, Path outputDir) throws Exception {

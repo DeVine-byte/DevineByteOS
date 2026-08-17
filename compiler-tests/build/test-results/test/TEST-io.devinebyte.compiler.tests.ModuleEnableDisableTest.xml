@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="io.devinebyte.compiler.tests.ModuleEnableDisableTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-08-05T10:50:48.638Z" hostname="localhost" time="0.026">
+<testsuite name="io.devinebyte.compiler.tests.ModuleEnableDisableTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-08-14T08:06:50" hostname="DESKTOP-EE228O3" time="0.004">
   <properties/>
-  <testcase name="disabledModuleGeneratesNoArtifacts()" classname="io.devinebyte.compiler.tests.ModuleEnableDisableTest" time="0.02"/>
+  <testcase name="disabledModuleGeneratesNoArtifacts()" classname="io.devinebyte.compiler.tests.ModuleEnableDisableTest" time="0.004"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

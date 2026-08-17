@@ -8,6 +8,8 @@ module sales enable {
         ReserveInventory;
         OrderCreated;
     }
+
+    event OrderCreated();
 }
 
 module inventory depends on sales enable {
@@ -15,6 +17,8 @@ module inventory depends on sales enable {
         sku: String;
         qty: Int;
     }
+}
 
-    event OrderCreated();
+module runtime enable {
+    event SystemBooted();
 }

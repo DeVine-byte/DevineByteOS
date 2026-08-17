@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="io.devinebyte.runtime.tenant.TenantIsolationE2ETest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-08-05T10:50:50.202Z" hostname="localhost" time="1.28">
+<testsuite name="io.devinebyte.runtime.tenant.TenantIsolationE2ETest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-08-14T08:06:50" hostname="DESKTOP-EE228O3" time="0.387">
   <properties/>
-  <testcase name="singleDbpkgBootsTwoIsolatedTenants(Path)" classname="io.devinebyte.runtime.tenant.TenantIsolationE2ETest" time="1.191"/>
+  <testcase name="singleDbpkgBootsTwoIsolatedTenants(Path)" classname="io.devinebyte.runtime.tenant.TenantIsolationE2ETest" time="0.387"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

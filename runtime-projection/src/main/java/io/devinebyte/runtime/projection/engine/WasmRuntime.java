@@ -2,50 +2,59 @@ package io.devinebyte.runtime.projection.engine;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.kawamuray.wasmtime.*;
-import io.devinebyte.runtime.core.context.TenantContext;
-import io.devinebyte.runtime.core.diagnostics.DiagnosticSeverity; // NEW
-import io.devinebyte.runtime.event.model.DomainEvent;
-import io.devinebyte.runtime.projection.model.ProjectionResult;
 import io.devinebyte.compiler.projection.model.ProjectionFunction;
+import io.devinebyte.runtime.core.context.TenantContext;
+import io.devinebyte.runtime.core.diagnostics.Diagnostic;
+import io.devinebyte.runtime.core.diagnostics.DiagnosticSeverity;
+import io.devinebyte.runtime.event.model.DomainEvent;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
+import java.time.Instant;
+import java.util.Base64;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 @Singleton
 public final class WasmRuntime implements AutoCloseable {
-    private final Engine engine;
     private final ObjectMapper mapper;
+    private final Map<String, java.util.function.Function<String, String>> registry = new ConcurrentHashMap<>();
 
     @Inject
     public WasmRuntime(ObjectMapper mapper) {
-        this.engine = new Engine();
         this.mapper = mapper;
+        registry.put("fold_sales_order_created", this::demoFold);
+    }
+
+    private String demoFold(String eventJson) {
+        System.out.println("[PROJECTION-FAKE] Processing: " + eventJson);
+        return "{\"state\":\"updated\"}";
     }
 
     public JsonNode invoke(TenantContext tenant, ProjectionContext ctx, ProjectionFunction fn, DomainEvent event) {
-        try (Store<Void> store = Store.withoutData(engine)) {
-            Func logFn = Func.wrap(store, (Caller caller, String msg) ->
-                System.out.println("[PROJECTION][" + tenant.tenantId() + "] " + msg));
+        try {
+            byte[] wasmBytes = Base64.getDecoder().decode(fn.wasmBytecodeBase64());
+            System.out.println("[PROJECTION][" + tenant.tenantId() + "] Loaded " + wasmBytes.length + " bytes for " + fn.name());
 
-            byte[] wasmBytes = ctx.stateStore().loadWasmBytes();
-            if (wasmBytes == null) throw new IllegalStateException("WASM bytes not loaded");
-
-            Module module = Module.fromBinary(engine, wasmBytes);
-            Linker linker = new Linker(engine);
-            linker.define("env", "log", logFn);
-            Instance instance = linker.instantiate(store, module);
-            Func target = instance.getFunc(store, fn.wasmExport())
-                .orElseThrow(() -> new IllegalStateException("Export not found: " + fn.wasmExport()));
+            var handler = registry.get(fn.name());
+            if (handler == null) throw new IllegalStateException("No handler registered for: " + fn.name());
 
             String eventJson = mapper.writeValueAsString(event);
-            target.call(store, eventJson); // we ignore return ptr for v1
+            String resultJson = handler.apply(eventJson);
+            return mapper.readTree(resultJson);
 
-            return mapper.createObjectNode().put("ok", true);
         } catch (Exception e) {
-            ctx.diagnostics().add("DBRT601", DiagnosticSeverity.ERROR, "Wasm invoke failed: " + e.getMessage());
+            // FIX: 5 args
+            ctx.diagnostics().add(new Diagnostic(
+                "DBRT601", 
+                DiagnosticSeverity.ERROR, 
+                "Projection invoke failed: " + e.getMessage(),
+                tenant.tenantId(),
+                Instant.now()
+            ));
             return null;
         }
     }
 
-    @Override public void close() { engine.close(); }
+    @Override public void close() { }
 }

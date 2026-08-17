@@ -24,16 +24,29 @@ public class RuntimeConfigGenerator {
     public GenerationResult generate(TenantContext tenant, BlueprintIR ir, Path outDir) throws Exception {
         Files.createDirectories(outDir);
 
-        Map<String, String> config = Map.of(
+        List<String> requestedModules = ir.modules().stream()
+            .filter(ModuleIR::enabled)
+            .map(m -> m.id().toLowerCase())
+            .sorted()
+            .collect(Collectors.toList());
+
+        Map<String, Object> fileConfig = Map.of(
             "tenantId", tenant.tenantId(),
             "lifecycle", tenant.state().name(),
-            "version", ir.version()
+            "version", ir.version(),
+            "requestedModules", requestedModules
+        );
+
+        Map<String, String> resultConfig = Map.of(
+            "tenantId", tenant.tenantId(),
+            "lifecycle", tenant.state().name(),
+            "version", ir.version(),
+            "requestedModules", String.join(",", requestedModules)
         );
 
         Map<String, Boolean> flags = ir.modules().stream()
             .collect(Collectors.toMap(ModuleIR::id, ModuleIR::enabled));
 
-        // FIX: Build proper ModuleGraph object
         Map<String, ModuleDefinition> modules = ir.modules().stream()
             .collect(Collectors.toMap(
                 ModuleIR::id,
@@ -42,20 +55,15 @@ public class RuntimeConfigGenerator {
                     m.enabled(),
                     Set.copyOf(m.dependencies()),
                     m.events().stream().map(EventIR::name).collect(Collectors.toSet()),
-                    Set.of() // subscribesToEvents
+                    Set.of()
                 )
             ));
         ModuleGraph moduleGraph = new ModuleGraph(modules);
 
-        mapper.writeValue(outDir.resolve("tenant_config.json").toFile(), config);
+        mapper.writeValue(outDir.resolve("tenant_config.json").toFile(), fileConfig);
         mapper.writeValue(outDir.resolve("feature_flags.json").toFile(), flags);
         mapper.writeValue(outDir.resolve("module_graph.json").toFile(), moduleGraph);
 
-        return new GenerationResult(
-            List.of(), List.of(), List.of(), List.of(),
-            List.of(), List.of(), List.of(),
-            config, flags,
-            moduleGraph // NOW INCLUDED
-        );
+        return new GenerationResult(List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), resultConfig, flags, moduleGraph);
     }
 }

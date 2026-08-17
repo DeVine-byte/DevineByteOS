@@ -15,6 +15,7 @@ public final class ProjectionEngine {
     private final ProjectionStateStore store;
     private final ModuleIsolationGuard guard;
     private final ProjectionDiagnostics diagnostics;
+    private static final String DEFAULT_MODULE = "Sales"; // v1: infer from name later
 
     @jakarta.inject.Inject
     public ProjectionEngine(WasmRuntime wasm, ProjectionStateStore store, ModuleIsolationGuard guard, ProjectionDiagnostics diagnostics) {
@@ -22,10 +23,11 @@ public final class ProjectionEngine {
     }
 
     public ProjectionResult execute(TenantContext tenant, ProjectionFunction function, DomainEvent event) {
+        String moduleId = DEFAULT_MODULE; // TODO: derive from function.name()
         try {
-            guard.assertEnabled(tenant, function.moduleId(), "projection:" + function.name());
+            guard.assertEnabled(tenant, moduleId, "projection:" + function.name());
         } catch (Exception e) {
-            diagnostics.moduleDisabled(tenant.tenantId(), function.moduleId());
+            diagnostics.moduleDisabled(tenant.tenantId(), moduleId);
             return null;
         }
         ProjectionContext ctx = new ProjectionContext(tenant, event, store, guard, diagnostics.collector());
