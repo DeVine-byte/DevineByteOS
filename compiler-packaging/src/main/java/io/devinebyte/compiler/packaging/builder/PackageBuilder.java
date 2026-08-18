@@ -2,7 +2,10 @@ package io.devinebyte.compiler.packaging.builder;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.devinebyte.compiler.blueprint.model.ModuleIR;
 import io.devinebyte.compiler.packaging.model.Manifest;
 import io.devinebyte.compiler.packaging.model.PackageContent;
 
@@ -10,15 +13,19 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public class PackageBuilder {
     private final ObjectMapper mapper = new ObjectMapper()
-       .registerModule(new JavaTimeModule())
-       .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+          .registerModule(new JavaTimeModule())
+          .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
     public Path build(PackageContent content, Path outputDir) throws IOException {
         Files.createDirectories(outputDir);
@@ -41,17 +48,17 @@ public class PackageBuilder {
 
     private Manifest createManifest(PackageContent content, String checksum) {
         return new Manifest(
-            "1.0", // schemaVersion
-            content.tenant().tenantId(), // tenantId
-            content.version(), // version
-            Instant.now(), // compiledAt
-            "devinebyte-compiler-1.0.0", // compiler
-            checksum, // sourceHash
-            "", // entrypoint
-            content.moduleGraph(), // moduleGraph
-            Map.of("contracts", "4"), // metadata
-            content.multiTenant(), // strictMode
-            Map.of() // keywordAliases - empty. Aliases are compile-time only
+            "1.0",
+            content.tenant().tenantId(),
+            content.version(),
+            Instant.now(),
+            "devinebyte-compiler-1.0.0",
+            checksum,
+            "",
+            content.moduleGraph(),
+            Map.of("contracts", "4"),
+            content.multiTenant(),
+            Map.of()
         );
     }
 
@@ -77,11 +84,55 @@ public class PackageBuilder {
 
             writeJson(zos, "runtime/tenant_config.json", content.tenantConfig());
             writeJson(zos, "runtime/feature_flags.json", content.featureFlags());
-            writeJson(zos, "runtime/module_graph.json", content.moduleGraph());
+            writeModuleGraph(zos, content);
             writeBytes(zos, "bootstrap/runtime_bootstrap.class", content.runtimeBootstrapClass());
-
             writeManifest(zos, manifest);
         }
+    }
+
+    // KEY FIX: Case-insensitive dedupe + case-insensitive enabled check
+    private void writeModuleGraph(ZipOutputStream zos, PackageContent content) throws IOException {
+        ObjectNode root = mapper.createObjectNode();
+        ObjectNode modulesNode = mapper.createObjectNode();
+
+        // 1. Build set of enabled modules in lowercase for fast lookup
+        Set<String> enabledLower = content.tenant().enabledModules().stream()
+            .map(s -> s.toLowerCase(Locale.ROOT))
+            .collect(Collectors.toSet());
+
+        // 2. Dedupe modules by lowercase name. First one wins
+        Map<String, ModuleIR> modulesByLower = new LinkedHashMap<>();
+        for (ModuleIR m : content.blueprint().modules()) {
+            modulesByLower.putIfAbsent(m.name().toLowerCase(Locale.ROOT), m);
+        }
+
+        // 3. Build JSON using canonical name from first occurrence
+        for (ModuleIR m : modulesByLower.values()) {
+            String id = m.name(); // Keep DSL case
+            String idLower = id.toLowerCase(Locale.ROOT);
+
+            ObjectNode modNode = mapper.createObjectNode();
+            modNode.put("moduleId", id);
+            modNode.put("enabled", enabledLower.contains(idLower));
+
+            // Fix deps: map dep name to canonical case
+            ArrayNode deps = mapper.createArrayNode();
+            for (String d : m.dependencies()) {
+                String depCanonical = modulesByLower.get(d.toLowerCase(Locale.ROOT)).name();
+                deps.add(depCanonical);
+            }
+            modNode.set("dependsOn", deps);
+
+            ArrayNode exposes = mapper.createArrayNode();
+            m.events().forEach(e -> exposes.add(e.name()));
+            modNode.set("exposesEvents", exposes);
+            modNode.set("subscribesToEvents", mapper.createArrayNode());
+
+            modulesNode.set(id, modNode);
+        }
+        
+        root.set("modules", modulesNode);
+        writeJson(zos, "runtime/module_graph.json", root);
     }
 
     private void writeManifest(ZipOutputStream zos, Manifest manifest) throws IOException {
@@ -96,8 +147,7 @@ public class PackageBuilder {
         map.put("moduleGraph", manifest.moduleGraph());
         map.put("metadata", manifest.metadata());
         map.put("multiTenant", manifest.multiTenant());
-        map.put("keywordAliases", manifest.keywordAliases()); // write empty object {}
-
+        map.put("keywordAliases", manifest.keywordAliases());
         writeJson(zos, "manifest.json", map);
     }
 

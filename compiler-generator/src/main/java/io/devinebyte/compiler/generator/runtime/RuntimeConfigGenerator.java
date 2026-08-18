@@ -12,9 +12,7 @@ import io.devinebyte.runtime.config.ModuleGraph.ModuleDefinition;
 import jakarta.inject.Singleton;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -47,22 +45,38 @@ public class RuntimeConfigGenerator {
         Map<String, Boolean> flags = ir.modules().stream()
             .collect(Collectors.toMap(ModuleIR::id, ModuleIR::enabled));
 
-        Map<String, ModuleDefinition> modules = ir.modules().stream()
-            .collect(Collectors.toMap(
-                ModuleIR::id,
-                m -> new ModuleDefinition(
-                    m.id(),
-                    m.enabled(),
-                    Set.copyOf(m.dependencies()),
-                    m.events().stream().map(EventIR::name).collect(Collectors.toSet()),
-                    Set.of()
-                )
+        // FIX: Build modules with real deps from BlueprintIR + inject RUNTIME
+        Map<String, ModuleDefinition> modules = new LinkedHashMap<>();
+        
+        // 1. Always inject system RUNTIME module
+        modules.put("runtime", new ModuleDefinition(
+            "runtime", true, Set.of(), Set.of(), Set.of()
+        ));
+
+        // 2. Add user modules with deps converted to lowercase
+        for (ModuleIR m : ir.modules()) {
+            if (!m.enabled()) continue;
+            
+            Set<String> deps = m.dependencies().stream()
+                .map(String::toLowerCase) // sales, runtime
+                .collect(Collectors.toSet());
+                
+            modules.put(m.id(), new ModuleDefinition(
+                m.id(),
+                m.enabled(),
+                deps,
+                m.events().stream().map(EventIR::name).collect(Collectors.toSet()),
+                Set.of()
             ));
+        }
+        
         ModuleGraph moduleGraph = new ModuleGraph(modules);
 
         mapper.writeValue(outDir.resolve("tenant_config.json").toFile(), fileConfig);
         mapper.writeValue(outDir.resolve("feature_flags.json").toFile(), flags);
         mapper.writeValue(outDir.resolve("module_graph.json").toFile(), moduleGraph);
+
+        System.out.println("[GENERATOR] Wrote module_graph.json with " + modules.size() + " modules");
 
         return new GenerationResult(List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), resultConfig, flags, moduleGraph);
     }

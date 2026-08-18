@@ -48,16 +48,17 @@ public class GeneratorPhase implements CompilerPhase {
             GenerationResult configResult = configGenerator.generate(context.tenant(), ir, base.resolve("runtime"));
             byte[] bootstrap = bootstrapGenerator.generate(context.tenant(), base.resolve("bootstrap"));
 
-            // 2. FIX: Build ModuleGraph object instead of Map
+            // 2. FIX: Build ModuleGraph with UPPERCASE ids so deps match keys
+            // Parser gives "sales", "inventory" -> we convert to "SALES", "INVENTORY"
             Map<String, ModuleDefinition> modules = ir.modules().stream()
                 .collect(Collectors.toMap(
-                    ModuleIR::name,
+                    m -> m.name().toUpperCase(), // KEY: SALES, INVENTORY, RUNTIME
                     m -> new ModuleDefinition(
-                        m.name(),
-                        context.tenant().enabledModules().contains(m.name()),
-                        Set.copyOf(m.dependencies()),
+                        m.name().toUpperCase(), // id
+                        context.tenant().enabledModules().contains(m.name().toUpperCase()), // enabled check
+                        m.dependencies().stream().map(String::toUpperCase).collect(Collectors.toSet()), // DEPS: SALES
                         m.events().stream().map(EventIR::name).collect(Collectors.toSet()),
-                        Set.of()
+                        Set.of() // consumedEvents
                     )
                 ));
             ModuleGraph moduleGraph = new ModuleGraph(modules);
@@ -73,7 +74,7 @@ public class GeneratorPhase implements CompilerPhase {
             context.put("runtimeBootstrap", bootstrap);
             context.put("tenantConfig", configResult.config());
             context.put("featureFlags", configResult.featureFlags());
-            context.put("moduleGraph", moduleGraph); // NOW TYPED CORRECTLY
+            context.put("moduleGraph", moduleGraph); // NOW HAS PROPER DEPS
 
             context.diagnostics().addInfo("GENERATOR", "Generated domain, runtime, bootstrap for tenant " + context.tenant().tenantId());
             return new CompilerResult<>(context.tenant(), context.diagnostics(), configResult);

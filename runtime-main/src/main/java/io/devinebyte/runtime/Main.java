@@ -48,6 +48,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Main {
     public static void main(String[] args) throws Exception {
@@ -69,18 +70,17 @@ public class Main {
 
         Path dbpkg = Path.of(dbpkgArg);
         ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule())
- .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+              .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
         try (FileSystem fs = FileSystems.newFileSystem(dbpkg)) {
             Set<String> requestedModules = readRequestedModules(fs, mapper);
-            System.out.println("Enabled Modules from dbpkg: " + requestedModules);
 
             DiagnosticCollector diagnostics = new DiagnosticCollector();
             ModuleLoader moduleLoader = new ModuleLoader(diagnostics);
             ModuleRegistry moduleRegistry = new ModuleRegistry();
 
             RuntimeBootstrapper bootstrapper = new RuntimeBootstrapper(
-                new DbpkgVerifier(skipVerify), new ManifestReader(), moduleLoader, moduleRegistry
+                    new DbpkgVerifier(skipVerify), new ManifestReader(), moduleLoader, moduleRegistry
             );
             ConfigurationManager configManager = new ConfigurationManager(mapper);
             TenantRuntimeFactory factory = new TenantRuntimeFactory(configManager, moduleLoader, moduleRegistry);
@@ -95,9 +95,9 @@ public class Main {
 
             // FIX: Override context because bootstrap returns empty modules
             TenantContext fixedCtx = new TenantContext(
-                bootstrap.tenantContext().tenantId(),
-                TenantLifecycle.ACTIVE,
-                requestedModules
+                    bootstrap.tenantContext().tenantId(),
+                    TenantLifecycle.ACTIVE,
+                    requestedModules
             );
 
             TenantRuntime runtime = factory.create(fixedCtx, bootstrap);
@@ -120,7 +120,7 @@ public class Main {
                 ProjectionLoader loader = new ProjectionLoader(mapper);
                 ProjectionLoadResult projectionLoad = loader.load(fs, diagnostics);
                 boolean hasErrors = projectionLoad.diagnostics().getAll().stream()
-        .anyMatch(d -> d.severity() == DiagnosticSeverity.ERROR || d.severity() == DiagnosticSeverity.FATAL);
+                      .anyMatch(d -> d.severity() == DiagnosticSeverity.ERROR || d.severity() == DiagnosticSeverity.FATAL);
                 if (!hasErrors) {
                     WasmRuntime wasm = new WasmRuntime(mapper);
                     FileProjectionStateStore stateStore = new FileProjectionStateStore();
@@ -140,7 +140,7 @@ public class Main {
             // Test events
             ObjectNode payload = mapper.createObjectNode().put("boot", "ok");
             EventMetadata meta = new EventMetadata(UUID.randomUUID(), null, "runtime", Instant.now(),
-                Map.of("tenantId", fixedCtx.tenantId()));
+                    Map.of("tenantId", fixedCtx.tenantId()));
             DomainEvent bootEvent = new DomainEvent("SystemBooted", "1.0", payload, meta);
             eventBus.publish(fixedCtx, bootEvent);
 
@@ -154,6 +154,8 @@ public class Main {
     }
 
     private static Set<String> readRequestedModules(FileSystem fs, ObjectMapper mapper) throws Exception {
+        Set<String> modules = new HashSet<>();
+
         Path manifestPath = fs.getPath("/manifest.json");
         if (Files.exists(manifestPath)) {
             try (InputStream in = Files.newInputStream(manifestPath)) {
@@ -161,47 +163,64 @@ public class Main {
                 System.out.println("[INFO] Loaded manifest for tenant: " + manifest.get("tenantId"));
             }
         }
+
         Path cfg = fs.getPath("runtime/tenant_config.json");
         if (Files.exists(cfg)) {
             try (InputStream in = Files.newInputStream(cfg)) {
                 Map<String, Object> json = mapper.readValue(in, Map.class);
                 Object req = json.get("requestedModules");
                 if (req instanceof List) {
-                    List<String> requestedModules = (List<String>) req;
-                    if (!requestedModules.isEmpty()) return new HashSet<>(requestedModules);
+                    modules.addAll((List<String>) req);
                 } else if (req!= null) {
-                    return new HashSet<>(Arrays.asList(req.toString().split(",")));
+                    modules.addAll(Arrays.asList(req.toString().split(",")));
                 }
             }
         }
-        System.out.println("[WARN] No requestedModules found in dbpkg. Defaulting to runtime,inventory,sales");
-        return Set.of("runtime", "inventory", "sales");
+
+        // CRITICAL: Always inject system runtime module
+        modules.add("runtime");
+        System.out.println("Enabled Modules from dbpkg: " + modules);
+        return modules;
     }
 
     private static ModuleGraph buildModuleGraph(FileSystem fs, Set<String> requestedModules, ObjectMapper mapper) throws Exception {
         Map<String, ModuleGraph.ModuleDefinition> defs = new HashMap<>();
 
         Path graphPath = fs.getPath("runtime/module_graph.json");
-        Map<String, List<String>> depsMap = new HashMap<>();
-
         if (Files.exists(graphPath)) {
             try (InputStream in = Files.newInputStream(graphPath)) {
                 Map<String, Object> json = mapper.readValue(in, Map.class);
-                Map<String, List<String>> raw = (Map<String, List<String>>) json.get("dependencies");
-                if (raw!= null) depsMap = raw;
-                System.out.println("[INFO] Loaded module graph from dbpkg");
+                Map<String, Map<String, Object>> modules = (Map<String, Map<String, Object>>) json.get("modules");
+
+                System.out.println("[INFO] Loaded module graph from dbpkg with " + modules.size() + " modules");
+
+                // FIX: Build case-insensitive lookup because compiler writes SALES but runtime uses sales
+                Map<String, Map<String, Object>> modulesLower = modules.entrySet().stream()
+                   .collect(Collectors.toMap(e -> e.getKey().toLowerCase(), Map.Entry::getValue));
+
+                // FORCE ADD RUNTIME - compiler doesn't emit system modules
+                modulesLower.putIfAbsent("runtime", Map.of("dependsOn", List.of(), "enabled", true));
+
+                for (String reqMod : requestedModules) {
+                    String key = reqMod.toLowerCase(); // sales, inventory, runtime
+                    Map<String, Object> modData = modulesLower.get(key);
+                    if (modData!= null) {
+                        List<String> depsList = (List<String>) modData.getOrDefault("dependsOn", List.of());
+                        Set<String> deps = depsList.stream().map(String::toLowerCase).collect(Collectors.toSet());
+                        defs.put(reqMod, new ModuleGraph.ModuleDefinition(reqMod, true, deps, Set.of(), Set.of()));
+                    } else {
+                        System.out.println("[WARN] Module " + reqMod + " not found in module_graph.json");
+                    }
+                }
             }
         } else {
             System.out.println("[WARN] runtime/module_graph.json not found. Using hardcoded deps");
-            depsMap.put("sales", List.of());
-            depsMap.put("inventory", List.of("sales"));
-            depsMap.put("runtime", List.of());
+            defs.put("sales", new ModuleGraph.ModuleDefinition("sales", true, Set.of(), Set.of(), Set.of()));
+            defs.put("inventory", new ModuleGraph.ModuleDefinition("inventory", true, Set.of("sales"), Set.of(), Set.of()));
         }
 
-        for (String mod : requestedModules) {
-            Set<String> deps = new HashSet<>(depsMap.getOrDefault(mod, List.of()));
-            defs.put(mod, new ModuleGraph.ModuleDefinition(mod, true, deps, Set.of(), Set.of()));
-        }
+        // Safety: always ensure runtime is in defs
+        defs.putIfAbsent("runtime", new ModuleGraph.ModuleDefinition("runtime", true, Set.of(), Set.of(), Set.of()));
 
         return new ModuleGraph(defs);
     }

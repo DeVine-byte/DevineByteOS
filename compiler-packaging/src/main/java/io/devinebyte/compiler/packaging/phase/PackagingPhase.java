@@ -57,7 +57,7 @@ public class PackagingPhase implements CompilerPhase {
         boolean multiTenant =!strictMode;
 
         PackageContent pkgContent = new PackageContent(
-            context.tenant(), ir.version(),
+            context.tenant(), ir.version(), ir, // PASSED BLUEPRINT HERE
             events!= null? events : List.of(), entities!= null? entities : List.of(),
             workflowSchemas!= null? workflowSchemas : List.of(), apis!= null? apis : List.of(),
             workflows!= null? workflows : List.of(), projections!= null? projections : List.of(),
@@ -88,7 +88,7 @@ public class PackagingPhase implements CompilerPhase {
     private void validateNoCycles(ModuleGraph graph, CompilationContext context) {
         if (graph == null) return;
         Map<String, Set<String>> deps = graph.modules().entrySet().stream()
-      .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().dependsOn()));
+          .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().dependsOn()));
         Set<String> visited = new HashSet<>();
         Set<String> recStack = new HashSet<>();
         for (String module : deps.keySet()) {

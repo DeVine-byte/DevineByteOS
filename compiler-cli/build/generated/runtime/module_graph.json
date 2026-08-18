@@ -1,5 +1,19 @@
 {
   "modules" : {
+    "runtime" : {
+      "moduleId" : "runtime",
+      "enabled" : true,
+      "dependsOn" : [ ],
+      "exposesEvents" : [ ],
+      "subscribesToEvents" : [ ]
+    },
+    "SALES" : {
+      "moduleId" : "SALES",
+      "enabled" : true,
+      "dependsOn" : [ ],
+      "exposesEvents" : [ "OrderCreated" ],
+      "subscribesToEvents" : [ ]
+    },
     "INVENTORY" : {
       "moduleId" : "INVENTORY",
       "enabled" : true,
@@ -12,13 +26,6 @@
       "enabled" : true,
       "dependsOn" : [ ],
       "exposesEvents" : [ "SystemBooted" ],
-      "subscribesToEvents" : [ ]
-    },
-    "SALES" : {
-      "moduleId" : "SALES",
-      "enabled" : true,
-      "dependsOn" : [ ],
-      "exposesEvents" : [ "OrderCreated" ],
       "subscribesToEvents" : [ ]
     }
   }

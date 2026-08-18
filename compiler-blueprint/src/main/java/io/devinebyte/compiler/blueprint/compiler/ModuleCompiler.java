@@ -4,6 +4,7 @@ import io.devinebyte.compiler.audit.model.AuditModel;
 import io.devinebyte.compiler.audit.model.Recommendation;
 import io.devinebyte.compiler.blueprint.model.*;
 import io.devinebyte.compiler.core.context.CompilationContext;
+import io.devinebyte.compiler.core.model.ModuleDefinition; // <-- ADDED
 import io.devinebyte.compiler.dsl.ast.*;
 import jakarta.inject.Singleton;
 import java.util.ArrayList;
@@ -14,20 +15,25 @@ import java.util.stream.Collectors;
 
 @Singleton
 public class ModuleCompiler {
-    public BlueprintIR compile(CompilationContext context, AuditModel audit, List<AstNode> ast) {                                 
-        List<ModuleIR> modules = new ArrayList<>();              
-        List<EntityIR> allEntities = new ArrayList<>();          
-        List<EventIR> allEvents = new ArrayList<>();             
-        List<WorkflowIR> allWorkflows = new ArrayList<>();       
-        List<String> kpis = new ArrayList<>();                                                                                    
+    
+    public BlueprintIR compile(CompilationContext context, AuditModel audit, List<AstNode> ast) {
+        List<ModuleIR> modules = new ArrayList<>();
+        List<EntityIR> allEntities = new ArrayList<>();
+        List<EventIR> allEvents = new ArrayList<>();
+        List<WorkflowIR> allWorkflows = new ArrayList<>();
+        List<String> kpis = new ArrayList<>();
 
         for (AstNode node : ast) {
-            if (node instanceof ModuleNode m) {                  
+            if (node instanceof ModuleNode m) {
                 String moduleId = m.name().toLowerCase();
                 List<EntityIR> moduleEntities = new ArrayList<>();
                 List<EventIR> moduleEvents = new ArrayList<>();
                 List<WorkflowIR> moduleWorkflows = new ArrayList<>();
-                Set<String> deps = m.dependencies();
+
+                // FIX: Read dependencies from AST and normalize to lowercase
+                Set<String> deps = m.dependencies().stream()
+                    .map(String::toLowerCase)
+                    .collect(Collectors.toSet());
 
                 for (AstNode child : m.children()) {
                     if (child instanceof EntityNode e) {
@@ -41,7 +47,6 @@ public class ModuleCompiler {
                         allEvents.add(eir);
                     }
                     if (child instanceof WorkflowNode w) {
-                        // Extract requiredEvents from steps
                         Set<String> allEventNames = allEvents.stream().map(EventIR::name).collect(Collectors.toSet());
                         List<String> requiredEvents = w.steps().stream()
                             .filter(allEventNames::contains)
@@ -55,11 +60,19 @@ public class ModuleCompiler {
                         kpis.add(k.formula());
                     }
                 }
-                modules.add(new ModuleIR(moduleId, m.name(), m.enabled(), deps, moduleEntities, moduleEvents, moduleWorkflows));
+                
+                modules.add(new ModuleIR(
+                    moduleId, 
+                    m.name(), 
+                    m.enabled(), 
+                    deps, // <-- deps wired here
+                    moduleEntities, 
+                    moduleEvents, 
+                    moduleWorkflows
+                ));
             }
         }
 
-        // Pull the enabled list early to resolve the compiler reference issue
         Set<String> tenantEnabledModules = context.tenant().enabledModules();
 
         audit.recommendations().stream()
@@ -68,18 +81,33 @@ public class ModuleCompiler {
             .forEach(mod -> {
                 String modId = mod.toLowerCase();
                 if (modules.stream().noneMatch(m -> m.id().equals(modId))) {
-                    boolean isEnabled = tenantEnabledModules.contains(mod.toUpperCase()); 
+                    boolean isEnabled = tenantEnabledModules.contains(mod.toUpperCase());
                     modules.add(new ModuleIR(
-                        modId, 
-                        mod, 
-                        isEnabled, 
-                        new HashSet<>(), 
-                        new ArrayList<>(), 
-                        new ArrayList<>(), 
+                        modId,
+                        mod,
+                        isEnabled,
+                        new HashSet<>(),
+                        new ArrayList<>(),
+                        new ArrayList<>(),
                         new ArrayList<>()
                     ));
                 }
             });
+
+        // CRITICAL FIX: Convert to ModuleDefinition with dependencies for dbpkg
+        List<ModuleDefinition> moduleDefinitions = modules.stream()
+            .map(m -> new ModuleDefinition(
+                m.name().toUpperCase(), // id: SALES, INVENTORY, RUNTIME
+                m.name(),               // name: sales
+                m.enabled(),
+                m.dependencies().stream().map(String::toUpperCase).collect(Collectors.toSet()), // <-- THIS WRITES DEPS TO JSON
+                m.events().stream().map(EventIR::name).collect(Collectors.toList()),
+                List.of() // consumedEvents
+            ))
+            .collect(Collectors.toList());
+
+        // Put this in context so DbpkgWriter/Generator can use it
+        context.put("moduleDefinitions", moduleDefinitions);
 
         BlueprintIR blueprint = new BlueprintIR(
             context.tenant().tenantId(),
@@ -92,10 +120,7 @@ public class ModuleCompiler {
             kpis
         );
 
-        // Put in context for any phase that needs it
         context.put("blueprint", blueprint);
-
         return blueprint;
     }
 }
-
