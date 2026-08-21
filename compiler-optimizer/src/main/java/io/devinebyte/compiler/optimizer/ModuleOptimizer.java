@@ -22,12 +22,13 @@ public class ModuleOptimizer {
         return new BlueprintIR(
             ir.tenantId(),
             ir.version(),
-            ir.enabledModules(), // ADD THIS
+            ir.enabledModules(),
             enabledModules,
             ir.entities(),
             ir.events(),
             ir.workflows(),
-            ir.kpiFormulas() // ADD THIS
+            ir.kpiFormulas(),
+            ir.apiSchemas() // ADD 9TH ARG
         );
     }
 }

@@ -18,7 +18,7 @@
       "moduleId" : "INVENTORY",
       "enabled" : true,
       "dependsOn" : [ "sales" ],
-      "exposesEvents" : [ ],
+      "exposesEvents" : [ "InventoryReserved" ],
       "subscribesToEvents" : [ ]
     },
     "RUNTIME" : {

@@ -3,6 +3,17 @@
   "version" : "1.0",
   "fields" : {
     "eventId" : "UUID",
+    "orderId" : "STRING",
+    "tenantId" : "STRING",
+    "customerId" : "STRING",
+    "version" : "STRING",
+    "timestamp" : "DATETIME"
+  }
+}, {
+  "name" : "InventoryReserved",
+  "version" : "1.0",
+  "fields" : {
+    "eventId" : "UUID",
     "tenantId" : "STRING",
     "version" : "STRING",
     "timestamp" : "DATETIME"

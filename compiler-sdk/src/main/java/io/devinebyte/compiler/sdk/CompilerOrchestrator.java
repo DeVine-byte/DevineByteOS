@@ -12,7 +12,6 @@ import io.devinebyte.compiler.blueprint.model.BlueprintIR;
 import io.devinebyte.compiler.blueprint.shake.ModuleTreeShaker;
 import io.devinebyte.compiler.blueprint.validation.ContractViolationEngine;
 import io.devinebyte.compiler.contracts.phase.ContractsPhase;
-import io.devinebyte.compiler.contracts.generator.APISchemaGenerator;
 import io.devinebyte.compiler.contracts.generator.EntitySchemaGenerator;
 import io.devinebyte.compiler.contracts.generator.EventSchemaGenerator;
 import io.devinebyte.compiler.contracts.generator.WorkflowSchemaGenerator;
@@ -26,6 +25,7 @@ import io.devinebyte.compiler.dsl.lexer.Lexer;
 import io.devinebyte.compiler.dsl.parser.Parser;
 import io.devinebyte.compiler.dsl.ast.ModuleNode;
 import io.devinebyte.compiler.dsl.semantic.SemanticAnalyzer;
+import io.devinebyte.compiler.dsl.generator.ApiSchemaWriter;
 import io.devinebyte.compiler.generator.phase.GeneratorPhase;
 import io.devinebyte.compiler.generator.codegen.DomainGenerator;
 import io.devinebyte.compiler.generator.runtime.RuntimeBootstrapGenerator;
@@ -43,16 +43,15 @@ import io.devinebyte.compiler.reporting.collector.DependencyGraphBuilder;
 import io.devinebyte.compiler.reporting.writer.JsonReportWriter;
 import io.devinebyte.compiler.reporting.model.CompilationReport;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -86,9 +85,9 @@ public class CompilerOrchestrator {
         var ast = parser.parse(context);
 
         Map<String, ModuleGraph.ModuleDefinition> moduleDefs = ast.stream()
-           .filter(n -> n instanceof ModuleNode)
-           .map(n -> (ModuleNode) n)
-           .collect(Collectors.toMap(
+          .filter(n -> n instanceof ModuleNode)
+          .map(n -> (ModuleNode) n)
+          .collect(Collectors.toMap(
                 ModuleNode::name,
                 m -> new ModuleGraph.ModuleDefinition(
                     m.name(),
@@ -100,9 +99,9 @@ public class CompilerOrchestrator {
             ));
 
         Set<String> enabledModules = moduleDefs.entrySet().stream()
-           .filter(e -> e.getValue().enabled())
-           .map(Map.Entry::getKey)
-           .collect(Collectors.toSet());
+          .filter(e -> e.getValue().enabled())
+          .map(Map.Entry::getKey)
+          .collect(Collectors.toSet());
 
         tenant = new TenantContext(tenantId, TenantLifecycle.ACTIVE, enabledModules);
         context = new CompilationContext(tenant, diagnostics);
@@ -133,38 +132,54 @@ public class CompilerOrchestrator {
 
         collector.startPhase("blueprint");
         CompilerResult<BlueprintIR> blueprintResult = new BlueprintCompiler(
-            new ModuleCompiler(), new ModuleTreeShaker(), new ContractViolationEngine(), new AuditToBlueprintMapper()
+            new ModuleCompiler(),
+            new ModuleTreeShaker(),
+            new ContractViolationEngine(),
+            new AuditToBlueprintMapper(),
+            new ApiSchemaWriter()
         ).execute(context, null);
         BlueprintIR blueprint = blueprintResult.output();
         context.put("blueprint", blueprint);
         collector.endPhase("blueprint",!context.diagnostics().hasErrors());
 
         collector.startPhase("contracts");
-        new ContractsPhase(new EventSchemaGenerator(), new EntitySchemaGenerator(), new WorkflowSchemaGenerator(), new APISchemaGenerator())
-           .execute(context, blueprintResult);
+        new ContractsPhase(
+            new EventSchemaGenerator(),
+            new EntitySchemaGenerator(),
+            new WorkflowSchemaGenerator(),
+            new ApiSchemaWriter()
+        ).execute(context, blueprintResult);
+
+        // FIX: Merge APIs from ContractsPhase back into BlueprintIR
+        List<ApiSchemaWriter.ApiSchema> apis = context.get("apiSchemas");
+        BlueprintIR blueprintWithApis = new BlueprintIR(
+            blueprint.tenantId(), blueprint.version(), blueprint.enabledModules(),
+            blueprint.modules(), blueprint.entities(), blueprint.events(),
+            blueprint.workflows(), blueprint.kpiFormulas(), apis!= null? apis : List.of()
+        );
+        blueprintResult = new CompilerResult<>(context.tenant(), context.diagnostics(), blueprintWithApis);
+        context.put("blueprint", blueprintWithApis);
         collector.endPhase("contracts",!context.diagnostics().hasErrors());
 
         collector.startPhase("workflow");
-        new WorkflowCompiler().compile(tenant, context, blueprint);
+        new WorkflowCompiler().compile(tenant, context, blueprintWithApis); // use updated IR
         collector.endPhase("workflow",!context.diagnostics().hasErrors());
 
         collector.startPhase("projection");
-        new ProjectionCompiler(new WasmGenerator()).compile(tenant, context, blueprint);
+        new ProjectionCompiler(new WasmGenerator()).compile(tenant, context, blueprintWithApis); // use updated IR
         collector.endPhase("projection",!context.diagnostics().hasErrors());
 
         collector.startPhase("generator");
         new GeneratorPhase(new DomainGenerator(), new RuntimeConfigGenerator(), new RuntimeBootstrapGenerator())
-           .execute(context, blueprintResult);
+          .execute(context, blueprintResult); // use updated result
         collector.endPhase("generator",!context.diagnostics().hasErrors());
 
         collector.startPhase("reporting");
-        new ReportingPhase(collector).execute(context, blueprintResult);
+        new ReportingPhase(collector).execute(context, blueprintResult); // use updated result
         collector.endPhase("reporting",!context.diagnostics().hasErrors());
 
         collector.startPhase("packaging");
-        CompilerResult<Path> packagingResult = new PackagingPhase(new PackageBuilder())
-           .execute(context, blueprintResult);
-
+        CompilerResult<Path> packagingResult = new PackagingPhase(new PackageBuilder()).execute(context, blueprintResult); // use updated result
         Path dbpkg = packagingResult.output();
 
         addManifestToZip(dbpkg, tenantId, version, keywordAliases);
@@ -188,27 +203,23 @@ public class CompilerOrchestrator {
     }
 
     private void addManifestToZip(Path zipFile, String tenantId, String version, Map<String, String> keywordAliases) throws IOException {
-        // BUILD MANIFEST FROM SCRATCH - all 9 fields ManifestReader needs
         Map<String, Object> manifest = new HashMap<>();
-
-        manifest.put("schemaVersion", "1.0"); // 1
-        manifest.put("tenantId", tenantId); // 2
-        manifest.put("version", version); // 3
-        manifest.put("builtAt", Instant.now().toString()); // 4
-        manifest.put("builtBy", "devine-byte-compiler"); // 5
-        manifest.put("sha256", "TBD"); // 6 placeholder for pass 1
-        manifest.put("signature", "dev"); // 7
-        manifest.put("multiTenant", true); // 8
-        manifest.put("keywordAliases", keywordAliases); // 9
+        manifest.put("schemaVersion", "1.0");
+        manifest.put("tenantId", tenantId);
+        manifest.put("version", version);
+        manifest.put("builtAt", Instant.now().toString());
+        manifest.put("builtBy", "devine-byte-compiler");
+        manifest.put("sha256", "TBD");
+        manifest.put("signature", "dev");
+        manifest.put("multiTenant", true);
+        manifest.put("keywordAliases", keywordAliases);
 
         Map<String, String> env = Map.of("create", "true");
 
-        // PASS 1: write with TBD
         try (FileSystem fs = FileSystems.newFileSystem(zipFile, env)) {
             Files.writeString(fs.getPath("/manifest.json"), objectMapper.writeValueAsString(manifest));
         }
 
-        // PASS 2: compute real sha256 and overwrite
         String sha256 = computeSha256(zipFile);
         manifest.put("sha256", sha256);
         try (FileSystem fs = FileSystems.newFileSystem(zipFile, env)) {

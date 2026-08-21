@@ -7,40 +7,31 @@ import java.util.Map;
 
 @Singleton
 public class KeywordDictionary {
-    private final Map<String, TokenType> baseKeywords = new HashMap<>();
-    private final Map<String, TokenType> activeKeywords = new HashMap<>();
-
-    public KeywordDictionary() {
-        baseKeywords.put("module", TokenType.MODULE);
-        baseKeywords.put("entity", TokenType.ENTITY);
-        baseKeywords.put("event", TokenType.EVENT);
-        baseKeywords.put("workflow", TokenType.WORKFLOW);
-        baseKeywords.put("kpi", TokenType.KPI);
-        baseKeywords.put("enable", TokenType.ENABLE);
-        baseKeywords.put("enabled", TokenType.ENABLE); 
-        baseKeywords.put("disable", TokenType.DISABLE);
-        baseKeywords.put("disabled", TokenType.DISABLE);
-        baseKeywords.put("depends", TokenType.DEPENDS);
-        baseKeywords.put("on", TokenType.ON);
-        reset();
-    }
-
+    private final Map<String, TokenType> keywords = new HashMap<>();
+    public KeywordDictionary() { reset(); }
     public void reset() {
-        activeKeywords.clear();
-        activeKeywords.putAll(baseKeywords);
+        keywords.clear();
+        keywords.put("MODULE", TokenType.MODULE);
+        keywords.put("ENTITY", TokenType.ENTITY);
+        keywords.put("EVENT", TokenType.EVENT);
+        keywords.put("WORKFLOW", TokenType.WORKFLOW);
+        keywords.put("KPI", TokenType.KPI);
+        keywords.put("ENABLE", TokenType.ENABLE);
+        keywords.put("DISABLE", TokenType.DISABLE);
+        keywords.put("DEPENDS", TokenType.DEPENDS);
+        keywords.put("ON", TokenType.ON);
+        keywords.put("EXPOSE", TokenType.EXPOSE);
+        keywords.put("API", TokenType.API);
+        keywords.put("GET", TokenType.GET);
+        keywords.put("POST", TokenType.POST);
+        keywords.put("PUT", TokenType.PUT);
+        keywords.put("DELETE", TokenType.DELETE);
+        keywords.put("PATCH", TokenType.PATCH);
     }
-
+    public TokenType lookup(String text) { return keywords.getOrDefault(text, TokenType.IDENTIFIER); }
     public void loadAliases(Map<String, String> aliases) {
-        reset();
-        aliases.forEach((alias, canonical) -> {
-            TokenType type = baseKeywords.get(canonical.toLowerCase());
-            if (type != null) {
-                activeKeywords.put(alias.toLowerCase(), type);
-            }
-        });
-    }
-
-    public TokenType lookup(String lexeme) {
-        return activeKeywords.getOrDefault(lexeme.toLowerCase(), TokenType.IDENTIFIER);
+       if (aliases == null || aliases.isEmpty()) return;
+       reset();
+       aliases.forEach((k,v) -> keywords.put(k.toUpperCase(), TokenType.valueOf(v.toUpperCase())));
     }
 }

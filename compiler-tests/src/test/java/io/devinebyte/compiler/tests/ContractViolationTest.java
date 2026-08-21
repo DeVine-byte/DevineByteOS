@@ -11,6 +11,8 @@ import io.devinebyte.compiler.core.context.TenantContext;
 import io.devinebyte.compiler.core.context.TenantLifecycle;
 import io.devinebyte.compiler.core.diagnostics.DiagnosticCollector;
 import io.devinebyte.compiler.core.diagnostics.DiagnosticSeverity;
+import io.devinebyte.compiler.dsl.generator.ApiSchemaWriter;
+import io.devinebyte.compiler.dsl.generator.ApiSchemaWriter.ApiSchema;
 import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
@@ -27,27 +29,27 @@ class ContractViolationTest {
 
         EventIR definedEvent = new EventIR("OrderCreated", "sales", "v1", Map.of("id", "String"), true);
         WorkflowIR badWorkflow = new WorkflowIR("OrderFlow", "sales", List.of("step1"), List.of("PaymentReceived"));
-        
-        // 7 args to match ModuleIR record
+
         ModuleIR module = new ModuleIR(
-            "sales",                    // id
-            "Sales",                    // name
-            true,                       // enabled
-            Set.of(),                   // dependencies
-            List.of(),                  // entities
-            List.of(definedEvent),      // events
-            List.of(badWorkflow)        // workflows
+            "sales",
+            "Sales",
+            true,
+            Set.of(),
+            List.of(),
+            List.of(definedEvent),
+            List.of(badWorkflow)
         );
 
         BlueprintIR ir = new BlueprintIR(
-            "test-tenant",              // tenantId
-            "1.0.0",                    // version
-            Set.of("sales"),            // enabledModules
-            List.of(module),            // modules
-            List.of(),                  // entities
-            List.of(definedEvent),      // events
-            List.of(badWorkflow),       // workflows
-            List.of()                   // kpiFormulas
+            "test-tenant",
+            "1.0.0",
+            Set.of("sales"),
+            List.of(module),
+            List.of(),
+            List.of(definedEvent),
+            List.of(badWorkflow),
+            List.of(),
+            List.of() // ADD 9TH ARG
         );
 
         new ContractViolationEngine().validate(ctx, ir);

@@ -16,35 +16,19 @@ public class Lexer {
     private int start = 0, current = 0, line = 1, column = 1;
 
     @Inject
-    public Lexer(KeywordDictionary dict) {
-        this.dict = dict;
-        this.source = "";
-    }
+    public Lexer(KeywordDictionary dict) { this.dict = dict; this.source = ""; }
 
     public List<Token> scanTokens(CompilationContext context) {
-        // Load tenant keyword aliases from attributes before scanning
         @SuppressWarnings("unchecked")
         Map<String, String> aliases = context.get("keywordAliases");
-        if (aliases != null) {
-            dict.loadAliases(aliases);
-        } else {
-            dict.reset(); // use base keywords only
-        }
+        if (aliases != null && !aliases.isEmpty()) dict.loadAliases(aliases); else dict.reset();
 
-        // Reset state for new scan
         this.source = context.get("sourceCode");
         if (this.source == null) this.source = "";
         this.source = this.source.replace("\uFEFF", "");
-        this.tokens.clear();
-        this.start = 0;
-        this.current = 0;
-        this.line = 1;
-        this.column = 1;
+        this.tokens.clear(); this.start = 0; this.current = 0; this.line = 1; this.column = 1;
 
-        while (!isAtEnd()) {
-            start = current;
-            scanToken(context);
-        }
+        while (!isAtEnd()) { start = current; scanToken(context); }
         tokens.add(new Token(TokenType.EOF, "", line, column));
         return tokens;
     }
@@ -59,7 +43,22 @@ public class Lexer {
             case ':' -> addToken(TokenType.COLON);
             case ';' -> addToken(TokenType.SEMICOLON);
             case ',' -> addToken(TokenType.COMMA);
+            case '[' -> addToken(TokenType.LBRACK);
+            case ']' -> addToken(TokenType.RBRACK);
             case '-' -> { if (match('>')) addToken(TokenType.ARROW); }
+            case '/' -> {
+                if (match('/')) { // // comment
+                    while (peek() != '\n' && !isAtEnd()) advance();
+                } else if (match('*')) { // /* comment */
+                    while (!(peek() == '*' && peekNext() == '/') && !isAtEnd()) {
+                        if (peek() == '\n') { line++; column = 1; }
+                        advance();
+                    }
+                    if (!isAtEnd()) { advance(); advance(); } // consume */
+                } else {
+                    context.diagnostics().addError("LEXER_001", "Unexpected character: /");
+                }
+            }
             case ' ', '\r', '\t' -> {}
             case '\n' -> { line++; column = 1; }
             case '"' -> string(context);
@@ -74,71 +73,26 @@ public class Lexer {
     private void identifier() {
         while (isAlphaNumeric(peek())) advance();
         String text = source.substring(start, current);
-
-        // CHANGED: use dictionary instead of hardcoded switch
-        TokenType type = dict.lookup(text);
+        TokenType type = dict.lookup(text.toUpperCase());
         addToken(type);
     }
 
-    private void number() {
-        while (isDigit(peek())) advance();
-        addToken(TokenType.NUMBER);
-    }
+    private void number() { while (isDigit(peek())) advance(); addToken(TokenType.NUMBER); }
 
     private void string(CompilationContext context) {
-        while (peek() != '"' && !isAtEnd()) {
-            if (peek() == '\n') {
-                line++;
-                column = 1;
-            }
-            advance();
-        }
-        if (isAtEnd()) {
-            context.diagnostics().addError("LEXER_002", "Unterminated string");
-            return;
-        }
-        advance();
-        addToken(TokenType.STRING, source.substring(start + 1, current - 1));
+        while (peek() != '"' && !isAtEnd()) { if (peek() == '\n') { line++; column = 1; } advance(); }
+        if (isAtEnd()) { context.diagnostics().addError("LEXER_002", "Unterminated string"); return; }
+        advance(); addToken(TokenType.STRING, source.substring(start + 1, current - 1));
     }
 
-    private boolean match(char expected) {
-        if (isAtEnd() || source.charAt(current) != expected) return false;
-        current++;
-        column++;
-        return true;
-    }
-
-    private char peek() {
-        return isAtEnd()? '\0' : source.charAt(current);
-    }
-
-    private boolean isAlpha(char c) {
-        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
-    }
-
-    private boolean isDigit(char c) {
-        return c >= '0' && c <= '9';
-    }
-
-    private boolean isAlphaNumeric(char c) {
-        return isAlpha(c) || isDigit(c);
-    }
-
-    private char advance() {
-        current++;
-        column++;
-        return source.charAt(current - 1);
-    }
-
-    private boolean isAtEnd() {
-        return current >= source.length();
-    }
-
-    private void addToken(TokenType type) {
-        addToken(type, null);
-    }
-
-    private void addToken(TokenType type, String literal) {
-        tokens.add(new Token(type, literal != null ? literal : source.substring(start, current), line, column));
-    }
+    private boolean match(char expected) { if (isAtEnd() || source.charAt(current) != expected) return false; current++; column++; return true; }
+    private char peek() { return isAtEnd()? '\0' : source.charAt(current); }
+    private char peekNext() { return current + 1 >= source.length() ? '\0' : source.charAt(current + 1); } // NEW
+    private boolean isAlpha(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'; }
+    private boolean isDigit(char c) { return c >= '0' && c <= '9'; }
+    private boolean isAlphaNumeric(char c) { return isAlpha(c) || isDigit(c); }
+    private char advance() { current++; column++; return source.charAt(current - 1); }
+    private boolean isAtEnd() { return current >= source.length(); }
+    private void addToken(TokenType type) { addToken(type, null); }
+    private void addToken(TokenType type, String literal) { tokens.add(new Token(type, literal != null ? literal : source.substring(start, current), line, column)); }
 }

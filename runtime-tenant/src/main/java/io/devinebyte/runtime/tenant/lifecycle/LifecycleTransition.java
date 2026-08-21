@@ -1,18 +1,5 @@
 package io.devinebyte.runtime.tenant.lifecycle;
 
-import io.devinebyte.runtime.core.context.TenantLifecycle;
-import java.util.Set;
+import java.time.Instant;
 
-public final class LifecycleTransition {
-    private static final Set<String> VALID = Set.of(
-        "PROVISIONING->ACTIVE",
-        "ACTIVE->SUSPENDED", 
-        "SUSPENDED->ACTIVE",
-        "ACTIVE->DECOMMISSIONED",
-        "SUSPENDED->DECOMMISSIONED"
-    );
-
-    public static boolean isValid(TenantLifecycle from, TenantLifecycle to) {
-        return VALID.contains(from.name() + "->" + to.name());
-    }
-}
+public record LifecycleTransition(String tenantId, io.devinebyte.runtime.core.context.TenantLifecycle from, io.devinebyte.runtime.core.context.TenantLifecycle to, Instant occurredAt) {}

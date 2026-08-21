@@ -1,49 +1,49 @@
 package io.devinebyte.runtime.tenant;
 
-import io.devinebyte.runtime.bootstrap.BootstrapResult;
+import io.devinebyte.runtime.bootstrap.RuntimeBootstrapper;
 import io.devinebyte.runtime.core.context.TenantContext;
 import io.devinebyte.runtime.core.context.TenantLifecycle;
-import io.devinebyte.runtime.core.registry.RuntimeRegistry;
-import io.devinebyte.runtime.tenant.exception.TenantLifecycleException; // ADD THIS
-import io.devinebyte.runtime.tenant.lifecycle.TenantLifecycleController;
+import io.devinebyte.runtime.core.diagnostics.DiagnosticCollector;
 import io.devinebyte.runtime.tenant.registry.TenantRegistry;
+import io.devinebyte.runtime.tenant.registry.TenantRuntimeHandle;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.util.Set;
 
 @Singleton
 public class TenantRuntimeManager {
+    private final RuntimeBootstrapper bootstrapper;
     private final TenantRuntimeFactory factory;
     private final TenantRegistry registry;
-    private final RuntimeRegistry runtimeRegistry;
-    private final TenantLifecycleController lifecycleController;
 
     @Inject
-    public TenantRuntimeManager(
-        TenantRuntimeFactory factory,
-        TenantRegistry registry,
-        RuntimeRegistry runtimeRegistry,
-        TenantLifecycleController lifecycleController
-    ) {
+    public TenantRuntimeManager(RuntimeBootstrapper bootstrapper, TenantRuntimeFactory factory, TenantRegistry registry) {
+        this.bootstrapper = bootstrapper;
         this.factory = factory;
         this.registry = registry;
-        this.runtimeRegistry = runtimeRegistry;
-        this.lifecycleController = lifecycleController;
     }
 
-    public TenantRuntime createTenant(TenantContext tenant, BootstrapResult bootstrap) {
-        if (!bootstrap.success()) {
-            throw new TenantLifecycleException("DBRT009", "Bootstrap failed"); // now compiles
+    public TenantRuntimeHandle bootTenant(Path dbpkg, String tenantId, boolean skipVerify) throws Exception {
+        TenantContext initialCtx = new TenantContext(tenantId, TenantLifecycle.PROVISIONING, Set.of());
+        DiagnosticCollector diagnostics = new DiagnosticCollector();
+
+        try (FileSystem fs = FileSystems.newFileSystem(dbpkg)) {
+            var bootstrap = bootstrapper.boot(initialCtx, dbpkg);
+            if (!bootstrap.success() || bootstrap.diagnostics().hasFatal()) {
+                bootstrap.diagnostics().getAll().forEach(d -> diagnostics.add(d));
+                throw new IllegalStateException("Bootstrap failed: " + diagnostics.getAll());
+            }
+
+            TenantRuntime runtime = factory.create(bootstrap.tenantContext(), bootstrap, fs, diagnostics);
+            runtime.boot();
+            return registry.register(tenantId, runtime);
         }
-        TenantRuntime runtime = factory.create(tenant, bootstrap);
-        registry.register(tenant.tenantId(), runtime);
-        
-        TenantContext active = lifecycleController.transition(runtime.tenantContext(), TenantLifecycle.ACTIVE);
-        return new TenantRuntime(active, runtime.config(), runtime.moduleGraph(), runtime.featureFlags(), runtime.dbpkgPath());
     }
 
-    public void destroyTenant(TenantContext tenant) {
-        TenantRuntime runtime = registry.get(tenant);
-        TenantContext decomm = lifecycleController.transition(runtime.tenantContext(), TenantLifecycle.DECOMMISSIONED);
-        registry.unregister(tenant.tenantId());
+    public void shutdownTenant(String tenantId) {
+        registry.unregister(tenantId);
     }
 }

@@ -1,13 +1,48 @@
-dependencies {
-    implementation project(':runtime-core')
-    implementation project(':runtime-config') 
-    implementation project(':runtime-bootstrap')
-    implementation project(':runtime-module')    
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
-    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.17.2' // for ObjectMapper
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+plugins {
+    id 'java-library'
 }
 
-test {
+group = 'io.devinebyte'
+version = '1.0.0'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+dependencies {
+    // Core runtime dependencies
+    implementation project(':runtime-core')
+    implementation project(':runtime-bootstrap')
+    implementation project(':runtime-config')
+    implementation project(':runtime-module')
+    implementation project(':runtime-event')
+    implementation project(':runtime-workflow')
+    implementation project(':runtime-orchestration')
+    implementation project(':compiler-dsl') // for ApiSchema
+
+    // DI
+    implementation 'jakarta.inject:jakarta.inject-api:2.0.1'
+
+    // JSON
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.2'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.17.2'
+
+    // Test
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.3'
+}
+
+tasks.withType(Test).configureEach {
     useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+        showStandardStreams = true // so we see BOOTSTRAP DIAG lines
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.compilerArgs += ['-parameters'] // for record names in DI
 }

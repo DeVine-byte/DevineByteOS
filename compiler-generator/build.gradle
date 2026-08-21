@@ -6,6 +6,7 @@ dependencies {
     implementation project(':compiler-core')
     implementation project(':runtime-config')
     implementation project(':compiler-blueprint')
+    implementation project(':compiler-dsl')
     implementation project(':compiler-contracts')
     implementation project(':compiler-workflow')   // ADD
     implementation project(':compiler-projection') // ADD

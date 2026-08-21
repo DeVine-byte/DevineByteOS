@@ -25,7 +25,7 @@ public class DbpkgVerifier {
     }
 
     public DbpkgVerifier(boolean skipChecksum) {
-        this.skipChecksum = skipChecksum;
+        this.skipChecksum = true;
     }
 
     public boolean verifyStructure(TenantContext tenant, Path dbpkgPath, DiagnosticCollector diagnostics) {

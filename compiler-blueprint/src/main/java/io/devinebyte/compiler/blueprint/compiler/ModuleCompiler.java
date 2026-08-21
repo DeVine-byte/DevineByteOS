@@ -4,7 +4,7 @@ import io.devinebyte.compiler.audit.model.AuditModel;
 import io.devinebyte.compiler.audit.model.Recommendation;
 import io.devinebyte.compiler.blueprint.model.*;
 import io.devinebyte.compiler.core.context.CompilationContext;
-import io.devinebyte.compiler.core.model.ModuleDefinition; // <-- ADDED
+import io.devinebyte.compiler.core.model.ModuleDefinition;
 import io.devinebyte.compiler.dsl.ast.*;
 import jakarta.inject.Singleton;
 import java.util.ArrayList;
@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 
 @Singleton
 public class ModuleCompiler {
-    
+
     public BlueprintIR compile(CompilationContext context, AuditModel audit, List<AstNode> ast) {
         List<ModuleIR> modules = new ArrayList<>();
         List<EntityIR> allEntities = new ArrayList<>();
@@ -30,7 +30,6 @@ public class ModuleCompiler {
                 List<EventIR> moduleEvents = new ArrayList<>();
                 List<WorkflowIR> moduleWorkflows = new ArrayList<>();
 
-                // FIX: Read dependencies from AST and normalize to lowercase
                 Set<String> deps = m.dependencies().stream()
                     .map(String::toLowerCase)
                     .collect(Collectors.toSet());
@@ -60,14 +59,14 @@ public class ModuleCompiler {
                         kpis.add(k.formula());
                     }
                 }
-                
+
                 modules.add(new ModuleIR(
-                    moduleId, 
-                    m.name(), 
-                    m.enabled(), 
-                    deps, // <-- deps wired here
-                    moduleEntities, 
-                    moduleEvents, 
+                    moduleId,
+                    m.name(),
+                    m.enabled(),
+                    deps,
+                    moduleEntities,
+                    moduleEvents,
                     moduleWorkflows
                 ));
             }
@@ -94,19 +93,17 @@ public class ModuleCompiler {
                 }
             });
 
-        // CRITICAL FIX: Convert to ModuleDefinition with dependencies for dbpkg
         List<ModuleDefinition> moduleDefinitions = modules.stream()
             .map(m -> new ModuleDefinition(
-                m.name().toUpperCase(), // id: SALES, INVENTORY, RUNTIME
-                m.name(),               // name: sales
+                m.name().toUpperCase(),
+                m.name(),
                 m.enabled(),
-                m.dependencies().stream().map(String::toUpperCase).collect(Collectors.toSet()), // <-- THIS WRITES DEPS TO JSON
+                m.dependencies().stream().map(String::toUpperCase).collect(Collectors.toSet()),
                 m.events().stream().map(EventIR::name).collect(Collectors.toList()),
-                List.of() // consumedEvents
+                List.of()
             ))
             .collect(Collectors.toList());
 
-        // Put this in context so DbpkgWriter/Generator can use it
         context.put("moduleDefinitions", moduleDefinitions);
 
         BlueprintIR blueprint = new BlueprintIR(
@@ -117,7 +114,8 @@ public class ModuleCompiler {
             allEntities,
             allEvents,
             allWorkflows,
-            kpis
+            kpis,
+            List.of() // ADD 9TH ARG
         );
 
         context.put("blueprint", blueprint);

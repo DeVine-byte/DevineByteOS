@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="io.devinebyte.runtime.tenant.TenantRuntimeManagerTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-08-17T13:51:43.582Z" hostname="localhost" time="0.015">
+<testsuite name="io.devinebyte.runtime.tenant.TenantRuntimeManagerTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-08-21T14:39:02" hostname="DESKTOP-EE228O3" time="0.002">
   <properties/>
-  <testcase name="createsTenantFromBootstrap()" classname="io.devinebyte.runtime.tenant.TenantRuntimeManagerTest" time="0.008"/>
+  <testcase name="managerCanBeConstructed()" classname="io.devinebyte.runtime.tenant.TenantRuntimeManagerTest" time="0.002"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

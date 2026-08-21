@@ -5,9 +5,11 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.devinebyte.compiler.blueprint.model.BlueprintIR;
 import io.devinebyte.compiler.blueprint.model.ModuleIR;
 import io.devinebyte.compiler.packaging.model.Manifest;
 import io.devinebyte.compiler.packaging.model.PackageContent;
+import io.devinebyte.compiler.packaging.builder.ChecksumUtil;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -15,6 +17,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -95,27 +98,23 @@ public class PackageBuilder {
         ObjectNode root = mapper.createObjectNode();
         ObjectNode modulesNode = mapper.createObjectNode();
 
-        // 1. Build set of enabled modules in lowercase for fast lookup
         Set<String> enabledLower = content.tenant().enabledModules().stream()
             .map(s -> s.toLowerCase(Locale.ROOT))
             .collect(Collectors.toSet());
 
-        // 2. Dedupe modules by lowercase name. First one wins
         Map<String, ModuleIR> modulesByLower = new LinkedHashMap<>();
         for (ModuleIR m : content.blueprint().modules()) {
             modulesByLower.putIfAbsent(m.name().toLowerCase(Locale.ROOT), m);
         }
 
-        // 3. Build JSON using canonical name from first occurrence
         for (ModuleIR m : modulesByLower.values()) {
-            String id = m.name(); // Keep DSL case
+            String id = m.name();
             String idLower = id.toLowerCase(Locale.ROOT);
 
             ObjectNode modNode = mapper.createObjectNode();
             modNode.put("moduleId", id);
             modNode.put("enabled", enabledLower.contains(idLower));
 
-            // Fix deps: map dep name to canonical case
             ArrayNode deps = mapper.createArrayNode();
             for (String d : m.dependencies()) {
                 String depCanonical = modulesByLower.get(d.toLowerCase(Locale.ROOT)).name();
@@ -130,7 +129,7 @@ public class PackageBuilder {
 
             modulesNode.set(id, modNode);
         }
-        
+
         root.set("modules", modulesNode);
         writeJson(zos, "runtime/module_graph.json", root);
     }

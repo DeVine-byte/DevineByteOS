@@ -7,17 +7,26 @@
     "isFinal" : false,
     "transitions" : [ {
       "triggerEvent" : "ReserveInventoryCompleted",
-      "targetState" : "OrderCreated",
+      "targetState" : "ChargePayment",
       "action" : "ReserveInventory"
     } ]
   }, {
-    "name" : "OrderCreated",
+    "name" : "ChargePayment",
+    "isInitial" : false,
+    "isFinal" : false,
+    "transitions" : [ {
+      "triggerEvent" : "ChargePaymentCompleted",
+      "targetState" : "ShipOrder",
+      "action" : "ChargePayment"
+    } ]
+  }, {
+    "name" : "ShipOrder",
     "isInitial" : false,
     "isFinal" : true,
     "transitions" : [ {
-      "triggerEvent" : "OrderCreatedCompleted",
+      "triggerEvent" : "ShipOrderCompleted",
       "targetState" : "END",
-      "action" : "OrderCreated"
+      "action" : "ShipOrder"
     } ]
   } ]
 } ]

@@ -1,4 +1,4 @@
-package io.devinebyte.compiler.blueprint.compiler;               
+package io.devinebyte.compiler.blueprint.compiler;
 
 import io.devinebyte.compiler.audit.model.AuditModel;
 import io.devinebyte.compiler.blueprint.mapper.AuditToBlueprintMapper;
@@ -10,6 +10,8 @@ import io.devinebyte.compiler.core.context.CompilationContext;
 import io.devinebyte.compiler.core.pipeline.CompilerPhase;
 import io.devinebyte.compiler.core.pipeline.CompilerResult;
 import io.devinebyte.compiler.dsl.ast.AstNode;
+import io.devinebyte.compiler.dsl.generator.ApiSchemaWriter; // CHANGED
+import io.devinebyte.compiler.dsl.generator.ApiSchemaWriter.ApiSchema;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.List;
@@ -21,18 +23,21 @@ public class BlueprintCompiler implements CompilerPhase {
     private final ModuleTreeShaker treeShaker;
     private final ContractViolationEngine violationEngine;
     private final AuditToBlueprintMapper mapper;
+    private final ApiSchemaWriter apiSchemaWriter; // FIXED: added ;
 
     @Inject
     public BlueprintCompiler(
         ModuleCompiler moduleCompiler,
         ModuleTreeShaker treeShaker,
         ContractViolationEngine violationEngine,
-        AuditToBlueprintMapper mapper
+        AuditToBlueprintMapper mapper,
+        ApiSchemaWriter apiSchemaWriter
     ) {
         this.moduleCompiler = moduleCompiler;
         this.treeShaker = treeShaker;
         this.violationEngine = violationEngine;
         this.mapper = mapper;
+        this.apiSchemaWriter = apiSchemaWriter;
     }
 
     @Override public String name() { return "blueprint"; }
@@ -41,7 +46,6 @@ public class BlueprintCompiler implements CompilerPhase {
     public CompilerResult<BlueprintIR> execute(CompilationContext context, CompilerResult input) throws Exception {
         context.diagnostics().addInfo("BLUEPRINT_START", "Compiling Blueprint for tenant " + context.tenant().tenantId());
 
-        // Cast from Object to real types
         AuditModel audit = context.get("audit");
         List<AstNode> ast = context.get("ast");
 
@@ -55,20 +59,23 @@ public class BlueprintCompiler implements CompilerPhase {
         CompilerResult shakenResult = treeShaker.execute(context, new CompilerResult<>(context.tenant(), context.diagnostics(), rawIR));
         BlueprintIR shakenIR = (BlueprintIR) shakenResult.output();
 
-        // DEBUG: Compare RAW vs SHAKEN components
-        System.out.println("RAW modules      : " + rawIR.modules().size());
-        System.out.println("RAW entities     : " + rawIR.entities().size());
-        System.out.println("RAW workflows    : " + rawIR.workflows().size());
-        System.out.println("RAW events       : " + rawIR.events().size());
+    // DELETE THESE 2 LINES
+    // List<ApiSchemaWriter.ApiSchema> apiSchemas = apiSchemaWriter.generate(context, ast);
+    // context.put("apiSchemas", apiSchemas);
+    // context.diagnostics().addInfo("API_GEN", "Generated " + apiSchemas.size() + " API contracts");
 
-        System.out.println("SHAKEN modules   : " + shakenIR.modules().size());
-        System.out.println("SHAKEN entities  : " + shakenIR.entities().size());
-        System.out.println("SHAKEN workflows : " + shakenIR.workflows().size());
-        System.out.println("SHAKEN events    : " + shakenIR.events().size());
+        System.out.println("RAW modules      : " + rawIR.modules().size());
+    // ... rest
 
         violationEngine.validate(context, shakenIR);
 
-        return new CompilerResult<>(context.tenant(), context.diagnostics(), shakenIR);
+    // Rebuild IR WITHOUT apiSchemas
+        BlueprintIR finalIR = new BlueprintIR(
+            shakenIR.tenantId(), shakenIR.version(), shakenIR.enabledModules(),
+            shakenIR.modules(), shakenIR.entities(), shakenIR.events(),
+            shakenIR.workflows(), shakenIR.kpiFormulas(), List.of() // EMPTY LIST
+        );
+
+        return new CompilerResult<>(context.tenant(), context.diagnostics(), finalIR);
     }
 }
-

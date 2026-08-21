@@ -27,17 +27,13 @@ public class ModuleTreeShaker implements CompilerPhase {
 
         BlueprintIR rawIR = (BlueprintIR) input.output();
 
-        // Canonicalize enabled module ids
         Set<String> enabled = context.tenant()
                 .enabledModules()
                 .stream()
                 .map(this::canonical)
                 .collect(Collectors.toSet());
 
-        context.diagnostics().addInfo(
-                "TREE_SHAKE",
-                "Enabled modules: " + enabled
-        );
+        context.diagnostics().addInfo("TREE_SHAKE", "Enabled modules: " + enabled);
 
         var keptModules = rawIR.modules().stream()
                 .filter(m -> enabled.contains(canonical(m.id())))
@@ -65,13 +61,8 @@ public class ModuleTreeShaker implements CompilerPhase {
                 .toList();
 
         if (keptModules.size() != rawIR.modules().size()) {
-
             int removed = rawIR.modules().size() - keptModules.size();
-
-            context.diagnostics().addInfo(
-                    "TREE_SHAKE",
-                    "Shaken out " + removed + " disabled modules"
-            );
+            context.diagnostics().addInfo("TREE_SHAKE", "Shaken out " + removed + " disabled modules");
         }
 
         BlueprintIR shakenIR = new BlueprintIR(
@@ -82,7 +73,8 @@ public class ModuleTreeShaker implements CompilerPhase {
                 keptEntities,
                 keptEvents,
                 keptWorkflows,
-                rawIR.kpiFormulas()
+                rawIR.kpiFormulas(),
+                rawIR.apiSchemas() // ADD 9TH ARG
         );
 
         context.put("blueprint", shakenIR);
@@ -94,14 +86,10 @@ public class ModuleTreeShaker implements CompilerPhase {
         );
     }
 
-    /**
-     * Converts every module identifier into the compiler's canonical form.
-     */
     private String canonical(String value) {
         if (value == null) {
             return "";
         }
-
         return value.trim().toUpperCase(Locale.ROOT);
     }
 }

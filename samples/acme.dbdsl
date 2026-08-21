@@ -1,22 +1,44 @@
 module sales enable {
     entity Order {
         id: String;
+        customerId: String;
+        total: Decimal;
         status: String;
+        expose api [GET, POST];
+    }
+
+    entity Customer {
+        id: String;
+        name: String;
+        email: String;
+        expose api [GET, PUT];
+    }
+
+    event OrderCreated {
+        payload: {
+            orderId: String,
+            customerId: String
+        }
     }
 
     workflow FulfillOrder {
         ReserveInventory;
-        OrderCreated;
+        ChargePayment;
+        ShipOrder;
     }
 
-    event OrderCreated();
+    kpi OrderConversionRate: OrdersPaid;
 }
 
 module inventory depends on sales enable {
     entity Stock {
         sku: String;
         qty: Int;
+        warehouse: String;
+        expose api [GET, PUT];
     }
+
+    event InventoryReserved();
 }
 
 module runtime enable {

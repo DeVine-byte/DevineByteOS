@@ -7,6 +7,14 @@
     "required" : true
   } ]
 }, {
+  "name" : "Customer",
+  "key" : "id",
+  "fields" : [ {
+    "name" : "id",
+    "type" : "UUID",
+    "required" : true
+  } ]
+}, {
   "name" : "Stock",
   "key" : "id",
   "fields" : [ {

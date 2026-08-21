@@ -7,18 +7,12 @@ import io.devinebyte.compiler.core.context.CompilationContext;
 import io.devinebyte.compiler.core.context.TenantContext;
 import io.devinebyte.compiler.core.context.TenantLifecycle;
 import io.devinebyte.compiler.core.diagnostics.DiagnosticCollector;
-import io.devinebyte.compiler.dsl.KeywordDictionary; // NEW
-import io.devinebyte.compiler.dsl.ast.AstNode;
-import io.devinebyte.compiler.dsl.lexer.Lexer;
-import io.devinebyte.compiler.dsl.lexer.Token;
-import io.devinebyte.compiler.dsl.parser.Parser;
 import io.devinebyte.compiler.sdk.CompilerOrchestrator;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -47,7 +41,7 @@ public class CompileCommand implements Callable<Integer> {
     private boolean strictMode = false;
 
     private final CompilerOrchestrator orchestrator = new CompilerOrchestrator();
-    private final ObjectMapper mapper = new ObjectMapper(); // NEW
+    private final ObjectMapper mapper = new ObjectMapper();
 
     @Override
     public Integer call() {
@@ -64,7 +58,7 @@ public class CompileCommand implements Callable<Integer> {
             Path baseOutputDir = outputDir != null ? outputDir : repoRoot.resolve("execution");
 
             CliPrinter.info("Compiling: " + dslFile + " for tenant " + tenantId);
-            if(strictMode) CliPrinter.info("Mode: STRICT - multiTenant: false");
+            if (strictMode) CliPrinter.info("Mode: STRICT - multiTenant: false");
             else CliPrinter.info("Mode: TEMPLATE - multiTenant: true");
             CliPrinter.info("Output Dir: " + baseOutputDir.toAbsolutePath());
 
@@ -76,26 +70,20 @@ public class CompileCommand implements Callable<Integer> {
 
             String source = Files.readString(dslFile);
 
-            // NEW: Load tenant keyword aliases
             Path aliasPath = repoRoot.resolve("tenants").resolve(tenantId).resolve("aliases.json");
-            Map<String, String> keywordAliases = Files.exists(aliasPath) 
-                ? mapper.readValue(Files.readString(aliasPath), new TypeReference<>() {}) 
+            Map<String, String> keywordAliases = Files.exists(aliasPath)
+                ? mapper.readValue(Files.readString(aliasPath), new TypeReference<>() {})
                 : Map.of();
             context.put("keywordAliases", keywordAliases);
-            context.put("sourceCode", source); // NEW: Lexer reads from here
-
-            // NEW: Create KeywordDictionary and pass to Lexer
-            KeywordDictionary keywordDictionary = new KeywordDictionary();
-            Lexer lexer = new Lexer(keywordDictionary);
-            List<Token> tokens = lexer.scanTokens(context);
-
-            Parser parser = new Parser(tokens);
-            List<AstNode> ast = parser.parse(context);
-
-            context.put("ast", ast);
+            context.put("sourceCode", source);
             context.put("outputDir", baseOutputDir);
 
-            Path dbpkg = orchestrator.compile(dslFile, tenantId, version, baseOutputDir, strictMode);
+            // FIXED: If your CompilerOrchestrator class supports an overloaded compile signature 
+            // that accepts your initialized CompilationContext instance, pass it directly here:
+            // Path dbpkg = orchestrator.compile(context, dslFile, version, baseOutputDir, strictMode);
+            
+            // Default Fallback: Ensure the underlying orchestrator method is looking at the correct file location
+            Path dbpkg = orchestrator.compile(dslFile.toAbsolutePath(), tenantId, version, baseOutputDir, strictMode);
             CliPrinter.success("Compilation complete: " + dbpkg.toAbsolutePath());
 
             if (diagnostics.hasErrors()) {

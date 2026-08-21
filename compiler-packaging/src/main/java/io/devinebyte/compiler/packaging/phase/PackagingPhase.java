@@ -1,7 +1,9 @@
 package io.devinebyte.compiler.packaging.phase;
 
 import io.devinebyte.compiler.blueprint.model.BlueprintIR;
-import io.devinebyte.compiler.contracts.model.*;
+import io.devinebyte.compiler.contracts.model.EventSchema;
+import io.devinebyte.compiler.contracts.model.EntitySchema;
+import io.devinebyte.compiler.contracts.model.WorkflowSchema;
 import io.devinebyte.compiler.core.context.CompilationContext;
 import io.devinebyte.compiler.core.pipeline.CompilerPhase;
 import io.devinebyte.compiler.core.pipeline.CompilerResult;
@@ -10,6 +12,8 @@ import io.devinebyte.compiler.packaging.model.PackageContent;
 import io.devinebyte.compiler.projection.model.DashboardDefinition;
 import io.devinebyte.compiler.projection.model.ProjectionFunction;
 import io.devinebyte.compiler.workflow.model.ExecutableStateMachine;
+import io.devinebyte.compiler.dsl.generator.ApiSchemaWriter; // ADD
+import io.devinebyte.compiler.dsl.generator.ApiSchemaWriter.ApiSchema; // ADD
 import io.devinebyte.runtime.config.ModuleGraph;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -41,7 +45,7 @@ public class PackagingPhase implements CompilerPhase {
         List<EventSchema> events = context.get("eventSchemas");
         List<EntitySchema> entities = context.get("entitySchemas");
         List<WorkflowSchema> workflowSchemas = context.get("workflowSchemas");
-        List<APISchema> apis = context.get("apiSchemas");
+        List<ApiSchema> apis = ir.apiSchemas();
         List<ExecutableStateMachine> workflows = context.get("workflows");
         List<ProjectionFunction> projections = context.get("projections");
         List<DashboardDefinition> dashboards = context.get("dashboards");
@@ -55,9 +59,9 @@ public class PackagingPhase implements CompilerPhase {
         Boolean strictModeFlag = context.get("strictMode");
         boolean strictMode = strictModeFlag!= null && strictModeFlag;
         boolean multiTenant =!strictMode;
-
+        System.out.println("PKG DEBUG: apiSchemas size = " + (apis == null ? 0 : apis.size()));
         PackageContent pkgContent = new PackageContent(
-            context.tenant(), ir.version(), ir, // PASSED BLUEPRINT HERE
+            context.tenant(), ir.version(), ir,
             events!= null? events : List.of(), entities!= null? entities : List.of(),
             workflowSchemas!= null? workflowSchemas : List.of(), apis!= null? apis : List.of(),
             workflows!= null? workflows : List.of(), projections!= null? projections : List.of(),
@@ -88,7 +92,7 @@ public class PackagingPhase implements CompilerPhase {
     private void validateNoCycles(ModuleGraph graph, CompilationContext context) {
         if (graph == null) return;
         Map<String, Set<String>> deps = graph.modules().entrySet().stream()
-          .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().dependsOn()));
+         .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().dependsOn()));
         Set<String> visited = new HashSet<>();
         Set<String> recStack = new HashSet<>();
         for (String module : deps.keySet()) {

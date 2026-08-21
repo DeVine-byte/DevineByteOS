@@ -31,23 +31,20 @@ public class DslPhase implements CompilerPhase {
 
     @Override
     public CompilerResult<List<AstNode>> execute(CompilationContext ctx, CompilerResult input) throws Exception {
-        Path dslPath = Path.of("samples/" + ctx.tenant().tenantId() + ".dbdsl");
-        String source = Files.readString(dslPath);
-
-        // NEW: Put source into context so Lexer can read it
-        ctx.put("sourceCode", source);
-        
-        // NEW: Load aliases if they exist. If not, Lexer will use base keywords
-        @SuppressWarnings("unchecked")
-        Map<String, String> aliases = ctx.get("keywordAliases");
-        if (aliases == null) {
-            ctx.put("keywordAliases", Map.of()); // ensure empty map so dict.reset() runs
+        String source = ctx.get("sourceCode"); // USE THIS FROM ORCHESTRATOR
+        if (source == null) {
+            Path dslPath = Path.of("samples/" + ctx.tenant().tenantId() + ".dbdsl");
+            source = Files.readString(dslPath);
         }
 
-        // CHANGED: Lexer now takes KeywordDictionary, not source
-        Lexer lexer = new Lexer(keywordDictionary);
-        List<Token> tokens = lexer.scanTokens(ctx); // aliases loaded inside
+        ctx.put("sourceCode", source);
 
+        Map<String, String> aliases = ctx.get("keywordAliases");
+        if (aliases == null) ctx.put("keywordAliases", Map.of());
+
+        Lexer lexer = new Lexer(keywordDictionary);
+        List<Token> tokens = lexer.scanTokens(ctx);
+        System.out.println("DEBUG TOKENS: " + tokens.stream().map(t -> t.type() + ":" + t.lexeme()).toList());
         Parser parser = new Parser(tokens);
         List<AstNode> ast = parser.parse(ctx);
 

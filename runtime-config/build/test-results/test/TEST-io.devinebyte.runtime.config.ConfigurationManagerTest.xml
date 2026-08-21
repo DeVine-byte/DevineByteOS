@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="io.devinebyte.runtime.config.ConfigurationManagerTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-08-05T10:50:46.903Z" hostname="localhost" time="1.693">
+<testsuite name="io.devinebyte.runtime.config.ConfigurationManagerTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-08-11T02:49:57" hostname="DESKTOP-EE228O3" time="0.354">
   <properties/>
-  <testcase name="loadsModuleGraph(Path)" classname="io.devinebyte.runtime.config.ConfigurationManagerTest" time="1.496"/>
+  <testcase name="loadsModuleGraph(Path)" classname="io.devinebyte.runtime.config.ConfigurationManagerTest" time="0.354"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

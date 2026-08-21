@@ -1,107 +1,94 @@
 package io.devinebyte.runtime.tenant;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.devinebyte.runtime.bootstrap.BootstrapResult;
-import io.devinebyte.runtime.bootstrap.DbpkgVerifier;
-import io.devinebyte.runtime.bootstrap.ManifestReader;
-import io.devinebyte.runtime.bootstrap.RuntimeBootstrapper;
-import io.devinebyte.runtime.config.ConfigurationManager;
-import io.devinebyte.runtime.core.context.TenantContext;
-import io.devinebyte.runtime.core.context.TenantLifecycle;
-import io.devinebyte.runtime.core.diagnostics.DiagnosticCollector; // NEW
-import io.devinebyte.runtime.module.ModuleLoader; // NEW
-import io.devinebyte.runtime.module.ModuleRegistry; // NEW
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.FileOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
 import java.time.Instant;
-import java.util.Set;
+import java.util.Comparator;
+import java.util.HexFormat;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class TenantIsolationE2ETest {
+    // FIX: disable WRITE_DATES_AS_TIMESTAMPS so Instant becomes ISO string
+    private static final ObjectMapper MAPPER = new ObjectMapper()
+            .registerModule(new JavaTimeModule())
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
     @Test
-    void singleDbpkgBootsTwoIsolatedTenants(@TempDir Path tmp) throws Exception {
-        Path dbpkg = tmp.resolve("app.dbpkg");
-        createFakeDbpkg(dbpkg);
+    void singleDbpkgBootsTwoIsolatedTenants(@TempDir Path tempDir) throws Exception {
+        Path dbpkg = tempDir.resolve("test.dbpkg");
+        createValidDbpkg(dbpkg);
+        Path baseData = Path.of("build/data/tenants");
+        if (Files.exists(baseData)) Files.walk(baseData).sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(java.io.File::delete);
 
-        DiagnosticCollector diagnostics = new DiagnosticCollector();
-        ModuleLoader moduleLoader = new ModuleLoader(diagnostics);
-        ModuleRegistry moduleRegistry = new ModuleRegistry();
+        RuntimeLauncher.launch(dbpkg, "tenant1", true);
+        RuntimeLauncher.launch(dbpkg, "tenant2", true);
+        Thread.sleep(100); // let FileEventStore flush
 
-        RuntimeBootstrapper bootstrapper = new RuntimeBootstrapper(
-            new DbpkgVerifier(true),
-            new ManifestReader(),
-            moduleLoader,
-            moduleRegistry
-        );
-        ConfigurationManager configManager = new ConfigurationManager(new ObjectMapper());
-        TenantRuntimeFactory factory = new TenantRuntimeFactory(
-            configManager,
-            moduleLoader,
-            moduleRegistry
-        );
-
-        // Boot tenant 1 from same dbpkg
-        TenantContext t1 = new TenantContext("acme-corp", TenantLifecycle.ACTIVE, Set.of());
-        BootstrapResult b1 = bootstrapper.boot(t1, dbpkg);
-        assertTrue(b1.success(), "Bootstrap t1 failed: " + b1.diagnostics().getAll());
-        TenantRuntime r1 = factory.create(t1, b1);
-
-        // Boot tenant 2 from SAME dbpkg
-        TenantContext t2 = new TenantContext("beta-inc", TenantLifecycle.ACTIVE, Set.of());
-        BootstrapResult b2 = bootstrapper.boot(t2, dbpkg);
-        assertTrue(b2.success(), "Bootstrap t2 failed: " + b2.diagnostics().getAll());
-        TenantRuntime r2 = factory.create(t2, b2);
-
-        // Assertions
-        assertNotSame(r1, r2, "Runtimes must be different instances");
-        assertEquals("acme-corp", r1.tenantContext().tenantId());
-        assertEquals("beta-inc", r2.tenantContext().tenantId());
-        assertEquals(dbpkg, r1.dbpkgPath());
-        assertEquals(dbpkg, r2.dbpkgPath());
+        assertTrue(Files.exists(baseData.resolve("tenant1/events.log")));
+        assertTrue(Files.exists(baseData.resolve("tenant2/events.log")));
+        assertNotEquals(Files.readString(baseData.resolve("tenant1/events.log")), Files.readString(baseData.resolve("tenant2/events.log")));
     }
 
-    private void createFakeDbpkg(Path dbpkg) throws Exception {
-        String manifest = """
-        {
-          "schemaVersion": "1.0",
-          "tenantId": "template",
-          "version": "0.1.0",
-          "builtAt": "%s",
-          "builtBy": "test",
-          "sha256": "fake",
-          "signature": "fake",
-          "multiTenant": true
-        }
-        """.formatted(Instant.now().toString());
-
+    private void createValidDbpkg(Path dbpkg) throws Exception {
+        record TestManifest(String schemaVersion, String tenantId, String version, Instant builtAt, String builtBy, String sha256, String signature, boolean multiTenant) {}
+        
         String moduleGraph = """
         {
           "modules": {
-            "SALES": { "enabled": true, "dependsOn": [] }
+            "runtime": {
+              "moduleId": "runtime",
+              "enabled": true,
+              "dependsOn": [],
+              "exposesEvents": ["SystemBooted"],
+              "subscribesToEvents": []
+            }
           }
         }
         """;
-
+        String apiSchema = "[]";
+        
+        TestManifest dummy = new TestManifest("1.0", "template", "0.1.0", Instant.now(), "test", "DUMMY", "fake", true);
+        writeZip(dbpkg, MAPPER.writeValueAsString(dummy), moduleGraph, apiSchema);
+        
+        byte[] bytes = Files.readAllBytes(dbpkg);
+        String sha = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
+        TestManifest real = new TestManifest("1.0", "template", "0.1.0", dummy.builtAt(), "test", sha, "fake", true);
+        writeZip(dbpkg, MAPPER.writeValueAsString(real), moduleGraph, apiSchema);
+    }
+    
+    private void writeZip(Path dbpkg, String manifest, String moduleGraph, String apiSchema) throws Exception {
         try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(dbpkg.toFile()))) {
-            zos.putNextEntry(new ZipEntry("manifest.json"));
-            zos.write(manifest.getBytes());
-            zos.closeEntry();
-
-            zos.putNextEntry(new ZipEntry("runtime/module_graph.json")); // NEW: required for boot
-            zos.write(moduleGraph.getBytes());
-            zos.closeEntry();
-
-            for (String dir : io.devinebyte.runtime.bootstrap.DbpkgStructure.required().requiredDirectories()) {
-                zos.putNextEntry(new ZipEntry(dir + "/"));
-                zos.closeEntry();
-            }
+            writeEntry(zos, "manifest.json", manifest);
+            writeEntry(zos, "runtime/module_graph.json", moduleGraph);
+            writeEntry(zos, "contracts/APISchema.json", apiSchema);
+            writeDir(zos, "contracts/"); 
+            writeDir(zos, "workflows/"); 
+            writeDir(zos, "projections/"); 
+            writeDir(zos, "runtime/"); 
+            writeDir(zos, "bootstrap/");
         }
+    }
+    
+    private void writeEntry(ZipOutputStream zos, String name, String content) throws Exception { 
+        zos.putNextEntry(new ZipEntry(name)); 
+        zos.write(content.getBytes(StandardCharsets.UTF_8)); 
+        zos.closeEntry(); 
+    }
+    
+    private void writeDir(ZipOutputStream zos, String name) throws Exception { 
+        zos.putNextEntry(new ZipEntry(name)); 
+        zos.closeEntry(); 
     }
 }

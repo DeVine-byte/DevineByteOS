@@ -20,12 +20,13 @@ public class WorkflowOptimizer {
         return new BlueprintIR(
             ir.tenantId(),
             ir.version(),
-            ir.enabledModules(), // ADD
+            ir.enabledModules(),
             ir.modules(),
             ir.entities(),
             ir.events(),
             sortedWorkflows,
-            ir.kpiFormulas() // ADD
+            ir.kpiFormulas(),
+            ir.apiSchemas() // ADD 9TH ARG
         );
     }
 }

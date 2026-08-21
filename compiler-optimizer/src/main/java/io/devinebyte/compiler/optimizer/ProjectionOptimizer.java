@@ -20,12 +20,13 @@ public class ProjectionOptimizer {
         return new BlueprintIR(
             ir.tenantId(),
             ir.version(),
-            ir.enabledModules(), // ADD
+            ir.enabledModules(),
             ir.modules(),
             sortedEntities,
             ir.events(),
             ir.workflows(),
-            ir.kpiFormulas() // ADD
+            ir.kpiFormulas(),
+            ir.apiSchemas() // ADD 9TH ARG
         );
     }
 }
