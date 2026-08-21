@@ -14,7 +14,7 @@ public record RuntimeApiServer(
     RuntimeRegistry runtimeRegistry,
     WorkflowEngine workflowEngine
 ) {
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = new ObjectMapper().findAndRegisterModules(); // FIXED
 
     public Object handle(TenantContext ctx, String principal, String method, String path, Object body, DiagnosticCollector diag) {
         if (!registry.isContractPath(method, path)) {

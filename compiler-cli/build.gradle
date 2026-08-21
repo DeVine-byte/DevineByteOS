@@ -18,7 +18,12 @@ application {
 
 // ADD THIS
 run {
-    args 'compile', '-d', 'acme.dbdsl', '-t', 'acme', '-v', '1.0.0', '-o', 'build/output'
+    // Uses the root project directory to safely locate the samples folder
+    args 'compile', 
+         '-d', "${rootProject.projectDir}/samples/acme.dbdsl", 
+         '-t', 'acme', 
+         '-v', '1.0.0', 
+         '-o', "${rootProject.projectDir}/execution"
 }
 
 repositories {

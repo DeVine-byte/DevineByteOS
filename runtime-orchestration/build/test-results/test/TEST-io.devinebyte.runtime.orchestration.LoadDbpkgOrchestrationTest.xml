@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="io.devinebyte.runtime.orchestration.LoadDbpkgOrchestrationTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-08-21T01:26:17" hostname="DESKTOP-EE228O3" time="0.018">
-  <properties/>
-  <testcase name="bootDbpkg_then_RejectNonContractRoute()" classname="io.devinebyte.runtime.orchestration.LoadDbpkgOrchestrationTest" time="0.018"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>
