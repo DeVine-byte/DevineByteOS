@@ -1,0 +1,6 @@
+{
+  "lifecycle" : "ACTIVE",
+  "tenantId" : "acme",
+  "version" : "1.0.0",
+  "requestedModules" : [ "inventory", "runtime", "sales" ]
+}

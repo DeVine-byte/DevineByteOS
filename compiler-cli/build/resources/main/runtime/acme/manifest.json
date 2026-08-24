@@ -1,0 +1,6 @@
+{
+  "tenantId": "acme",
+  "version": "1.0.0",
+  "modules": ["event", "projection", "runtime"],
+  "checksum": "skip-for-now"
+}
