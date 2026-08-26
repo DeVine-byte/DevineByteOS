@@ -1,18 +1,24 @@
 package io.devinebyte.runtime.bootstrap;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.devinebyte.compiler.dsl.generator.ApiSchemaWriter.ApiSchema; // NEW
+import io.devinebyte.compiler.dsl.generator.ApiSchemaWriter.ApiSchema;
 import io.devinebyte.runtime.config.ModuleGraph;
 import io.devinebyte.runtime.config.ModuleGraph.ModuleDefinition;
 import io.devinebyte.runtime.core.context.TenantContext;
 import io.devinebyte.runtime.core.diagnostics.DiagnosticCollector;
 import io.devinebyte.runtime.module.ModuleLoader;
 import io.devinebyte.runtime.module.ModuleRegistry;
+import io.devinebyte.runtime.plugin.PluginContext;
+import io.devinebyte.runtime.plugin.PluginLoader;
+import io.devinebyte.runtime.plugin.PluginManifest;
+import io.devinebyte.runtime.plugin.RuntimePlugin;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List; // NEW
+import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipFile;
 
@@ -39,7 +45,7 @@ public class RuntimeBootstrapper {
 
     public BootstrapResult boot(TenantContext tenant, Path dbpkgPath) {
         DiagnosticCollector diagnostics = new DiagnosticCollector();
-        List<ApiSchema> apiSchemas = List.of(); // NEW
+        List<ApiSchema> apiSchemas = List.of();
 
         if (!verifier.verifyStructure(tenant, dbpkgPath, diagnostics)) {
             return new BootstrapResult(false, tenant, null, dbpkgPath, diagnostics, apiSchemas);
@@ -47,6 +53,11 @@ public class RuntimeBootstrapper {
 
         try (ZipFile zip = new ZipFile(dbpkgPath.toFile())) {
             var manifestEntry = zip.getEntry("manifest.json");
+            if (manifestEntry == null) {
+                diagnostics.fatal("DBRT005", "Missing required file: manifest.json", tenant.tenantId());
+                return new BootstrapResult(false, tenant, null, dbpkgPath, diagnostics, apiSchemas);
+            }
+            
             var manifest = manifestReader.read(tenant, zip.getInputStream(manifestEntry), diagnostics);
             if (manifest == null || diagnostics.hasFatal()) {
                 return new BootstrapResult(false, tenant, null, dbpkgPath, diagnostics, apiSchemas);
@@ -61,7 +72,7 @@ public class RuntimeBootstrapper {
                 return new BootstrapResult(false, tenant, manifest, dbpkgPath, diagnostics, apiSchemas);
             }
 
-            // NEW: Load APISchema.json
+            // 1. Load APISchema.json
             var apiSchemaEntry = zip.getEntry("contracts/APISchema.json");
             if (apiSchemaEntry == null) {
                 diagnostics.fatal("DBRT005", "Missing required file: contracts/APISchema.json", tenant.tenantId());
@@ -70,8 +81,8 @@ public class RuntimeBootstrapper {
             try (InputStream is = zip.getInputStream(apiSchemaEntry)) {
                 apiSchemas = objectMapper.readValue(is, objectMapper.getTypeFactory().constructCollectionType(List.class, ApiSchema.class));
             }
-            //diagnostics.addInfo("BOOT_001", "Loaded " + apiSchemas.size() + " API contracts");
 
+            // 2. Load module_graph.json
             var moduleGraphEntry = zip.getEntry("runtime/module_graph.json");
             if (moduleGraphEntry == null) {
                 diagnostics.fatal("DBRT004", "Missing required file: runtime/module_graph.json", tenant.tenantId());
@@ -92,11 +103,43 @@ public class RuntimeBootstrapper {
             Map<String, ModuleDefinition> moduleMap = moduleGraph.modules();
             moduleRegistry.register(bootContext, moduleMap);
 
+            // 3. NEW: Load Plugins from /bootstrap/plugins/
+            // We need to extract dbpkg to temp dir first because PluginLoader needs real files, not ZipFile
+            Path tempExtractDir = Files.createTempDirectory("dbos-" + tenant.tenantId());
+            DbpkgExtractor.extract(zip, tempExtractDir, diagnostics); // you need this util
+            
+            Path pluginsPath = tempExtractDir.resolve("bootstrap/plugins");
+            if (Files.exists(pluginsPath)) {
+                PluginManifest pluginManifest = readPluginManifest(pluginsPath, diagnostics);
+                PluginContext pluginContext = new PluginContext(
+                    bootContext, null, null, null, null, null, null // wire real deps
+                );
+                PluginLoader loader = new PluginLoader(pluginsPath);
+                List<RuntimePlugin> plugins = loader.loadPlugins(pluginContext, diagnostics);
+                
+                for (RuntimePlugin plugin : plugins) {
+                    plugin.initialize(pluginContext, diagnostics);
+                }
+                for (RuntimePlugin plugin : plugins) {
+                    plugin.start(diagnostics);
+                }
+                diagnostics.addInfo("BOOT_002", "Loaded " + plugins.size() + " plugins");
+            }
+
             return new BootstrapResult(true, bootContext, manifest, dbpkgPath, diagnostics, apiSchemas);
 
         } catch (Exception e) {
             diagnostics.fatal("DBRT008", "Bootstrap failed: " + e.getMessage(), tenant.tenantId());
             return new BootstrapResult(false, tenant, null, dbpkgPath, diagnostics, apiSchemas);
+        }
+    }
+
+    private PluginManifest readPluginManifest(Path pluginsPath, DiagnosticCollector diagnostics) {
+        try {
+            return objectMapper.readValue(pluginsPath.resolve("manifest.json").toFile(), PluginManifest.class);
+        } catch (Exception e) {
+            diagnostics.fatal("DBRT150", "Failed to read plugin manifest: " + e.getMessage());
+            return new PluginManifest(List.of());
         }
     }
 }

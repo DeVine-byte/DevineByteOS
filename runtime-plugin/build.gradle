@@ -1,0 +1,12 @@
+plugins { id 'java-library' }
+
+dependencies {
+    implementation project(':runtime-core')
+    implementation project(':runtime-event')
+    implementation project(':runtime-observability')
+    implementation 'org.ow2.asm:asm:9.6'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
+}
+
+java { toolchain { languageVersion = JavaLanguageVersion.of(21) } }
+tasks.test { useJUnitPlatform() }

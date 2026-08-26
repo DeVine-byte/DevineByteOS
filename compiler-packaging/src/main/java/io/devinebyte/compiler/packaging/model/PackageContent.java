@@ -30,4 +30,5 @@ public record PackageContent(
     Map<String, Boolean> featureFlags,
     ModuleGraph moduleGraph,
     boolean multiTenant
+    Path pluginsDi
 ) {}

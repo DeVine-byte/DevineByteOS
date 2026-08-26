@@ -9,26 +9,25 @@ import io.devinebyte.compiler.blueprint.model.BlueprintIR;
 import io.devinebyte.compiler.blueprint.model.ModuleIR;
 import io.devinebyte.compiler.packaging.model.Manifest;
 import io.devinebyte.compiler.packaging.model.PackageContent;
-import io.devinebyte.compiler.packaging.builder.ChecksumUtil;
+import io.devinebyte.runtime.plugin.PluginManifest;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.jar.JarEntry;
+import java.util.jar.JarInputStream;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public class PackageBuilder {
     private final ObjectMapper mapper = new ObjectMapper()
-          .registerModule(new JavaTimeModule())
-          .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+         .registerModule(new JavaTimeModule())
+         .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
     public Path build(PackageContent content, Path outputDir) throws IOException {
         Files.createDirectories(outputDir);
@@ -36,12 +35,15 @@ public class PackageBuilder {
         Path tempPath = outputDir.resolve("temp-" + fileName);
         Path finalPath = outputDir.resolve(fileName);
 
-        Manifest placeholder = createManifest(content, "sha256-placeholder");
+        // Pass 1: write with placeholder checksum
+        Manifest placeholder = createManifest(content, "sha256-placeholder", List.of());
         writeZip(tempPath, content, placeholder);
 
         String checksum = ChecksumUtil.sha256(tempPath);
 
-        Manifest real = createManifest(content, checksum);
+        // Pass 2: collect plugin hashes from temp, then write final
+        List<PluginManifest.PluginEntry> pluginEntries = collectPluginEntries(content);
+        Manifest real = createManifest(content, checksum, pluginEntries);
         writeZip(finalPath, content, real);
 
         Files.delete(tempPath);
@@ -49,7 +51,10 @@ public class PackageBuilder {
         return finalPath;
     }
 
-    private Manifest createManifest(PackageContent content, String checksum) {
+    private Manifest createManifest(PackageContent content, String checksum, List<PluginManifest.PluginEntry> plugins) {
+        Map<String, Object> metadata = new LinkedHashMap<>(content.metadata());
+        metadata.put("plugins", plugins);
+
         return new Manifest(
             "1.0",
             content.tenant().tenantId(),
@@ -57,26 +62,31 @@ public class PackageBuilder {
             Instant.now(),
             "devinebyte-compiler-1.0.0",
             checksum,
-            "",
+            "", // signature added later
             content.moduleGraph(),
             Map.of("contracts", "4"),
             content.multiTenant(),
-            Map.of()
+            metadata
         );
     }
 
     private void writeZip(Path zipPath, PackageContent content, Manifest manifest) throws IOException {
         try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(zipPath))) {
+            // directories
             zos.putNextEntry(new ZipEntry("contracts/")); zos.closeEntry();
             zos.putNextEntry(new ZipEntry("workflows/")); zos.closeEntry();
             zos.putNextEntry(new ZipEntry("projections/")); zos.closeEntry();
             zos.putNextEntry(new ZipEntry("runtime/")); zos.closeEntry();
             zos.putNextEntry(new ZipEntry("bootstrap/")); zos.closeEntry();
+            zos.putNextEntry(new ZipEntry("bootstrap/plugins/")); zos.closeEntry();
 
+            // contracts
             writeJson(zos, "contracts/EventSchema.json", content.eventSchemas());
             writeJson(zos, "contracts/EntitySchema.json", content.entitySchemas());
             writeJson(zos, "contracts/WorkflowSchema.json", content.workflowSchemas());
             writeJson(zos, "contracts/APISchema.json", content.apiSchemas());
+
+            // workflows + projections
             writeJson(zos, "workflows/compiled_state_machines.json", content.workflows());
             writeJson(zos, "projections/dashboard_definitions.json", content.dashboards());
 
@@ -85,12 +95,85 @@ public class PackageBuilder {
                     content.projections().get(i).toString().getBytes());
             }
 
+            // runtime
             writeJson(zos, "runtime/tenant_config.json", content.tenantConfig());
             writeJson(zos, "runtime/feature_flags.json", content.featureFlags());
             writeModuleGraph(zos, content);
+
+            // bootstrap
             writeBytes(zos, "bootstrap/runtime_bootstrap.class", content.runtimeBootstrapClass());
+
+            // plugins
+            List<PluginManifest.PluginEntry> pluginEntries = writePlugins(zos, content);
+            writeJson(zos, "bootstrap/plugins/manifest.json", new PluginManifest(pluginEntries));
+
+            // manifest last
             writeManifest(zos, manifest);
         }
+    }
+
+    private List<PluginManifest.PluginEntry> writePlugins(ZipOutputStream zos, PackageContent content) throws IOException {
+        List<PluginManifest.PluginEntry> entries = new ArrayList<>();
+        Path pluginsSourceDir = content.pluginsDir();
+
+        if (pluginsSourceDir!= null && Files.exists(pluginsSourceDir)) {
+            try (var stream = Files.list(pluginsSourceDir)) {
+                for (Path jar : stream.filter(p -> p.toString().endsWith(".jar")).sorted().toList()) {
+                    String jarName = jar.getFileName().toString();
+                    byte[] jarBytes = Files.readAllBytes(jar);
+                    String sha256 = ChecksumUtil.sha256(jarBytes);
+
+                    writeBytes(zos, "bootstrap/plugins/" + jarName, jarBytes);
+
+                    String entrypoint = readEntrypointFromJar(jarBytes).orElse("com.devinebyte.plugin.PluginImpl");
+                    String id = jarName.split("-")[0];
+                    String version = extractVersion(jarName);
+                    String moduleId = id.toUpperCase(Locale.ROOT);
+
+                    entries.add(new PluginManifest.PluginEntry(
+                        id, version, jarName, entrypoint, "0.1", moduleId, sha256
+                    ));
+                }
+            }
+        }
+        return entries;
+    }
+
+    private List<PluginManifest.PluginEntry> collectPluginEntries(PackageContent content) throws IOException {
+        List<PluginManifest.PluginEntry> entries = new ArrayList<>();
+        Path pluginsSourceDir = content.pluginsDir();
+        if (pluginsSourceDir!= null && Files.exists(pluginsSourceDir)) {
+            try (var stream = Files.list(pluginsSourceDir)) {
+                for (Path jar : stream.filter(p -> p.toString().endsWith(".jar")).sorted().toList()) {
+                    byte[] jarBytes = Files.readAllBytes(jar);
+                    String sha256 = ChecksumUtil.sha256(jarBytes);
+                    String jarName = jar.getFileName().toString();
+                    String entrypoint = readEntrypointFromJar(jarBytes).orElse("com.devinebyte.plugin.PluginImpl");
+                    String id = jarName.split("-")[0];
+                    entries.add(new PluginManifest.PluginEntry(
+                        id, extractVersion(jarName), jarName, entrypoint, "0.1", id.toUpperCase(Locale.ROOT), sha256
+                    ));
+                }
+            }
+        }
+        return entries;
+    }
+
+    private Optional<String> readEntrypointFromJar(byte[] jarBytes) throws IOException {
+        try (JarInputStream jis = new JarInputStream(new ByteArrayInputStream(jarBytes))) {
+            JarEntry entry;
+            while ((entry = jis.getNextJarEntry())!= null) {
+                if (entry.getName().equals("META-INF/services/io.devinebyte.runtime.plugin.RuntimePlugin")) {
+                    String service = new String(jis.readAllBytes()).trim();
+                    return Optional.of(service.split("\n")[0].trim());
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    private String extractVersion(String jarName) {
+        return jarName.replaceAll(".*-(\\d+\\.\\d+\\.\\d+)\\.jar", "$1");
     }
 
     // KEY FIX: Case-insensitive dedupe + case-insensitive enabled check
@@ -99,8 +182,8 @@ public class PackageBuilder {
         ObjectNode modulesNode = mapper.createObjectNode();
 
         Set<String> enabledLower = content.tenant().enabledModules().stream()
-            .map(s -> s.toLowerCase(Locale.ROOT))
-            .collect(Collectors.toSet());
+           .map(s -> s.toLowerCase(Locale.ROOT))
+           .collect(Collectors.toSet());
 
         Map<String, ModuleIR> modulesByLower = new LinkedHashMap<>();
         for (ModuleIR m : content.blueprint().modules()) {
