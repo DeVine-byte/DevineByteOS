@@ -29,6 +29,6 @@ public record PackageContent(
     Map<String, String> tenantConfig,
     Map<String, Boolean> featureFlags,
     ModuleGraph moduleGraph,
-    boolean multiTenant
-    Path pluginsDi
+    boolean multiTenant,
+    Path pluginsDir
 ) {}

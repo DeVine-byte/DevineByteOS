@@ -5,6 +5,7 @@ plugins {
 dependencies {
     implementation project(':compiler-core')
     implementation project(':runtime-config')
+    implementation project(':runtime-plugin')
     implementation project(':compiler-dsl')
     implementation project(':compiler-contracts')
     implementation project(':compiler-workflow')

@@ -8,6 +8,7 @@ import io.devinebyte.runtime.core.context.TenantContext;
 import io.devinebyte.runtime.core.diagnostics.DiagnosticCollector;
 import io.devinebyte.runtime.module.ModuleLoader;
 import io.devinebyte.runtime.module.ModuleRegistry;
+import io.devinebyte.runtime.plugin.DbpkgExtractor; // NEW
 import io.devinebyte.runtime.plugin.PluginContext;
 import io.devinebyte.runtime.plugin.PluginLoader;
 import io.devinebyte.runtime.plugin.PluginManifest;
@@ -57,7 +58,7 @@ public class RuntimeBootstrapper {
                 diagnostics.fatal("DBRT005", "Missing required file: manifest.json", tenant.tenantId());
                 return new BootstrapResult(false, tenant, null, dbpkgPath, diagnostics, apiSchemas);
             }
-            
+
             var manifest = manifestReader.read(tenant, zip.getInputStream(manifestEntry), diagnostics);
             if (manifest == null || diagnostics.hasFatal()) {
                 return new BootstrapResult(false, tenant, null, dbpkgPath, diagnostics, apiSchemas);
@@ -103,20 +104,19 @@ public class RuntimeBootstrapper {
             Map<String, ModuleDefinition> moduleMap = moduleGraph.modules();
             moduleRegistry.register(bootContext, moduleMap);
 
-            // 3. NEW: Load Plugins from /bootstrap/plugins/
-            // We need to extract dbpkg to temp dir first because PluginLoader needs real files, not ZipFile
+            // 3. Load Plugins from /bootstrap/plugins/
             Path tempExtractDir = Files.createTempDirectory("dbos-" + tenant.tenantId());
-            DbpkgExtractor.extract(zip, tempExtractDir, diagnostics); // you need this util
-            
+            DbpkgExtractor.extract(zip, tempExtractDir, diagnostics);
+
             Path pluginsPath = tempExtractDir.resolve("bootstrap/plugins");
             if (Files.exists(pluginsPath)) {
                 PluginManifest pluginManifest = readPluginManifest(pluginsPath, diagnostics);
                 PluginContext pluginContext = new PluginContext(
-                    bootContext, null, null, null, null, null, null // wire real deps
+                    bootContext, null, null, null, null, null, null // TODO: wire real EventBus, etc
                 );
                 PluginLoader loader = new PluginLoader(pluginsPath);
                 List<RuntimePlugin> plugins = loader.loadPlugins(pluginContext, diagnostics);
-                
+
                 for (RuntimePlugin plugin : plugins) {
                     plugin.initialize(pluginContext, diagnostics);
                 }

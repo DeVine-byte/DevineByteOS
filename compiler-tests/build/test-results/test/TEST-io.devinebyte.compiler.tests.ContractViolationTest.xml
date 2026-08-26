@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="io.devinebyte.compiler.tests.ContractViolationTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-08-21T22:05:12" hostname="DESKTOP-EE228O3" time="0.03">
+<testsuite name="io.devinebyte.compiler.tests.ContractViolationTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-08-26T16:06:01.409Z" hostname="localhost" time="0.168">
   <properties/>
-  <testcase name="workflowWithUndefinedEventFailsValidation()" classname="io.devinebyte.compiler.tests.ContractViolationTest" time="0.03"/>
+  <testcase name="workflowWithUndefinedEventFailsValidation()" classname="io.devinebyte.compiler.tests.ContractViolationTest" time="0.106"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

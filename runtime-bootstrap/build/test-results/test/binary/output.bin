@@ -1,5 +1,0 @@
-'MANIFEST: tenant=acme multiTenant=true
-'[DBRT] Topological Load Order: [SALES]
-'MANIFEST: tenant=acme multiTenant=true
-'[DBRT] Topological Load Order: [SALES]
-6TEMPLATE: boot succeeded for wrong-tenant as expected
