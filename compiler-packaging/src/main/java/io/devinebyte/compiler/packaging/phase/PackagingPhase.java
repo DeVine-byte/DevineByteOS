@@ -12,8 +12,8 @@ import io.devinebyte.compiler.packaging.model.PackageContent;
 import io.devinebyte.compiler.projection.model.DashboardDefinition;
 import io.devinebyte.compiler.projection.model.ProjectionFunction;
 import io.devinebyte.compiler.workflow.model.ExecutableStateMachine;
-import io.devinebyte.compiler.dsl.generator.ApiSchemaWriter; // ADD
-import io.devinebyte.compiler.dsl.generator.ApiSchemaWriter.ApiSchema; // ADD
+import io.devinebyte.compiler.dsl.generator.ApiSchemaWriter; 
+import io.devinebyte.compiler.dsl.generator.ApiSchemaWriter.ApiSchema; 
 import io.devinebyte.runtime.config.ModuleGraph;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -53,21 +53,29 @@ public class PackagingPhase implements CompilerPhase {
         Map<String, String> config = context.get("tenantConfig");
         Map<String, Boolean> flags = context.get("featureFlags");
         ModuleGraph graph = context.get("moduleGraph");
+        
+        // Added resolution logic for pluginsDir argument assignment
+        Path contextPluginsDir = context.get("pluginsDir");
+        if (contextPluginsDir == null) {
+            contextPluginsDir = Path.of("plugins");
+        }
 
         validateNoCycles(graph, context);
 
         Boolean strictModeFlag = context.get("strictMode");
-        boolean strictMode = strictModeFlag!= null && strictModeFlag;
-        boolean multiTenant =!strictMode;
+        boolean strictMode = strictModeFlag != null && strictModeFlag;
+        boolean multiTenant = !strictMode;
         System.out.println("PKG DEBUG: apiSchemas size = " + (apis == null ? 0 : apis.size()));
+        
+        // Fixed: PackageContent instantiation now accurately passes all 16 elements
         PackageContent pkgContent = new PackageContent(
             context.tenant(), ir.version(), ir,
-            events!= null? events : List.of(), entities!= null? entities : List.of(),
-            workflowSchemas!= null? workflowSchemas : List.of(), apis!= null? apis : List.of(),
-            workflows!= null? workflows : List.of(), projections!= null? projections : List.of(),
-            dashboards!= null? dashboards : List.of(), bootstrap!= null? bootstrap : new byte[0],
-            config!= null? config : Map.of(), flags!= null? flags : Map.of(), graph,
-            multiTenant
+            events != null ? events : List.of(), entities != null ? entities : List.of(),
+            workflowSchemas != null ? workflowSchemas : List.of(), apis != null ? apis : List.of(),
+            workflows != null ? workflows : List.of(), projections != null ? projections : List.of(),
+            dashboards != null ? dashboards : List.of(), bootstrap != null ? bootstrap : new byte[0],
+            config != null ? config : Map.of(), flags != null ? flags : Map.of(), graph,
+            multiTenant, contextPluginsDir
         );
 
         try {
@@ -118,3 +126,4 @@ public class PackagingPhase implements CompilerPhase {
         return false;
     }
 }
+

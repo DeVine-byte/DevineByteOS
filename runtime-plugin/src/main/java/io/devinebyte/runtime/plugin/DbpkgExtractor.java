@@ -17,9 +17,10 @@ public final class DbpkgExtractor {
         while (entries.hasMoreElements()) {
             ZipEntry entry = entries.nextElement();
             Path target = dest.resolve(entry.getName()).normalize();
-            
+
             if (!target.startsWith(dest)) {
-                diagnostics.fatal("DBRT090", "Zip entry outside target dir: " + entry.getName());
+                // Fixed: Appended required "SYSTEM" tenantId parameter
+                diagnostics.fatal("DBRT090", "Zip entry outside target dir: " + entry.getName(), "SYSTEM");
                 throw new IOException("Zip slip attack");
             }
 
@@ -34,3 +35,4 @@ public final class DbpkgExtractor {
         }
     }
 }
+

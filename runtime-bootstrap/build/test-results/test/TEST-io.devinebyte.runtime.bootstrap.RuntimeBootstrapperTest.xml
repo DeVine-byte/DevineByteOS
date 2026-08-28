@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="io.devinebyte.runtime.bootstrap.RuntimeBootstrapperTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-08-28T16:01:28.427Z" hostname="localhost" time="1.203">
+  <properties/>
+  <testcase name="boot_succeedsForCorrectTenant()" classname="io.devinebyte.runtime.bootstrap.RuntimeBootstrapperTest" time="0.452"/>
+  <testcase name="boot_respectsMultiTenantFlag()" classname="io.devinebyte.runtime.bootstrap.RuntimeBootstrapperTest" time="0.143"/>
+  <system-out><![CDATA[MANIFEST: tenant=acme multiTenant=true
+[DBRT] Topological Load Order: [SALES]
+MANIFEST: tenant=acme multiTenant=true
+[DBRT] Topological Load Order: [SALES]
+TEMPLATE: boot succeeded for wrong-tenant as expected
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

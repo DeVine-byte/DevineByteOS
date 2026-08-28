@@ -123,7 +123,7 @@ public class RuntimeBootstrapper {
                 for (RuntimePlugin plugin : plugins) {
                     plugin.start(diagnostics);
                 }
-                diagnostics.addInfo("BOOT_002", "Loaded " + plugins.size() + " plugins");
+                diagnostics.error("BOOT_002", "Loaded " + plugins.size() + " plugins", "SYSTEM");
             }
 
             return new BootstrapResult(true, bootContext, manifest, dbpkgPath, diagnostics, apiSchemas);
@@ -138,7 +138,7 @@ public class RuntimeBootstrapper {
         try {
             return objectMapper.readValue(pluginsPath.resolve("manifest.json").toFile(), PluginManifest.class);
         } catch (Exception e) {
-            diagnostics.fatal("DBRT150", "Failed to read plugin manifest: " + e.getMessage());
+            diagnostics.fatal("DBRT150", "Failed to read plugin manifest: " + e.getMessage(), "SYSTEM");
             return new PluginManifest(List.of());
         }
     }
