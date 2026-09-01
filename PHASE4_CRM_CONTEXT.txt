@@ -1,0 +1,2613 @@
+
+================================================================
+DEVINEBYTE OS — PHASE 4 CRM CONTEXT
+================================================================
+
+Generated: Mon Aug 31 16:15:47 WAT 2026
+Repository: /home/devine/DevineByteOS
+
+This file contains the Phase 3 contracts requested before CRM implementation.
+The collection script is read-only.
+
+================================================================
+1. CONTRACT ROUTE REGISTRY
+================================================================
+
+
+----- FILE: runtime-orchestration/src/main/java/io/devinebyte/runtime/orchestration/runtime/api/ContractRouteRegistry.java -----
+
+package io.devinebyte.runtime.orchestration.runtime.api;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.InputStream;
+import java.nio.file.FileSystem;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+public class ContractRouteRegistry {
+    private final Map<String, Route> ROUTES = new ConcurrentHashMap<>(); // no longer static
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    public ContractRouteRegistry(FileSystem fs) { // ADD constructor
+        Path schemaPath = fs.getPath("/contracts/APISchema.json");
+        if (!Files.exists(schemaPath)) {
+            throw new IllegalStateException("APISchema.json not found in dbpkg at /contracts/");
+        }
+        try (InputStream is = Files.newInputStream(schemaPath)) {
+            JsonNode root = MAPPER.readTree(is);
+
+            for (JsonNode contract : root) {
+                String module = contract.get("module").asText();
+                JsonNode paths = contract.get("paths");
+                for (JsonNode n : paths) {
+                    String key = n.get("method").asText() + ":" + n.get("path").asText();
+                    ROUTES.put(key, new Route(
+                        n.get("handler").asText(),
+                        n.get("commandOrQuery").asText(),
+                        n.get("requiredPermission").asText(),
+                        module
+                    ));
+                }
+            }
+            System.out.println("[DBRT] Loaded " + ROUTES.size() + " routes from APISchema.json");
+        } catch (Exception e) { throw new RuntimeException("Failed to load APISchema.json", e); }
+    }
+
+    public boolean isContractPath(String method, String path) { // no longer static
+        return ROUTES.containsKey(method + ":" + path);
+    }
+
+    public String getCommand(String method, String path) {
+        Route r = ROUTES.get(method + ":" + path);
+        return r == null ? null : r.handler();
+    }
+
+    public String getCommandOrQuery(String method, String path) {
+        Route r = ROUTES.get(method + ":" + path);
+        return r == null ? null : r.commandOrQuery();
+    }
+
+    private record Route(String handler, String commandOrQuery, String requiredPermission, String module) {}
+}
+
+
+================================================================
+2. RUNTIME REGISTRY
+================================================================
+
+
+----- FILE: runtime-core/src/main/java/io/devinebyte/runtime/core/registry/RuntimeRegistry.java -----
+
+package io.devinebyte.runtime.core.registry;
+
+import io.devinebyte.runtime.core.context.TenantContext;
+import jakarta.inject.Singleton;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * Central registry. Everything loaded from .dbpkg is registered here.
+ */
+@Singleton
+public class RuntimeRegistry {
+    private final Map<String, Object> entities = new ConcurrentHashMap<>();
+    private final Map<String, Object> workflows = new ConcurrentHashMap<>();
+    private final Map<String, Object> projections = new ConcurrentHashMap<>();
+
+    public void registerEntity(TenantContext tenant, String name, Object entity) {
+        entities.put(tenant.tenantId() + ":" + name, entity);
+    }
+
+    public void registerWorkflow(TenantContext tenant, String name, Object workflow) {
+        workflows.put(tenant.tenantId() + ":" + name, workflow);
+    }
+
+    public void registerProjection(TenantContext tenant, String name, Object projection) {
+        projections.put(tenant.tenantId() + ":" + name, projection);
+    }
+}
+
+
+================================================================
+3. MODULE ISOLATION GUARD
+================================================================
+
+
+----- FILE: runtime-module/src/main/java/io/devinebyte/runtime/module/ModuleIsolationGuard.java -----
+
+package io.devinebyte.runtime.module;
+
+import io.devinebyte.runtime.core.context.TenantContext;
+import io.devinebyte.runtime.module.exception.ModuleDisabledAccessException;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+
+@Singleton
+public class ModuleIsolationGuard {
+    private final ModuleRegistry registry;
+
+    @Inject
+    public ModuleIsolationGuard(ModuleRegistry registry) {
+        this.registry = registry;
+    }
+
+    public void assertEnabled(TenantContext tenant, String moduleId, String operation) {
+        if (!registry.isEnabled(tenant, moduleId)) {
+            throw new ModuleDisabledAccessException(
+                "DBRT009", 
+                "Module " + moduleId + " is disabled. Cannot perform: " + operation,
+                tenant.tenantId()
+            );
+        }
+    }
+}
+
+
+================================================================
+4. RUNTIME SERVICES
+================================================================
+
+
+----- FILE: runtime-plugin/src/main/java/io/devinebyte/runtime/plugin/RuntimeServices.java -----
+
+package io.devinebyte.runtime.plugin;
+
+public interface RuntimeServices {
+    <T> T getService(Class<T> serviceType);
+}
+
+
+
+----- FILE: runtime-plugin/src/main/java/io/devinebyte/runtime/plugin/RuntimeServices.java -----
+
+package io.devinebyte.runtime.plugin;
+
+public interface RuntimeServices {
+    <T> T getService(Class<T> serviceType);
+}
+
+
+
+================================================================
+5. EVENT HANDLER REGISTRATION AND WIRING
+================================================================
+
+
+----- FILE: runtime-event/src/main/java/io/devinebyte/runtime/event/handler/HandlerRegistry.java -----
+
+package io.devinebyte.runtime.event.handler;
+
+import jakarta.inject.Singleton;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+@Singleton
+public final class HandlerRegistry {
+    private final Map<String, List<EventHandler>> handlers = new ConcurrentHashMap<>();
+
+    public void register(EventHandler handler) {
+        handlers.computeIfAbsent(handler.eventType(), k -> new java.util.ArrayList<>()).add(handler);
+    }
+
+    public List<EventHandler> getHandlers(String eventType) {
+        return handlers.getOrDefault(eventType, List.of());
+    }
+}
+
+
+----- FILE: runtime-projection/src/main/java/io/devinebyte/runtime/projection/handler/ProjectionEventHandler.java -----
+
+package io.devinebyte.runtime.projection.handler;
+
+import io.devinebyte.runtime.core.context.TenantContext;
+import io.devinebyte.runtime.event.handler.EventHandler;
+import io.devinebyte.runtime.event.model.DomainEvent;
+import io.devinebyte.runtime.projection.engine.ProjectionEngine;
+import io.devinebyte.runtime.projection.loader.ProjectionLoadResult;
+import io.devinebyte.compiler.projection.model.ProjectionFunction;
+
+import java.util.Map;
+import java.util.stream.Collectors;
+
+public final class ProjectionEventHandler implements EventHandler {
+    private final ProjectionEngine engine;
+    private final TenantContext tenant;
+    private final Map<String, ProjectionFunction> byEventType;
+    private final String primaryEventType; // v1: only handle 1 type per handler instance
+
+    public ProjectionEventHandler(ProjectionEngine engine, TenantContext tenant, ProjectionLoadResult loadResult) {
+        this.engine = engine;
+        this.tenant = tenant;
+        this.byEventType = loadResult.functions().stream()
+                .collect(Collectors.toMap(ProjectionFunction::eventType, f -> f));
+        this.primaryEventType = loadResult.functions().isEmpty() ? "" : loadResult.functions().get(0).eventType();
+    }
+
+    @Override
+    public String moduleId() {
+        return "projection";
+    }
+
+    @Override
+    public String eventType() {
+        return primaryEventType; // FIX: return the actual event type
+    }
+
+    @Override
+    public void handle(TenantContext ctx, DomainEvent event) {
+        ProjectionFunction fn = byEventType.get(event.type());
+        if (fn != null) {
+            engine.execute(ctx, fn, event);
+        }
+    }
+}
+
+
+----- FILE: runtime-event/src/main/java/io/devinebyte/runtime/event/handler/EventHandler.java -----
+
+package io.devinebyte.runtime.event.handler;
+
+import io.devinebyte.runtime.core.context.TenantContext;
+import io.devinebyte.runtime.event.model.DomainEvent;
+
+public interface EventHandler {
+    String moduleId();
+    String eventType();
+    void handle(TenantContext ctx, DomainEvent event);
+}
+
+
+----- FILE: runtime-workflow/src/main/java/io/devinebyte/runtime/workflow/engine/WorkflowEventDispatcher.java -----
+
+package io.devinebyte.runtime.workflow.engine;
+
+import io.devinebyte.runtime.core.context.TenantContext;
+import io.devinebyte.runtime.core.workflow.WorkflowInstanceReader;
+import io.devinebyte.runtime.core.workflow.WorkflowInstanceView;
+import io.devinebyte.runtime.event.handler.EventHandler;
+import io.devinebyte.runtime.event.model.DomainEvent;
+import io.devinebyte.runtime.workflow.model.WorkflowDefinition;
+import java.util.List;
+
+public record WorkflowEventDispatcher(WorkflowEngine engine, WorkflowInstanceReader reader)
+    implements EventHandler {
+
+    @Override
+    public String eventType() {
+        return "*"; // Subscribe to all. We filter with engine.isSubscribedTo()
+    }
+
+    @Override
+    public String moduleId() {
+        return "workflow"; // This identifies this handler to the ModuleIsolationGuard
+    }
+
+    @Override
+    public void handle(TenantContext ctx, DomainEvent event) {
+        if (!engine.isSubscribedTo(event.type())) return;
+
+        List<WorkflowInstanceView> active = reader.findActiveByTenant(ctx);
+        for (WorkflowInstanceView view : active) {
+            WorkflowDefinition def = engine.getDefinition(view.workflowName());
+            if (def != null && def.findTransition(view.currentState(), event.type()) != null) {
+                engine.handleEvent(ctx, view.instanceId(), event);
+            }
+        }
+    }
+}
+
+
+----- FILE: runtime-event/src/main/java/io/devinebyte/runtime/event/core/EventDispatcher.java -----
+
+package io.devinebyte.runtime.event.core;
+
+import io.devinebyte.runtime.core.context.TenantContext;
+import io.devinebyte.runtime.event.handler.HandlerRegistry;
+import io.devinebyte.runtime.event.model.DomainEvent;
+import io.devinebyte.runtime.module.ModuleIsolationGuard;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+
+@Singleton
+public final class EventDispatcher {
+    private final HandlerRegistry registry;
+    private final ModuleIsolationGuard guard;
+
+    @Inject
+    public EventDispatcher(HandlerRegistry registry, ModuleIsolationGuard guard) {
+        this.registry = registry;
+        this.guard = guard;
+    }
+
+    public void dispatch(TenantContext ctx, DomainEvent event) {
+        registry.getHandlers(event.type())
+            .stream()
+            .filter(h -> {
+                try {
+                    guard.assertEnabled(ctx, h.moduleId(), "handle:" + event.type());
+                    return true;
+                } catch (Exception e) {
+                    return false; // module disabled, skip handler
+                }
+            })
+            .forEach(h -> h.handle(ctx, event));
+    }
+}
+
+
+----- FILE: runtime-event/src/main/java/io/devinebyte/runtime/event/core/NoOpEventDispatcher.java -----
+
+package io.devinebyte.runtime.event.core;
+
+import io.devinebyte.runtime.core.context.TenantContext;
+import io.devinebyte.runtime.event.model.DomainEvent;
+
+public class NoOpEventDispatcher {
+    public void dispatch(TenantContext ctx, DomainEvent event) {
+        // North Star 6: append only. No dispatch yet.
+    }
+}
+
+
+----- FILE: runtime-event/src/main/java/io/devinebyte/runtime/event/core/CompositeEventDispatcher.java -----
+
+package io.devinebyte.runtime.event.core;
+
+import io.devinebyte.runtime.core.context.TenantContext;
+import io.devinebyte.runtime.event.model.DomainEvent;
+import java.util.List;
+
+public final class CompositeEventDispatcher {
+    private final List<EventDispatcher> delegates;
+
+    public CompositeEventDispatcher(List<EventDispatcher> delegates) {
+        this.delegates = delegates;
+    }
+
+    public void dispatch(TenantContext ctx, DomainEvent event) {
+        delegates.forEach(d -> d.dispatch(ctx, event));
+    }
+}
+
+
+----- FILE: compiler-core/src/main/java/io/devinebyte/compiler/core/bus/CompilerEventBus.java -----
+
+package io.devinebyte.compiler.core.bus;
+
+import jakarta.inject.Singleton;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
+
+@Singleton
+public class CompilerEventBus {
+    private final ConcurrentHashMap<String, Consumer<Object>> listeners = new ConcurrentHashMap<>();
+
+    public void subscribe(String eventType, Consumer<Object> handler) {
+        listeners.put(eventType, handler);
+    }
+    
+    public void publish(String eventType, Object payload) {
+        var handler = listeners.get(eventType);
+        if (handler != null) {
+            handler.accept(payload);
+        }
+    }
+}
+
+
+----- FILE: runtime-event/src/main/java/io/devinebyte/runtime/event/core/SimpleEventBus.java -----
+
+package io.devinebyte.runtime.event.core;
+
+import io.devinebyte.runtime.core.context.TenantContext;
+import io.devinebyte.runtime.event.model.DomainEvent;
+import io.devinebyte.runtime.module.ModuleIsolationGuard;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+
+@Singleton
+public final class SimpleEventBus {
+    private final EventStore eventStore;
+    private final CompositeEventDispatcher dispatcher; // CHANGED
+    private final ModuleIsolationGuard guard;
+
+    @Inject
+    public SimpleEventBus(EventStore eventStore, CompositeEventDispatcher dispatcher, ModuleIsolationGuard guard) {
+        this.eventStore = eventStore;
+        this.dispatcher = dispatcher;
+        this.guard = guard;
+    }
+
+    public void publish(TenantContext ctx, DomainEvent event) {
+        guard.assertEnabled(ctx, event.metadata().sourceModule(), "publish:" + event.type());
+        eventStore.append(ctx, event);
+        dispatcher.dispatch(ctx, event); // now calls composite
+    }
+}
+
+
+----- FILE: runtime-event/src/main/java/io/devinebyte/runtime/event/core/EventBus.java -----
+
+package io.devinebyte.runtime.event.core;
+
+import io.devinebyte.runtime.core.context.TenantContext;
+import io.devinebyte.runtime.event.model.DomainEvent;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+
+@Singleton
+public final class EventBus {
+    private final EventStore eventStore;
+    private final EventDispatcher dispatcher;
+    private final io.devinebyte.runtime.module.ModuleIsolationGuard guard;
+
+    @Inject
+    public EventBus(EventStore eventStore, EventDispatcher dispatcher, io.devinebyte.runtime.module.ModuleIsolationGuard guard) {
+        this.eventStore = eventStore;
+        this.dispatcher = dispatcher;
+        this.guard = guard;
+    }
+
+    public void publish(TenantContext ctx, DomainEvent event) {
+        guard.assertEnabled(ctx, event.metadata().sourceModule(), "publish:" + event.type());
+        eventStore.append(ctx, event);
+        dispatcher.dispatch(ctx, event);
+    }
+}
+
+
+================================================================
+6. MODULE IR
+================================================================
+
+
+----- FILE: compiler-blueprint/src/main/java/io/devinebyte/compiler/blueprint/model/ModuleIR.java -----
+
+package io.devinebyte.compiler.blueprint.model;
+
+import java.util.List;
+import java.util.Set;
+
+public record ModuleIR(
+    String id,
+    String name,
+    boolean enabled,
+    Set<String> dependencies,
+    List<EntityIR> entities,
+    List<EventIR> events,
+    List<WorkflowIR> workflows
+) {}
+
+
+================================================================
+7. ENTITY SCHEMA MODELS
+================================================================
+
+
+----- FILE: compiler-contracts/src/main/java/io/devinebyte/compiler/contracts/model/EntitySchema.java -----
+
+package io.devinebyte.compiler.contracts.model;
+
+import java.util.List;
+
+public record EntitySchema(
+    String name,
+    String key,
+    List<Field> fields
+) {}
+
+
+----- FILE: compiler-contracts/src/main/java/io/devinebyte/compiler/contracts/generator/EntitySchemaGenerator.java -----
+
+package io.devinebyte.compiler.contracts.generator;
+
+import io.devinebyte.compiler.blueprint.model.BlueprintIR;
+import io.devinebyte.compiler.contracts.model.EntitySchema;
+import io.devinebyte.compiler.contracts.model.Field;
+import io.devinebyte.compiler.contracts.model.FieldType;
+import io.devinebyte.compiler.core.context.TenantContext;
+import jakarta.inject.Singleton;
+import java.util.List;
+
+@Singleton
+public class EntitySchemaGenerator {
+    
+    public List<EntitySchema> generate(TenantContext tenant, BlueprintIR ir) {
+        return ir.entities().stream()
+            .map(e -> new EntitySchema(
+                e.name(),
+                "id",
+                List.of(new Field("id", FieldType.UUID, true))
+            ))
+            .toList();
+    }
+}
+
+
+----- FILE: compiler-contracts/src/main/java/io/devinebyte/compiler/contracts/model/EntitySchema.java -----
+
+package io.devinebyte.compiler.contracts.model;
+
+import java.util.List;
+
+public record EntitySchema(
+    String name,
+    String key,
+    List<Field> fields
+) {}
+
+
+----- FILE: compiler-contracts/src/main/java/io/devinebyte/compiler/contracts/generator/EntitySchemaGenerator.java -----
+
+package io.devinebyte.compiler.contracts.generator;
+
+import io.devinebyte.compiler.blueprint.model.BlueprintIR;
+import io.devinebyte.compiler.contracts.model.EntitySchema;
+import io.devinebyte.compiler.contracts.model.Field;
+import io.devinebyte.compiler.contracts.model.FieldType;
+import io.devinebyte.compiler.core.context.TenantContext;
+import jakarta.inject.Singleton;
+import java.util.List;
+
+@Singleton
+public class EntitySchemaGenerator {
+    
+    public List<EntitySchema> generate(TenantContext tenant, BlueprintIR ir) {
+        return ir.entities().stream()
+            .map(e -> new EntitySchema(
+                e.name(),
+                "id",
+                List.of(new Field("id", FieldType.UUID, true))
+            ))
+            .toList();
+    }
+}
+
+
+----- FILE: runtime-sdk/src/main/java/io/devinebyte/runtime/sdk/annotations/Entity.java -----
+
+package io.devinebyte.runtime.sdk.annotations;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import static java.lang.annotation.ElementType.TYPE;
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(TYPE)
+public @interface Entity {
+    String value() default "";
+}
+
+
+----- FILE: runtime-sdk/src/main/java/io/devinebyte/runtime/sdk/client/EntityClient.java -----
+
+package io.devinebyte.runtime.sdk.client;
+
+import io.devinebyte.runtime.core.context.TenantContext;
+import io.devinebyte.runtime.event.core.EventBus;
+import java.util.function.Supplier;
+
+public record EntityClient(
+    Supplier<TenantContext> tenantSupplier,
+    EventBus eventBus
+) {
+    // TODO: add load(), save() using EventStore.append()
+}
+
+
+----- FILE: compiler-blueprint/src/main/java/io/devinebyte/compiler/blueprint/model/EntityIR.java -----
+
+package io.devinebyte.compiler.blueprint.model;
+
+import java.util.Map;
+
+public record EntityIR(
+    String name,
+    String moduleId,
+    Map<String, String> fields,
+    String aggregateRoot
+) {}
+
+
+----- FILE: compiler-dsl/src/main/java/io/devinebyte/compiler/dsl/ast/EntityNode.java -----
+
+package io.devinebyte.compiler.dsl.ast;
+
+import java.util.List;
+import java.util.Map;
+
+public record EntityNode(
+    String name,
+    Map<String, String> fields,
+    List<String> exposedMethods // NEW
+) implements AstNode {}
+
+
+================================================================
+8. EVENT SCHEMA MODELS
+================================================================
+
+
+----- FILE: compiler-contracts/src/main/java/io/devinebyte/compiler/contracts/model/EventSchema.java -----
+
+package io.devinebyte.compiler.contracts.model;
+
+import java.util.Map;
+
+public record EventSchema(
+    String name,
+    String version,
+    Map<String, FieldType> fields
+) {}
+
+
+----- FILE: compiler-contracts/src/main/java/io/devinebyte/compiler/contracts/generator/EventSchemaGenerator.java -----
+
+package io.devinebyte.compiler.contracts.generator;
+
+import io.devinebyte.compiler.blueprint.model.BlueprintIR;
+import io.devinebyte.compiler.blueprint.model.EventIR;
+import io.devinebyte.compiler.contracts.model.EventSchema;
+import io.devinebyte.compiler.contracts.model.FieldType;
+import io.devinebyte.compiler.core.context.TenantContext;
+import jakarta.inject.Singleton;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@Singleton
+public class EventSchemaGenerator {
+    
+    public List<EventSchema> generate(TenantContext tenant, BlueprintIR ir) {
+        return ir.events().stream()
+            .map(e -> new EventSchema(
+                e.name(),
+                e.version(), // use event version, not IR version
+                buildFields(e)
+            ))
+            .toList();
+    }
+
+    private Map<String, FieldType> buildFields(EventIR e) {
+        Map<String, FieldType> fields = new HashMap<>();
+        
+        // Standard envelope per Rule 1: Event Sourced
+        fields.put("tenantId", FieldType.STRING);
+        fields.put("eventId", FieldType.UUID);
+        fields.put("timestamp", FieldType.DATETIME);
+        fields.put("version", FieldType.STRING);
+        
+        // Payload from DSL -> Blueprint
+        if (e.payload() != null) {
+            e.payload().forEach((key, typeStr) -> fields.put(key, toFieldType(typeStr)));
+        }
+        
+        return fields;
+    }
+    
+    private FieldType toFieldType(String typeStr) {
+        return switch (typeStr.toLowerCase()) {
+            case "string" -> FieldType.STRING;
+            case "uuid" -> FieldType.UUID;
+            case "long", "int" -> FieldType.LONG;
+            case "decimal", "double", "float" -> FieldType.DECIMAL;
+            case "boolean", "bool" -> FieldType.BOOLEAN;
+            case "datetime", "date", "time" -> FieldType.DATETIME;
+            case "json", "map" -> FieldType.JSON;
+            default -> FieldType.STRING; // safe default
+        };
+    }
+}
+
+
+----- FILE: runtime-event/src/main/java/io/devinebyte/runtime/event/model/DomainEvent.java -----
+
+package io.devinebyte.runtime.event.model;
+
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.devinebyte.runtime.core.context.TenantContext;
+import java.time.Instant;
+import java.util.Map;
+import java.util.UUID;
+
+public record DomainEvent(
+    String type,
+    String version,
+    ObjectNode payload,
+    EventMetadata metadata
+) {
+    // NEW: 5-arg version with explicit sourceModule
+    public static DomainEvent create(TenantContext ctx, String sourceModule, String type, String version, ObjectNode payload) {
+        EventMetadata meta = new EventMetadata(
+            UUID.randomUUID(),
+            null,
+            sourceModule,
+            Instant.now(),
+            Map.of("tenantId", ctx.tenantId())
+        );
+        return new DomainEvent(type, version, payload, meta);
+    }
+
+    // BACKWARDS COMPAT: 4-arg version defaults to "runtime"
+    public static DomainEvent create(TenantContext ctx, String type, String version, ObjectNode payload) {
+        return create(ctx, "runtime", type, version, payload);
+    }
+
+    public Instant occurredAt() { return metadata.storedAt(); }
+}
+
+
+
+----- FILE: runtime-event/src/main/java/io/devinebyte/runtime/event/model/EventMetadata.java -----
+
+package io.devinebyte.runtime.event.model;
+
+import java.time.Instant;
+import java.util.Map;
+import java.util.UUID;
+
+public record EventMetadata(
+    UUID correlationId,
+    UUID causationId,
+    String sourceModule,
+    Instant storedAt,
+    Map<String, String> tags // tenantId, version, moduleId
+) {}
+
+
+================================================================
+9. API SCHEMA MODELS
+================================================================
+
+
+----- FILE: compiler-dsl/src/main/java/io/devinebyte/compiler/dsl/generator/ApiSchemaWriter.java -----
+
+package io.devinebyte.compiler.dsl.generator;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.devinebyte.compiler.core.context.CompilationContext;
+import io.devinebyte.compiler.dsl.ast.AstNode;
+import io.devinebyte.compiler.dsl.ast.EntityNode;
+import io.devinebyte.compiler.dsl.ast.ModuleNode;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+
+public class ApiSchemaWriter {
+    private final ObjectMapper mapper = new ObjectMapper();
+
+    public static record ApiSchema(String module, List<Route> paths) {}
+    public static record Route(String method, String path, String handler, String requiredPermission, String commandOrQuery) {} // ADDED
+
+    public List<ApiSchema> generate(CompilationContext ctx, List<AstNode> ast) {
+        List<ApiSchema> schemas = new ArrayList<>();
+
+        for (AstNode node : ast) {
+            if (node instanceof ModuleNode m) {
+                String moduleName = m.name().toLowerCase();
+                List<Route> routes = new ArrayList<>();
+
+                for (AstNode child : m.children()) {
+                    if (child instanceof EntityNode e) {
+                        if (!e.exposedMethods().isEmpty()) {
+                            for (String method : e.exposedMethods()) {
+                                String methodUpper = method.toUpperCase();
+                                String cq = methodUpper.equals("GET") ? "Query" : "Command"; // NEW
+                                routes.add(new Route(
+                                    methodUpper,
+                                    "/" + moduleName + "/" + e.name().toLowerCase(),
+                                    "Handle" + e.name() + methodUpper,
+                                    moduleName.toUpperCase() + "_" + e.name().toUpperCase() + "_" + methodUpper,
+                                    cq // NEW
+                                ));
+                            }
+                        }
+                    }
+                }
+                if (!routes.isEmpty()) {
+                    schemas.add(new ApiSchema(moduleName, routes));
+                }
+            }
+        }
+
+        ctx.diagnostics().addInfo("API_001", "Generated " + schemas.size() + " API contracts");
+        return schemas;
+    }
+
+    public void writeToFile(CompilationContext ctx, List<AstNode> ast, Path outputDir) {
+        List<ApiSchema> schemas = generate(ctx, ast);
+        ArrayNode root = mapper.createArrayNode();
+        for (ApiSchema s : schemas) {
+            ObjectNode contract = mapper.createObjectNode();
+            contract.put("module", s.module());
+            ArrayNode paths = mapper.createArrayNode();
+            for (Route r : s.paths()) {
+                ObjectNode route = mapper.createObjectNode();
+                route.put("method", r.method());
+                route.put("path", r.path());
+                route.put("handler", r.handler());
+                route.put("requiredPermission", r.requiredPermission());
+                route.put("commandOrQuery", r.commandOrQuery()); // NEW
+                paths.add(route);
+            }
+            contract.set("paths", paths);
+            root.add(contract);
+        }
+
+        try {
+            Path out = outputDir.resolve("contracts/APISchema.json");
+            Files.createDirectories(out.getParent());
+            mapper.writerWithDefaultPrettyPrinter().writeValue(out.toFile(), root);
+            ctx.diagnostics().addInfo("API_002", "Wrote APISchema.json with " + schemas.size() + " contracts");
+        } catch (Exception ex) {
+            ctx.diagnostics().addError("API_003", "Failed to write APISchema.json: " + ex.getMessage());
+            throw new RuntimeException(ex);
+        }
+    }
+}
+
+
+----- FILE: runtime-orchestration/src/main/java/io/devinebyte/runtime/orchestration/runtime/api/ContractRouteRegistry.java -----
+
+package io.devinebyte.runtime.orchestration.runtime.api;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.InputStream;
+import java.nio.file.FileSystem;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+public class ContractRouteRegistry {
+    private final Map<String, Route> ROUTES = new ConcurrentHashMap<>(); // no longer static
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    public ContractRouteRegistry(FileSystem fs) { // ADD constructor
+        Path schemaPath = fs.getPath("/contracts/APISchema.json");
+        if (!Files.exists(schemaPath)) {
+            throw new IllegalStateException("APISchema.json not found in dbpkg at /contracts/");
+        }
+        try (InputStream is = Files.newInputStream(schemaPath)) {
+            JsonNode root = MAPPER.readTree(is);
+
+            for (JsonNode contract : root) {
+                String module = contract.get("module").asText();
+                JsonNode paths = contract.get("paths");
+                for (JsonNode n : paths) {
+                    String key = n.get("method").asText() + ":" + n.get("path").asText();
+                    ROUTES.put(key, new Route(
+                        n.get("handler").asText(),
+                        n.get("commandOrQuery").asText(),
+                        n.get("requiredPermission").asText(),
+                        module
+                    ));
+                }
+            }
+            System.out.println("[DBRT] Loaded " + ROUTES.size() + " routes from APISchema.json");
+        } catch (Exception e) { throw new RuntimeException("Failed to load APISchema.json", e); }
+    }
+
+    public boolean isContractPath(String method, String path) { // no longer static
+        return ROUTES.containsKey(method + ":" + path);
+    }
+
+    public String getCommand(String method, String path) {
+        Route r = ROUTES.get(method + ":" + path);
+        return r == null ? null : r.handler();
+    }
+
+    public String getCommandOrQuery(String method, String path) {
+        Route r = ROUTES.get(method + ":" + path);
+        return r == null ? null : r.commandOrQuery();
+    }
+
+    private record Route(String handler, String commandOrQuery, String requiredPermission, String module) {}
+}
+
+
+================================================================
+10. WORKFLOW SCHEMA MODELS
+================================================================
+
+
+----- FILE: compiler-contracts/src/main/java/io/devinebyte/compiler/contracts/model/WorkflowSchema.java -----
+
+package io.devinebyte.compiler.contracts.model;
+
+import java.util.List;
+
+public record WorkflowSchema(
+    String name,
+    List<Step> steps
+) {}
+
+
+----- FILE: compiler-contracts/src/main/java/io/devinebyte/compiler/contracts/generator/WorkflowSchemaGenerator.java -----
+
+package io.devinebyte.compiler.contracts.generator;
+
+import io.devinebyte.compiler.blueprint.model.BlueprintIR;
+import io.devinebyte.compiler.contracts.model.WorkflowSchema;
+import io.devinebyte.compiler.contracts.model.Step;
+import io.devinebyte.compiler.core.context.TenantContext;
+import jakarta.inject.Singleton;
+import java.util.List;
+
+@Singleton
+public class WorkflowSchemaGenerator {
+    
+    public List<WorkflowSchema> generate(TenantContext tenant, BlueprintIR ir) {
+        return ir.workflows().stream()
+            .map(w -> new WorkflowSchema(w.name(), List.of()))
+            .toList();
+    }
+}
+
+
+----- FILE: runtime-workflow/src/main/java/io/devinebyte/runtime/workflow/model/WorkflowDefinition.java -----
+
+package io.devinebyte.runtime.workflow.model;
+
+import io.devinebyte.compiler.workflow.model.ExecutableStateMachine;
+import io.devinebyte.compiler.workflow.model.State;
+import io.devinebyte.compiler.workflow.model.Transition;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+public record WorkflowDefinition(
+    String name,
+    String version,
+    Map<String, State> statesByName,
+    String initialState
+) {
+    public static WorkflowDefinition from(ExecutableStateMachine machine) {
+        Map<String, State> states = machine.states().stream()
+            .collect(Collectors.toMap(State::name, Function.identity()));
+        String initial = machine.states().stream()
+            .filter(State::isInitial)
+            .map(State::name)
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("No initial state for " + machine.workflowName()));
+        return new WorkflowDefinition(machine.workflowName(), machine.version(), states, initial);
+    }
+
+    public Transition findTransition(String currentState, String eventType) {
+        State state = statesByName.get(currentState);
+        if (state == null) return null;
+        return state.transitions().stream()
+            .filter(t -> t.triggerEvent().equals(eventType))
+            .findFirst()
+            .orElse(null);
+    }
+}
+
+
+----- FILE: compiler-workflow/src/main/java/io/devinebyte/compiler/workflow/model/ExecutableStateMachine.java -----
+
+package io.devinebyte.compiler.workflow.model;
+
+import java.util.List;
+
+public record ExecutableStateMachine(
+    String workflowName,
+    String version,
+    List<State> states
+) {}
+
+
+================================================================
+11. DBDSL EXAMPLES
+================================================================
+
+
+----- FILE: compiler-cli/acme.dbdsl -----
+
+module Sales enabled {
+  entity Order {
+    id: String;
+    customerId: String;
+    total: Number;
+    status: String;
+  }
+  
+  event OrderCreated {
+    payload: { orderId: String, total: Number }
+  }
+  
+  workflow FulfillOrder {
+    step Validate -> step ReserveInventory -> step Ship
+  }
+  
+  kpi OrderVolume: count(Order) per day
+}
+
+module Inventory enabled {
+  entity Stock {
+    sku: String;
+    qty: Number;
+  }
+}
+
+
+----- FILE: samples/hospital-acme.dbdsl -----
+
+department Emergency enabled {
+  patient Patient {
+    id: String;
+    name: String;
+    dob: Date;
+    bloodType: String;
+    status: String;
+  }
+
+  patient Doctor {
+    id: String;
+    name: String;
+    specialty: String;
+  }
+
+  signal PatientAdmitted {
+    payload: { patientId: String, triageLevel: Number, timestamp: DateTime }
+  }
+
+  signal PatientDischarged {
+    payload: { patientId: String, dischargeNotes: String, timestamp: DateTime }
+  }
+
+  protocol TriageAndAdmit {
+    step Register -> step Triage -> step AssignBed -> step NotifyDoctor
+  }
+
+  protocol DischargeProtocol {
+    step FinalCheck -> step Billing -> step Release
+  }
+
+  metric AdmissionRate: count(PatientAdmitted) per hour
+  metric AvgWaitTime: avg(Triage.duration) per day
+}
+
+department Pharmacy enabled {
+  patient Medication {
+    id: String;
+    name: String;
+    dosage: String;
+    stock: Number;
+  }
+
+  signal MedicationDispensed {
+    payload: { patientId: String, medicationId: String, qty: Number }
+  }
+
+  protocol FulfillPrescription {
+    step Verify -> step PickMedication -> step Dispense
+  }
+
+  metric StockOutRisk: count(Medication where stock < 10)
+}
+
+
+----- FILE: samples/acme.dbdsl -----
+
+module crm enable {
+    entity Customer {
+        id: String;
+        name: String;
+        email: String;
+        phone: String;
+        createdAt: DateTime;
+        expose api [GET, POST, PUT];
+    }
+
+    event CustomerCreated {
+        payload: {
+            customerId: String,
+            name: String,
+            email: String
+        }
+    }
+}
+
+module sales depends on crm enable {
+    entity Order {
+        id: String;
+        customerId: String;
+        total: Decimal;
+        status: String;
+        expose api [GET, POST];
+    }
+
+    event OrderCreated {
+        payload: {
+            orderId: String,
+            customerId: String
+        }
+    }
+
+    workflow FulfillOrder {
+        ReserveInventory;
+        ChargePayment;
+        ShipOrder;
+    }
+
+    kpi OrderConversionRate: OrdersPaid;
+}
+
+module inventory depends on sales enable {
+    entity Stock {
+        sku: String;
+        qty: Int;
+        warehouse: String;
+        expose api [GET, PUT];
+    }
+
+    event InventoryReserved();
+}
+
+module runtime enable {
+    event SystemBooted();
+}
+
+
+================================================================
+12. PACKAGE CONTENT
+================================================================
+
+
+----- FILE: compiler-packaging/src/main/java/io/devinebyte/compiler/packaging/model/PackageContent.java -----
+
+package io.devinebyte.compiler.packaging.model;
+
+import io.devinebyte.compiler.blueprint.model.BlueprintIR;
+import io.devinebyte.compiler.core.context.TenantContext;
+import io.devinebyte.compiler.contracts.model.EventSchema;
+import io.devinebyte.compiler.contracts.model.EntitySchema;
+import io.devinebyte.compiler.contracts.model.WorkflowSchema;
+import io.devinebyte.compiler.dsl.generator.ApiSchemaWriter; 
+import io.devinebyte.compiler.dsl.generator.ApiSchemaWriter.ApiSchema; 
+import io.devinebyte.compiler.workflow.model.ExecutableStateMachine;
+import io.devinebyte.compiler.projection.model.DashboardDefinition;                                                               
+import io.devinebyte.compiler.projection.model.ProjectionFunction;
+import io.devinebyte.runtime.config.ModuleGraph;                 
+import java.util.List;
+import java.util.Map;
+import java.nio.file.Path; // Fixed: Missing import statement for Path resolved here
+
+public record PackageContent(
+    TenantContext tenant,                                            
+    String version,
+    BlueprintIR blueprint, 
+    List<EventSchema> eventSchemas,
+    List<EntitySchema> entitySchemas,
+    List<WorkflowSchema> workflowSchemas,
+    List<ApiSchema> apiSchemas, 
+    List<ExecutableStateMachine> workflows,
+    List<ProjectionFunction> projections,
+    List<DashboardDefinition> dashboards,
+    byte[] runtimeBootstrapClass,
+    Map<String, String> tenantConfig,
+    Map<String, Boolean> featureFlags,
+    ModuleGraph moduleGraph,
+    boolean multiTenant,
+    Path pluginsDir
+) {}
+
+
+
+================================================================
+13. PLUGIN AND PACKAGE LOADING BOOTSTRAP
+================================================================
+
+
+----- FILE: runtime-plugin/src/main/java/io/devinebyte/runtime/plugin/PluginLoader.java -----
+
+package io.devinebyte.runtime.plugin;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.devinebyte.runtime.core.diagnostics.DiagnosticCollector;
+import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.HexFormat; // Fixed: HexFormat belongs in java.util
+
+public class PluginLoader {
+    private final Path pluginsPath; 
+    private final ObjectMapper mapper = new ObjectMapper();
+
+    public PluginLoader(Path pluginsPath) {
+        this.pluginsPath = pluginsPath;
+    }
+
+    public List<RuntimePlugin> loadPlugins(PluginContext context, DiagnosticCollector diagnostics) {
+        List<RuntimePlugin> loaded = new ArrayList<>();
+
+        Path manifestPath = pluginsPath.resolve("manifest.json");
+        if (!Files.exists(manifestPath)) {
+            // Fixed: DiagnosticCollector uses .error() instead of .addInfo()
+            diagnostics.error("BOOT_010", "No plugins found", "SYSTEM");
+            return loaded;
+        }
+
+        PluginManifest manifest = readManifest(manifestPath, diagnostics);
+        if (manifest == null) return loaded;
+
+        for (PluginManifest.PluginEntry entry : manifest.plugins()) {
+            Path jarPath = pluginsPath.resolve(entry.artifact());
+            if (!Files.exists(jarPath)) {
+                diagnostics.error("DBRT151", "Plugin jar missing: " + jarPath, "SYSTEM");
+                continue;
+            }
+            if (!verifySha256(jarPath, entry.sha256())) {
+                diagnostics.error("DBRT004", "Plugin signature invalid: " + entry.id(), "SYSTEM");
+                continue;
+            }
+
+            try (URLClassLoader cl = new URLClassLoader(new URL[]{jarPath.toUri().toURL()}, getClass().getClassLoader())) {
+                Class<?> pluginClass = cl.loadClass(entry.entrypoint());
+                if (!RuntimePlugin.class.isAssignableFrom(pluginClass)) {
+                    diagnostics.error("DBRT152", "Entrypoint does not implement RuntimePlugin: " + entry.entrypoint(), "SYSTEM");
+                    continue;
+                }
+                RuntimePlugin plugin = (RuntimePlugin) pluginClass.getDeclaredConstructor().newInstance();
+                loaded.add(plugin);
+                diagnostics.error("BOOT_011", "Loaded plugin: " + entry.id() + "@" + entry.version(), "SYSTEM");
+            } catch (Exception e) {
+                diagnostics.error("DBRT150", "Failed to load plugin: " + entry.id() + " - " + e.getMessage(), "SYSTEM");
+            }
+        }
+        return loaded;
+    }
+
+    private PluginManifest readManifest(Path manifestPath, DiagnosticCollector diagnostics) {
+        try {
+            return mapper.readValue(manifestPath.toFile(), PluginManifest.class);
+        } catch (IOException e) {
+            // Fixed: Appended required "SYSTEM" tenantId parameter
+            diagnostics.fatal("DBRT150", "Failed to read plugin manifest: " + e.getMessage(), "SYSTEM");
+            return null;
+        }
+    }
+
+    private boolean verifySha256(Path jarPath, String expected) {
+        if (expected == null || expected.isBlank()) return true; 
+        try {
+            byte[] bytes = Files.readAllBytes(jarPath);
+            byte[] hash = MessageDigest.getInstance("SHA-256").digest(bytes);
+            String actual = HexFormat.of().formatHex(hash);
+            return actual.equalsIgnoreCase(expected);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+}
+
+
+
+----- FILE: runtime-plugin/src/main/java/io/devinebyte/runtime/plugin/DbpkgExtractor.java -----
+
+package io.devinebyte.runtime.plugin;
+
+import io.devinebyte.runtime.core.diagnostics.DiagnosticCollector;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+
+public final class DbpkgExtractor {
+    private DbpkgExtractor() {}
+
+    public static void extract(ZipFile zip, Path dest, DiagnosticCollector diagnostics) throws IOException {
+        Files.createDirectories(dest);
+        var entries = zip.entries();
+        while (entries.hasMoreElements()) {
+            ZipEntry entry = entries.nextElement();
+            Path target = dest.resolve(entry.getName()).normalize();
+
+            if (!target.startsWith(dest)) {
+                // Fixed: Appended required "SYSTEM" tenantId parameter
+                diagnostics.fatal("DBRT090", "Zip entry outside target dir: " + entry.getName(), "SYSTEM");
+                throw new IOException("Zip slip attack");
+            }
+
+            if (entry.isDirectory()) {
+                Files.createDirectories(target);
+            } else {
+                Files.createDirectories(target.getParent());
+                try (InputStream is = zip.getInputStream(entry)) {
+                    Files.copy(is, target);
+                }
+            }
+        }
+    }
+}
+
+
+
+----- FILE: compiler-core/src/main/java/io/devinebyte/compiler/core/bootstrap/CompilerBootstrap.java -----
+
+package io.devinebyte.compiler.core.bootstrap;
+
+import io.devinebyte.compiler.core.context.CompilationContext;
+import io.devinebyte.compiler.core.pipeline.CompilerPipeline;
+import io.devinebyte.compiler.core.pipeline.CompilerResult;
+import jakarta.inject.Singleton;
+
+@Singleton
+public class CompilerBootstrap {
+    private final CompilerPipeline pipeline;
+
+    public CompilerBootstrap(CompilerPipeline pipeline) {
+        this.pipeline = pipeline;
+    }
+
+    public CompilerResult bootstrap(CompilationContext context) {
+        // pipeline now owns the loop and starts with CompilerResult.empty(ctx)
+        return pipeline.run(context); // <-- remove initialInput
+    }
+}
+
+
+----- FILE: compiler-generator/src/main/java/io/devinebyte/compiler/generator/runtime/RuntimeBootstrapGenerator.java -----
+
+package io.devinebyte.compiler.generator.runtime;
+
+import io.devinebyte.compiler.core.context.TenantContext;
+import jakarta.inject.Singleton;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
+
+@Singleton
+public class RuntimeBootstrapGenerator {
+
+    public byte[] generate(TenantContext tenant, Path outDir) throws IOException {
+        Files.createDirectories(outDir);
+        
+        // Placeholder: real prod would compile this to .class
+        String bootstrap = """
+            package tenant.%s.bootstrap;
+            public class RuntimeBootstrap {
+                public static void boot() {}
+            }
+            """.formatted(tenant.tenantId());
+            
+        byte[] bytes = bootstrap.getBytes(StandardCharsets.UTF_8);
+        Files.write(outDir.resolve("RuntimeBootstrap.class"), bytes);
+        return bytes;
+    }
+}
+
+
+----- FILE: runtime-bootstrap/src/main/java/io/devinebyte/runtime/bootstrap/RuntimeBootstrapper.java -----
+
+package io.devinebyte.runtime.bootstrap;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.devinebyte.compiler.dsl.generator.ApiSchemaWriter.ApiSchema;
+import io.devinebyte.runtime.config.ModuleGraph;
+import io.devinebyte.runtime.config.ModuleGraph.ModuleDefinition;
+import io.devinebyte.runtime.core.context.TenantContext;
+import io.devinebyte.runtime.core.diagnostics.DiagnosticCollector;
+import io.devinebyte.runtime.module.ModuleLoader;
+import io.devinebyte.runtime.module.ModuleRegistry;
+import io.devinebyte.runtime.plugin.DbpkgExtractor; // NEW
+import io.devinebyte.runtime.plugin.PluginContext;
+import io.devinebyte.runtime.plugin.PluginLoader;
+import io.devinebyte.runtime.plugin.PluginManifest;
+import io.devinebyte.runtime.plugin.RuntimePlugin;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
+import java.util.zip.ZipFile;
+
+@Singleton
+public class RuntimeBootstrapper {
+    private final DbpkgVerifier verifier;
+    private final ManifestReader manifestReader;
+    private final ModuleLoader moduleLoader;
+    private final ModuleRegistry moduleRegistry;
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Inject
+    public RuntimeBootstrapper(
+        DbpkgVerifier verifier,
+        ManifestReader manifestReader,
+        ModuleLoader moduleLoader,
+        ModuleRegistry moduleRegistry
+    ) {
+        this.verifier = verifier;
+        this.manifestReader = manifestReader;
+        this.moduleLoader = moduleLoader;
+        this.moduleRegistry = moduleRegistry;
+    }
+
+    public BootstrapResult boot(TenantContext tenant, Path dbpkgPath) {
+        DiagnosticCollector diagnostics = new DiagnosticCollector();
+        List<ApiSchema> apiSchemas = List.of();
+
+        if (!verifier.verifyStructure(tenant, dbpkgPath, diagnostics)) {
+            return new BootstrapResult(false, tenant, null, dbpkgPath, diagnostics, apiSchemas);
+        }
+
+        try (ZipFile zip = new ZipFile(dbpkgPath.toFile())) {
+            var manifestEntry = zip.getEntry("manifest.json");
+            if (manifestEntry == null) {
+                diagnostics.fatal("DBRT005", "Missing required file: manifest.json", tenant.tenantId());
+                return new BootstrapResult(false, tenant, null, dbpkgPath, diagnostics, apiSchemas);
+            }
+
+            var manifest = manifestReader.read(tenant, zip.getInputStream(manifestEntry), diagnostics);
+            if (manifest == null || diagnostics.hasFatal()) {
+                return new BootstrapResult(false, tenant, null, dbpkgPath, diagnostics, apiSchemas);
+            }
+
+            if (!manifest.multiTenant() && !manifest.tenantId().equals(tenant.tenantId())) {
+                diagnostics.fatal("DBRT007", "Tenant mismatch. Expected: " + manifest.tenantId() + " Got: " + tenant.tenantId(), tenant.tenantId());
+                return new BootstrapResult(false, tenant, manifest, dbpkgPath, diagnostics, apiSchemas);
+            }
+
+            if (!verifier.verifyChecksum(tenant, dbpkgPath, manifest.checksumSha256(), diagnostics)) {
+                return new BootstrapResult(false, tenant, manifest, dbpkgPath, diagnostics, apiSchemas);
+            }
+
+            // 1. Load APISchema.json
+            var apiSchemaEntry = zip.getEntry("contracts/APISchema.json");
+            if (apiSchemaEntry == null) {
+                diagnostics.fatal("DBRT005", "Missing required file: contracts/APISchema.json", tenant.tenantId());
+                return new BootstrapResult(false, tenant, manifest, dbpkgPath, diagnostics, apiSchemas);
+            }
+            try (InputStream is = zip.getInputStream(apiSchemaEntry)) {
+                apiSchemas = objectMapper.readValue(is, objectMapper.getTypeFactory().constructCollectionType(List.class, ApiSchema.class));
+            }
+
+            // 2. Load module_graph.json
+            var moduleGraphEntry = zip.getEntry("runtime/module_graph.json");
+            if (moduleGraphEntry == null) {
+                diagnostics.fatal("DBRT004", "Missing required file: runtime/module_graph.json", tenant.tenantId());
+                return new BootstrapResult(false, tenant, manifest, dbpkgPath, diagnostics, apiSchemas);
+            }
+
+            ModuleGraph moduleGraph;
+            try (InputStream is = zip.getInputStream(moduleGraphEntry)) {
+                moduleGraph = objectMapper.readValue(is, ModuleGraph.class);
+            }
+
+            ModuleLoader.LoadResult loadResult = moduleLoader.load(tenant, moduleGraph, diagnostics);
+            if (diagnostics.hasFatal()) {
+                return new BootstrapResult(false, tenant, manifest, dbpkgPath, diagnostics, apiSchemas);
+            }
+
+            TenantContext bootContext = new TenantContext(tenant.tenantId(), tenant.state(), loadResult.enabledModules());
+            Map<String, ModuleDefinition> moduleMap = moduleGraph.modules();
+            moduleRegistry.register(bootContext, moduleMap);
+
+            // 3. Load Plugins from /bootstrap/plugins/
+            Path tempExtractDir = Files.createTempDirectory("dbos-" + tenant.tenantId());
+            DbpkgExtractor.extract(zip, tempExtractDir, diagnostics);
+
+            Path pluginsPath = tempExtractDir.resolve("bootstrap/plugins");
+            if (Files.exists(pluginsPath)) {
+                PluginManifest pluginManifest = readPluginManifest(pluginsPath, diagnostics);
+                PluginContext pluginContext = new PluginContext(
+                    bootContext, null, null, null, null, null, null // TODO: wire real EventBus, etc
+                );
+                PluginLoader loader = new PluginLoader(pluginsPath);
+                List<RuntimePlugin> plugins = loader.loadPlugins(pluginContext, diagnostics);
+
+                for (RuntimePlugin plugin : plugins) {
+                    plugin.initialize(pluginContext, diagnostics);
+                }
+                for (RuntimePlugin plugin : plugins) {
+                    plugin.start(diagnostics);
+                }
+                diagnostics.error("BOOT_002", "Loaded " + plugins.size() + " plugins", "SYSTEM");
+            }
+
+            return new BootstrapResult(true, bootContext, manifest, dbpkgPath, diagnostics, apiSchemas);
+
+        } catch (Exception e) {
+            diagnostics.fatal("DBRT008", "Bootstrap failed: " + e.getMessage(), tenant.tenantId());
+            return new BootstrapResult(false, tenant, null, dbpkgPath, diagnostics, apiSchemas);
+        }
+    }
+
+    private PluginManifest readPluginManifest(Path pluginsPath, DiagnosticCollector diagnostics) {
+        try {
+            return objectMapper.readValue(pluginsPath.resolve("manifest.json").toFile(), PluginManifest.class);
+        } catch (Exception e) {
+            diagnostics.fatal("DBRT150", "Failed to read plugin manifest: " + e.getMessage(), "SYSTEM");
+            return new PluginManifest(List.of());
+        }
+    }
+}
+
+
+----- FILE: runtime-bootstrap/src/main/java/io/devinebyte/runtime/bootstrap/BootstrapResult.java -----
+
+package io.devinebyte.runtime.bootstrap;
+
+import io.devinebyte.compiler.dsl.generator.ApiSchemaWriter.ApiSchema; // NEW
+import io.devinebyte.runtime.core.context.TenantContext;
+import io.devinebyte.runtime.core.diagnostics.DiagnosticCollector;
+import java.nio.file.Path;
+import java.util.List; // NEW
+
+/**
+ * Immutable result of bootstrap. If success=false, runtime must not proceed.
+ */
+public record BootstrapResult(
+    boolean success,
+    TenantContext tenantContext, // keep your old name
+    ManifestReader.Manifest manifest, // nested class
+    Path dbpkgPath,
+    DiagnosticCollector diagnostics,
+    List<ApiSchema> apiSchemas // NEW: this was missing
+) {}
+
+
+----- FILE: runtime-bootstrap/src/main/java/io/devinebyte/runtime/bootstrap/BootstrapException.java -----
+
+package io.devinebyte.runtime.bootstrap;
+
+/**
+ * Runtime exception wrapper. We still log via DiagnosticCollector first.
+ */
+public class BootstrapException extends RuntimeException {
+    public BootstrapException(String message) {
+        super(message);
+    }
+}
+
+
+----- FILE: runtime-bootstrap/src/test/java/io/devinebyte/runtime/bootstrap/RuntimeBootstrapperTest.java -----
+
+package io.devinebyte.runtime.bootstrap;
+
+import io.devinebyte.runtime.core.context.TenantContext;
+import io.devinebyte.runtime.core.context.TenantLifecycle;
+import io.devinebyte.runtime.core.diagnostics.DiagnosticCollector;
+import io.devinebyte.runtime.module.ModuleLoader;        // NEW
+import io.devinebyte.runtime.module.ModuleRegistry;      // NEW
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Set;
+import java.util.zip.ZipFile;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class RuntimeBootstrapperTest {
+
+    // FIX: pass all 4 dependencies now
+    private final RuntimeBootstrapper bootstrapper = new RuntimeBootstrapper(
+        new DbpkgVerifier(true),
+        new ManifestReader(),
+        new ModuleLoader(new DiagnosticCollector()),
+        new ModuleRegistry()
+    );
+
+    private Path dbpkgPath;
+    private ManifestReader.Manifest manifest; // pre-read it
+    private final TenantContext acme = new TenantContext("acme", TenantLifecycle.ACTIVE, Set.of("SALES"));
+
+    @BeforeEach
+    void setup() throws Exception {
+        String prop = System.getProperty("dbpkg.path");
+        dbpkgPath = prop != null ? Path.of(prop) : Path.of("execution/acme/tenant-acme-v1.0.0.dbpkg");
+        assertTrue(Files.exists(dbpkgPath), "DBPKG not found: " + dbpkgPath);
+
+        // Pre-read manifest so we know if it's template or strict BEFORE booting
+        try (ZipFile zip = new ZipFile(dbpkgPath.toFile())) {
+            var entry = zip.getEntry("manifest.json");
+            manifest = new ManifestReader().read(acme, zip.getInputStream(entry), new DiagnosticCollector());
+        }
+        assertNotNull(manifest);
+        System.out.println("MANIFEST: tenant=" + manifest.tenantId() + " multiTenant=" + manifest.multiTenant());
+    }
+
+    @Test
+    void boot_succeedsForCorrectTenant() {
+        BootstrapResult result = bootstrapper.boot(acme, dbpkgPath);
+        assertTrue(result.success(), "Should boot for correct tenant");
+        assertEquals("acme", result.manifest().tenantId());
+    }
+
+    @Test
+    void boot_respectsMultiTenantFlag() {
+        TenantContext wrong = new TenantContext("wrong-tenant", TenantLifecycle.ACTIVE, Set.of("SALES"));
+        BootstrapResult result = bootstrapper.boot(wrong, dbpkgPath);
+
+        if (manifest.multiTenant()) {
+            // TEMPLATE mode
+            assertTrue(result.success(), "Template dbpkg should allow any tenant. Diagnostics: " + result.diagnostics().getAll());
+            System.out.println("TEMPLATE: boot succeeded for wrong-tenant as expected");
+        } else {
+            // STRICT mode
+            assertFalse(result.success(), "Strict dbpkg should block wrong tenant");
+            assertTrue(result.diagnostics().getAll().stream().anyMatch(d -> "DBRT007".equals(d.code())),
+                "Expected DBRT007 Tenant Mismatch error");
+            System.out.println("STRICT: boot failed with DBRT007 as expected");
+        }
+    }
+}
+
+
+----- FILE: compiler-generator/src/main/java/io/devinebyte/compiler/generator/runtime/RuntimeBootstrapGenerator.java -----
+
+package io.devinebyte.compiler.generator.runtime;
+
+import io.devinebyte.compiler.core.context.TenantContext;
+import jakarta.inject.Singleton;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
+
+@Singleton
+public class RuntimeBootstrapGenerator {
+
+    public byte[] generate(TenantContext tenant, Path outDir) throws IOException {
+        Files.createDirectories(outDir);
+        
+        // Placeholder: real prod would compile this to .class
+        String bootstrap = """
+            package tenant.%s.bootstrap;
+            public class RuntimeBootstrap {
+                public static void boot() {}
+            }
+            """.formatted(tenant.tenantId());
+            
+        byte[] bytes = bootstrap.getBytes(StandardCharsets.UTF_8);
+        Files.write(outDir.resolve("RuntimeBootstrap.class"), bytes);
+        return bytes;
+    }
+}
+
+
+----- FILE: runtime-bootstrap/src/main/java/io/devinebyte/runtime/bootstrap/RuntimeBootstrapper.java -----
+
+package io.devinebyte.runtime.bootstrap;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.devinebyte.compiler.dsl.generator.ApiSchemaWriter.ApiSchema;
+import io.devinebyte.runtime.config.ModuleGraph;
+import io.devinebyte.runtime.config.ModuleGraph.ModuleDefinition;
+import io.devinebyte.runtime.core.context.TenantContext;
+import io.devinebyte.runtime.core.diagnostics.DiagnosticCollector;
+import io.devinebyte.runtime.module.ModuleLoader;
+import io.devinebyte.runtime.module.ModuleRegistry;
+import io.devinebyte.runtime.plugin.DbpkgExtractor; // NEW
+import io.devinebyte.runtime.plugin.PluginContext;
+import io.devinebyte.runtime.plugin.PluginLoader;
+import io.devinebyte.runtime.plugin.PluginManifest;
+import io.devinebyte.runtime.plugin.RuntimePlugin;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
+import java.util.zip.ZipFile;
+
+@Singleton
+public class RuntimeBootstrapper {
+    private final DbpkgVerifier verifier;
+    private final ManifestReader manifestReader;
+    private final ModuleLoader moduleLoader;
+    private final ModuleRegistry moduleRegistry;
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Inject
+    public RuntimeBootstrapper(
+        DbpkgVerifier verifier,
+        ManifestReader manifestReader,
+        ModuleLoader moduleLoader,
+        ModuleRegistry moduleRegistry
+    ) {
+        this.verifier = verifier;
+        this.manifestReader = manifestReader;
+        this.moduleLoader = moduleLoader;
+        this.moduleRegistry = moduleRegistry;
+    }
+
+    public BootstrapResult boot(TenantContext tenant, Path dbpkgPath) {
+        DiagnosticCollector diagnostics = new DiagnosticCollector();
+        List<ApiSchema> apiSchemas = List.of();
+
+        if (!verifier.verifyStructure(tenant, dbpkgPath, diagnostics)) {
+            return new BootstrapResult(false, tenant, null, dbpkgPath, diagnostics, apiSchemas);
+        }
+
+        try (ZipFile zip = new ZipFile(dbpkgPath.toFile())) {
+            var manifestEntry = zip.getEntry("manifest.json");
+            if (manifestEntry == null) {
+                diagnostics.fatal("DBRT005", "Missing required file: manifest.json", tenant.tenantId());
+                return new BootstrapResult(false, tenant, null, dbpkgPath, diagnostics, apiSchemas);
+            }
+
+            var manifest = manifestReader.read(tenant, zip.getInputStream(manifestEntry), diagnostics);
+            if (manifest == null || diagnostics.hasFatal()) {
+                return new BootstrapResult(false, tenant, null, dbpkgPath, diagnostics, apiSchemas);
+            }
+
+            if (!manifest.multiTenant() && !manifest.tenantId().equals(tenant.tenantId())) {
+                diagnostics.fatal("DBRT007", "Tenant mismatch. Expected: " + manifest.tenantId() + " Got: " + tenant.tenantId(), tenant.tenantId());
+                return new BootstrapResult(false, tenant, manifest, dbpkgPath, diagnostics, apiSchemas);
+            }
+
+            if (!verifier.verifyChecksum(tenant, dbpkgPath, manifest.checksumSha256(), diagnostics)) {
+                return new BootstrapResult(false, tenant, manifest, dbpkgPath, diagnostics, apiSchemas);
+            }
+
+            // 1. Load APISchema.json
+            var apiSchemaEntry = zip.getEntry("contracts/APISchema.json");
+            if (apiSchemaEntry == null) {
+                diagnostics.fatal("DBRT005", "Missing required file: contracts/APISchema.json", tenant.tenantId());
+                return new BootstrapResult(false, tenant, manifest, dbpkgPath, diagnostics, apiSchemas);
+            }
+            try (InputStream is = zip.getInputStream(apiSchemaEntry)) {
+                apiSchemas = objectMapper.readValue(is, objectMapper.getTypeFactory().constructCollectionType(List.class, ApiSchema.class));
+            }
+
+            // 2. Load module_graph.json
+            var moduleGraphEntry = zip.getEntry("runtime/module_graph.json");
+            if (moduleGraphEntry == null) {
+                diagnostics.fatal("DBRT004", "Missing required file: runtime/module_graph.json", tenant.tenantId());
+                return new BootstrapResult(false, tenant, manifest, dbpkgPath, diagnostics, apiSchemas);
+            }
+
+            ModuleGraph moduleGraph;
+            try (InputStream is = zip.getInputStream(moduleGraphEntry)) {
+                moduleGraph = objectMapper.readValue(is, ModuleGraph.class);
+            }
+
+            ModuleLoader.LoadResult loadResult = moduleLoader.load(tenant, moduleGraph, diagnostics);
+            if (diagnostics.hasFatal()) {
+                return new BootstrapResult(false, tenant, manifest, dbpkgPath, diagnostics, apiSchemas);
+            }
+
+            TenantContext bootContext = new TenantContext(tenant.tenantId(), tenant.state(), loadResult.enabledModules());
+            Map<String, ModuleDefinition> moduleMap = moduleGraph.modules();
+            moduleRegistry.register(bootContext, moduleMap);
+
+            // 3. Load Plugins from /bootstrap/plugins/
+            Path tempExtractDir = Files.createTempDirectory("dbos-" + tenant.tenantId());
+            DbpkgExtractor.extract(zip, tempExtractDir, diagnostics);
+
+            Path pluginsPath = tempExtractDir.resolve("bootstrap/plugins");
+            if (Files.exists(pluginsPath)) {
+                PluginManifest pluginManifest = readPluginManifest(pluginsPath, diagnostics);
+                PluginContext pluginContext = new PluginContext(
+                    bootContext, null, null, null, null, null, null // TODO: wire real EventBus, etc
+                );
+                PluginLoader loader = new PluginLoader(pluginsPath);
+                List<RuntimePlugin> plugins = loader.loadPlugins(pluginContext, diagnostics);
+
+                for (RuntimePlugin plugin : plugins) {
+                    plugin.initialize(pluginContext, diagnostics);
+                }
+                for (RuntimePlugin plugin : plugins) {
+                    plugin.start(diagnostics);
+                }
+                diagnostics.error("BOOT_002", "Loaded " + plugins.size() + " plugins", "SYSTEM");
+            }
+
+            return new BootstrapResult(true, bootContext, manifest, dbpkgPath, diagnostics, apiSchemas);
+
+        } catch (Exception e) {
+            diagnostics.fatal("DBRT008", "Bootstrap failed: " + e.getMessage(), tenant.tenantId());
+            return new BootstrapResult(false, tenant, null, dbpkgPath, diagnostics, apiSchemas);
+        }
+    }
+
+    private PluginManifest readPluginManifest(Path pluginsPath, DiagnosticCollector diagnostics) {
+        try {
+            return objectMapper.readValue(pluginsPath.resolve("manifest.json").toFile(), PluginManifest.class);
+        } catch (Exception e) {
+            diagnostics.fatal("DBRT150", "Failed to read plugin manifest: " + e.getMessage(), "SYSTEM");
+            return new PluginManifest(List.of());
+        }
+    }
+}
+
+
+----- FILE: runtime-bootstrap/src/test/java/io/devinebyte/runtime/bootstrap/RuntimeBootstrapperTest.java -----
+
+package io.devinebyte.runtime.bootstrap;
+
+import io.devinebyte.runtime.core.context.TenantContext;
+import io.devinebyte.runtime.core.context.TenantLifecycle;
+import io.devinebyte.runtime.core.diagnostics.DiagnosticCollector;
+import io.devinebyte.runtime.module.ModuleLoader;        // NEW
+import io.devinebyte.runtime.module.ModuleRegistry;      // NEW
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Set;
+import java.util.zip.ZipFile;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class RuntimeBootstrapperTest {
+
+    // FIX: pass all 4 dependencies now
+    private final RuntimeBootstrapper bootstrapper = new RuntimeBootstrapper(
+        new DbpkgVerifier(true),
+        new ManifestReader(),
+        new ModuleLoader(new DiagnosticCollector()),
+        new ModuleRegistry()
+    );
+
+    private Path dbpkgPath;
+    private ManifestReader.Manifest manifest; // pre-read it
+    private final TenantContext acme = new TenantContext("acme", TenantLifecycle.ACTIVE, Set.of("SALES"));
+
+    @BeforeEach
+    void setup() throws Exception {
+        String prop = System.getProperty("dbpkg.path");
+        dbpkgPath = prop != null ? Path.of(prop) : Path.of("execution/acme/tenant-acme-v1.0.0.dbpkg");
+        assertTrue(Files.exists(dbpkgPath), "DBPKG not found: " + dbpkgPath);
+
+        // Pre-read manifest so we know if it's template or strict BEFORE booting
+        try (ZipFile zip = new ZipFile(dbpkgPath.toFile())) {
+            var entry = zip.getEntry("manifest.json");
+            manifest = new ManifestReader().read(acme, zip.getInputStream(entry), new DiagnosticCollector());
+        }
+        assertNotNull(manifest);
+        System.out.println("MANIFEST: tenant=" + manifest.tenantId() + " multiTenant=" + manifest.multiTenant());
+    }
+
+    @Test
+    void boot_succeedsForCorrectTenant() {
+        BootstrapResult result = bootstrapper.boot(acme, dbpkgPath);
+        assertTrue(result.success(), "Should boot for correct tenant");
+        assertEquals("acme", result.manifest().tenantId());
+    }
+
+    @Test
+    void boot_respectsMultiTenantFlag() {
+        TenantContext wrong = new TenantContext("wrong-tenant", TenantLifecycle.ACTIVE, Set.of("SALES"));
+        BootstrapResult result = bootstrapper.boot(wrong, dbpkgPath);
+
+        if (manifest.multiTenant()) {
+            // TEMPLATE mode
+            assertTrue(result.success(), "Template dbpkg should allow any tenant. Diagnostics: " + result.diagnostics().getAll());
+            System.out.println("TEMPLATE: boot succeeded for wrong-tenant as expected");
+        } else {
+            // STRICT mode
+            assertFalse(result.success(), "Strict dbpkg should block wrong tenant");
+            assertTrue(result.diagnostics().getAll().stream().anyMatch(d -> "DBRT007".equals(d.code())),
+                "Expected DBRT007 Tenant Mismatch error");
+            System.out.println("STRICT: boot failed with DBRT007 as expected");
+        }
+    }
+}
+
+
+================================================================
+ADDITIONAL: RUNTIME PLUGIN CONTRACT
+================================================================
+
+
+----- FILE: runtime-plugin/src/main/java/io/devinebyte/runtime/plugin/RuntimePlugin.java -----
+
+package io.devinebyte.runtime.plugin;
+
+import io.devinebyte.runtime.core.diagnostics.DiagnosticCollector;
+
+public interface RuntimePlugin {
+    
+    PluginDescriptor descriptor();
+
+    void initialize(PluginContext context, DiagnosticCollector diagnostics);
+
+    void start(DiagnosticCollector diagnostics);
+
+    void stop(DiagnosticCollector diagnostics);
+
+    void shutdown(DiagnosticCollector diagnostics);
+}
+
+
+----- FILE: runtime-plugin/src/main/java/io/devinebyte/runtime/plugin/PluginContext.java -----
+
+package io.devinebyte.runtime.plugin;
+
+import io.devinebyte.runtime.core.context.TenantContext;
+import io.devinebyte.runtime.event.core.EventBus;
+import io.devinebyte.runtime.observability.StructuredLogger;
+import io.devinebyte.runtime.observability.Metrics;
+
+public record PluginContext(
+    TenantContext tenant,
+    EventBus eventBus,
+    PluginContractRegistry contracts,
+    Configuration configuration,
+    StructuredLogger logger,
+    Metrics metrics,
+    RuntimeServices services
+) {}
+
+
+----- FILE: runtime-plugin/src/main/java/io/devinebyte/runtime/plugin/PluginDescriptor.java -----
+
+package io.devinebyte.runtime.plugin;
+
+public record PluginDescriptor(
+    String id,
+    String version,
+    String entrypoint,
+    String sdkVersion,
+    String moduleId
+) {}
+
+
+
+----- FILE: runtime-plugin/src/main/java/io/devinebyte/runtime/plugin/PluginManifest.java -----
+
+package io.devinebyte.runtime.plugin;
+
+import java.util.List;
+import java.util.Map;
+
+public record PluginManifest(List<PluginEntry> plugins) {
+    public record PluginEntry(
+        String id,
+        String version,
+        String artifact,
+        String entrypoint,
+        String sdkVersion,
+        String moduleId,
+        String sha256
+    ) {}
+}
+
+
+================================================================
+ADDITIONAL: RUNTIME SDK
+================================================================
+
+
+----- FILE: runtime-sdk/src/main/java/io/devinebyte/runtime/sdk/client/RuntimeClient.java -----
+
+package io.devinebyte.runtime.sdk.client;
+
+import io.devinebyte.runtime.sdk.context.RuntimeContext;
+import io.devinebyte.runtime.event.core.EventBus;
+
+public record RuntimeClient(
+    EventBus eventBus,
+    EntityClient entities,
+    WorkflowClient workflows
+) {
+    public RuntimeClient(EventBus eventBus) {
+        this(eventBus, new EntityClient(RuntimeContext::current, eventBus), new WorkflowClient(RuntimeContext::current, eventBus));
+    }
+}
+
+
+----- FILE: runtime-sdk/src/main/java/io/devinebyte/runtime/sdk/client/EntityClient.java -----
+
+package io.devinebyte.runtime.sdk.client;
+
+import io.devinebyte.runtime.core.context.TenantContext;
+import io.devinebyte.runtime.event.core.EventBus;
+import java.util.function.Supplier;
+
+public record EntityClient(
+    Supplier<TenantContext> tenantSupplier,
+    EventBus eventBus
+) {
+    // TODO: add load(), save() using EventStore.append()
+}
+
+
+----- FILE: runtime-sdk/src/main/java/io/devinebyte/runtime/sdk/client/WorkflowClient.java -----
+
+package io.devinebyte.runtime.sdk.client;
+
+import io.devinebyte.runtime.core.context.TenantContext;
+import io.devinebyte.runtime.event.core.EventBus;
+import java.util.function.Supplier;
+
+public record WorkflowClient(
+    Supplier<TenantContext> tenantSupplier,
+    EventBus eventBus
+) {
+    // TODO: add start(), signal()
+}
+
+
+----- FILE: runtime-sdk/src/main/java/io/devinebyte/runtime/sdk/context/RuntimeContext.java -----
+
+package io.devinebyte.runtime.sdk.context;
+
+import io.devinebyte.runtime.core.context.TenantContext;
+
+public final class RuntimeContext {
+    private static final ThreadLocal<TenantContext> CURRENT = new ThreadLocal<>();
+
+    public static void set(TenantContext tenant) {
+        CURRENT.set(tenant);
+    }
+
+    public static TenantContext current() {
+        TenantContext ctx = CURRENT.get();
+        if (ctx == null) {
+            throw new IllegalStateException("DBRT110: No TenantContext bound to current thread");
+        }
+        return ctx;
+    }
+
+    public static void clear() {
+        CURRENT.remove();
+    }
+}
+
+
+================================================================
+ADDITIONAL: EVENT MODEL
+================================================================
+
+
+----- FILE: runtime-event/src/main/java/io/devinebyte/runtime/event/model/StoredEvent.java -----
+
+package io.devinebyte.runtime.event.model;
+
+import java.time.Instant;
+
+public record StoredEvent(
+    long sequence,
+    DomainEvent event,
+    String previousHash,
+    String currentHash,
+    Instant storedAt
+) {}
+
+
+----- FILE: runtime-event/src/main/java/io/devinebyte/runtime/event/core/EventStore.java -----
+
+package io.devinebyte.runtime.event.core;
+
+import io.devinebyte.runtime.core.context.TenantContext;
+import io.devinebyte.runtime.event.model.DomainEvent;
+import io.devinebyte.runtime.event.model.StoredEvent;
+import java.util.List;
+import java.util.function.Consumer;
+
+public interface EventStore {
+    StoredEvent append(TenantContext ctx, DomainEvent event);
+    List<StoredEvent> readStream(TenantContext ctx, long fromSequence);
+    long getLastSequence(TenantContext ctx);
+    
+    default void replay(TenantContext ctx, long fromSequence, Consumer<DomainEvent> handler) {
+        readStream(ctx, fromSequence).forEach(s -> handler.accept(s.event()));
+    }
+}
+
+
+================================================================
+ADDITIONAL: RUNTIME API SERVER
+================================================================
+
+
+----- FILE: runtime-orchestration/src/main/java/io/devinebyte/runtime/orchestration/runtime/api/RuntimeApiServer.java -----
+
+package io.devinebyte.runtime.orchestration.runtime.api;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.devinebyte.runtime.core.context.TenantContext;
+import io.devinebyte.runtime.core.registry.RuntimeRegistry;
+import io.devinebyte.runtime.orchestration.runtime.security.SecurityRuntime;
+import io.devinebyte.runtime.workflow.engine.WorkflowEngine;
+import io.devinebyte.runtime.core.diagnostics.DiagnosticCollector;
+
+public record RuntimeApiServer(
+    SecurityRuntime security,
+    ContractRouteRegistry registry,
+    RuntimeRegistry runtimeRegistry,
+    WorkflowEngine workflowEngine
+) {
+    private static final ObjectMapper MAPPER = new ObjectMapper().findAndRegisterModules(); // FIXED
+
+    public Object handle(TenantContext ctx, String principal, String method, String path, Object body, DiagnosticCollector diag) {
+        if (!registry.isContractPath(method, path)) {
+            // FIXED: Closed string quote right after colon
+            throw new SecurityException("Contract violation: " + method + " " + path);
+        }
+
+        String command = registry.getCommand(method, path);
+        String commandOrQuery = registry.getCommandOrQuery(method, path);
+
+        if (command == null) {
+            throw new IllegalArgumentException("No route for " + method + " " + path);
+        }
+
+        JsonNode bodyNode = body == null ? MAPPER.createObjectNode() : MAPPER.valueToTree(body);
+
+        System.out.println("[API] " + method + " " + path + " -> " + command + " [" + commandOrQuery + "]");
+
+        return workflowEngine.start(ctx, command, bodyNode, commandOrQuery);
+    }
+}
+
+
+================================================================
+ADDITIONAL: PACKAGE BUILDER
+================================================================
+
+
+----- FILE: compiler-packaging/src/main/java/io/devinebyte/compiler/packaging/builder/PackageBuilder.java -----
+
+package io.devinebyte.compiler.packaging.builder;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.devinebyte.compiler.blueprint.model.ModuleIR;
+import io.devinebyte.compiler.packaging.model.Manifest;
+import io.devinebyte.compiler.packaging.model.PackageContent;
+import io.devinebyte.runtime.plugin.PluginManifest;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Instant;
+import java.util.*;
+import java.util.jar.JarEntry;
+import java.util.jar.JarInputStream;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
+public class PackageBuilder {
+
+    private final ObjectMapper mapper = new ObjectMapper()
+            .registerModule(new JavaTimeModule())
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+    public Path build(PackageContent content, Path outputDir) throws IOException {
+        Files.createDirectories(outputDir);
+
+        String fileName = "tenant-" + content.tenant().tenantId()
+                + "-v" + content.version() + ".dbpkg";
+        Path tempPath = outputDir.resolve("temp-" + fileName);
+        Path finalPath = outputDir.resolve(fileName);
+
+        Manifest placeholder = createManifest(content, "sha256-placeholder", List.of());
+        writeZip(tempPath, content, placeholder);
+
+        String checksum = ChecksumUtil.sha256(tempPath);
+        List<PluginManifest.PluginEntry> pluginEntries = collectPluginEntries(content);
+        Manifest manifest = createManifest(content, checksum, pluginEntries);
+
+        writeZip(finalPath, content, manifest);
+        Files.delete(tempPath);
+
+        System.out.println("Built: " + finalPath + " SHA256=" + checksum);
+        return finalPath;
+    }
+
+    private Manifest createManifest(
+            PackageContent content,
+            String checksum,
+            List<PluginManifest.PluginEntry> plugins
+    ) {
+        Map<String, String> metadata = new LinkedHashMap<>();
+
+        if (content.tenantConfig() != null) {
+            metadata.putAll(content.tenantConfig());
+        }
+
+        if (content.featureFlags() != null) {
+            content.featureFlags().forEach((k, v) -> metadata.put(k, String.valueOf(v)));
+        }
+
+        try {
+            metadata.put("plugins", mapper.writeValueAsString(plugins));
+        } catch (IOException e) {
+            metadata.put("plugins", "[]");
+        }
+
+        return new Manifest(
+                "1.0",
+                content.tenant().tenantId(),
+                content.version(),
+                Instant.now(),
+                "devinebyte-compiler-1.0.0",
+                checksum,
+                "",
+                content.moduleGraph(),
+                Map.of("contracts", "4"),
+                content.multiTenant(),
+                metadata
+        );
+    }
+
+    private void writeZip(
+            Path zipPath,
+            PackageContent content,
+            Manifest manifest
+    ) throws IOException {
+        try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(zipPath))) {
+            zos.putNextEntry(new ZipEntry("contracts/"));
+            zos.closeEntry();
+            zos.putNextEntry(new ZipEntry("workflows/"));
+            zos.closeEntry();
+            zos.putNextEntry(new ZipEntry("projections/"));
+            zos.closeEntry();
+            zos.putNextEntry(new ZipEntry("runtime/"));
+            zos.closeEntry();
+            zos.putNextEntry(new ZipEntry("bootstrap/"));
+            zos.closeEntry();
+            zos.putNextEntry(new ZipEntry("bootstrap/plugins/"));
+            zos.closeEntry();
+
+            writeJson(zos, "contracts/EventSchema.json", content.eventSchemas());
+            writeJson(zos, "contracts/EntitySchema.json", content.entitySchemas());
+            writeJson(zos, "contracts/WorkflowSchema.json", content.workflowSchemas());
+            writeJson(zos, "contracts/APISchema.json", content.apiSchemas());
+
+            writeJson(zos, "workflows/compiled_state_machines.json", content.workflows());
+            writeJson(zos, "projections/dashboard_definitions.json", content.dashboards());
+
+            for (int i = 0; i < content.projections().size(); i++) {
+                writeBytes(
+                        zos,
+                        "projections/projection_" + i + ".wasm",
+                        content.projections().get(i).toString().getBytes()
+                );
+            }
+
+            writeJson(zos, "runtime/tenant_config.json", content.tenantConfig());
+            writeJson(zos, "runtime/feature_flags.json", content.featureFlags());
+            writeModuleGraph(zos, content);
+
+            writeBytes(
+                    zos,
+                    "bootstrap/runtime_bootstrap.class",
+                    content.runtimeBootstrapClass()
+            );
+
+            List<PluginManifest.PluginEntry> pluginEntries = writePlugins(zos, content);
+            writeJson(
+                    zos,
+                    "bootstrap/plugins/manifest.json",
+                    new PluginManifest(pluginEntries)
+            );
+
+            writeManifest(zos, manifest);
+        }
+    }
+
+    private List<PluginManifest.PluginEntry> writePlugins(
+            ZipOutputStream zos,
+            PackageContent content
+    ) throws IOException {
+        List<PluginManifest.PluginEntry> entries = new ArrayList<>();
+        Path pluginsSourceDir = content.pluginsDir();
+
+        if (pluginsSourceDir == null || !Files.exists(pluginsSourceDir)) {
+            return entries;
+        }
+
+        Set<String> enabledModules = getEnabledModules(content);
+
+        try (var stream = Files.list(pluginsSourceDir)) {
+            for (Path jar : stream
+                    .filter(p -> p.toString().endsWith(".jar"))
+                    .sorted()
+                    .toList()) {
+
+                String jarName = jar.getFileName().toString();
+                String jarModuleId = jarName.split("-")[0].toLowerCase(Locale.ROOT);
+
+                if (!enabledModules.contains(jarModuleId)) {
+                    System.out.println("[PKG] Skipping plugin " + jarName
+                            + " - module not enabled");
+                    continue;
+                }
+
+                byte[] jarBytes = Files.readAllBytes(jar);
+                String sha256 = ChecksumUtil.sha256(jarBytes);
+
+                writeBytes(zos, "bootstrap/plugins/" + jarName, jarBytes);
+
+                String entrypoint = readEntrypointFromJar(jarBytes)
+                        .orElse("com.devinebyte.plugin.PluginImpl");
+                String id = jarName.split("-")[0];
+                String version = extractVersion(jarName);
+                String moduleId = id.toUpperCase(Locale.ROOT);
+
+                entries.add(new PluginManifest.PluginEntry(
+                        id,
+                        version,
+                        jarName,
+                        entrypoint,
+                        "0.1",
+                        moduleId,
+                        sha256
+                ));
+
+                System.out.println("[PKG] Loaded plugin " + jarName
+                        + " for module " + moduleId);
+            }
+        }
+
+        return entries;
+    }
+
+    private List<PluginManifest.PluginEntry> collectPluginEntries(
+            PackageContent content
+    ) throws IOException {
+        List<PluginManifest.PluginEntry> entries = new ArrayList<>();
+        Path pluginsSourceDir = content.pluginsDir();
+
+        if (pluginsSourceDir == null || !Files.exists(pluginsSourceDir)) {
+            return entries;
+        }
+
+        Set<String> enabledModules = getEnabledModules(content);
+
+        try (var stream = Files.list(pluginsSourceDir)) {
+            for (Path jar : stream
+                    .filter(p -> p.toString().endsWith(".jar"))
+                    .sorted()
+                    .toList()) {
+
+                String jarName = jar.getFileName().toString();
+                String jarModuleId = jarName.split("-")[0].toLowerCase(Locale.ROOT);
+
+                if (!enabledModules.contains(jarModuleId)) {
+                    continue;
+                }
+
+                byte[] jarBytes = Files.readAllBytes(jar);
+                String sha256 = ChecksumUtil.sha256(jarBytes);
+                String entrypoint = readEntrypointFromJar(jarBytes)
+                        .orElse("com.devinebyte.plugin.PluginImpl");
+                String id = jarName.split("-")[0];
+                String version = extractVersion(jarName);
+                String moduleId = id.toUpperCase(Locale.ROOT);
+
+                entries.add(new PluginManifest.PluginEntry(
+                        id,
+                        version,
+                        jarName,
+                        entrypoint,
+                        "0.1",
+                        moduleId,
+                        sha256
+                ));
+            }
+        }
+
+        return entries;
+    }
+
+    private Set<String> getEnabledModules(PackageContent content) {
+        return content.blueprint().modules().stream()
+                .filter(module -> content.tenant().enabledModules().stream()
+                        .anyMatch(enabled -> enabled.equalsIgnoreCase(module.name())))
+                .map(module -> module.name().toLowerCase(Locale.ROOT))
+                .collect(Collectors.toSet());
+    }
+
+    private Optional<String> readEntrypointFromJar(byte[] jarBytes) throws IOException {
+        try (JarInputStream jis = new JarInputStream(new ByteArrayInputStream(jarBytes))) {
+            JarEntry entry;
+
+            while ((entry = jis.getNextJarEntry()) != null) {
+                if (entry.getName().equals(
+                        "META-INF/services/io.devinebyte.runtime.plugin.RuntimePlugin")) {
+                    String service = new String(jis.readAllBytes()).trim();
+                    return Optional.of(service.split("\n")[0].trim());
+                }
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    private String extractVersion(String jarName) {
+        return jarName.replaceAll(".*-(\\d+\\.\\d+\\.\\d+)\\.jar", "$1");
+    }
+
+    private void writeModuleGraph(
+            ZipOutputStream zos,
+            PackageContent content
+    ) throws IOException {
+        ObjectNode root = mapper.createObjectNode();
+        ObjectNode modulesNode = mapper.createObjectNode();
+
+        Set<String> enabledLower = content.tenant().enabledModules().stream()
+                .map(s -> s.toLowerCase(Locale.ROOT))
+                .collect(Collectors.toSet());
+
+        Map<String, ModuleIR> modulesByLower = new LinkedHashMap<>();
+        for (ModuleIR module : content.blueprint().modules()) {
+            modulesByLower.putIfAbsent(
+                    module.name().toLowerCase(Locale.ROOT),
+                    module
+            );
+        }
+
+        for (ModuleIR module : modulesByLower.values()) {
+            String id = module.name();
+            String idLower = id.toLowerCase(Locale.ROOT);
+            ObjectNode modNode = mapper.createObjectNode();
+
+            modNode.put("moduleId", id);
+            modNode.put("enabled", enabledLower.contains(idLower));
+
+            ArrayNode deps = mapper.createArrayNode();
+            for (String dependency : module.dependencies()) {
+                String dependencyCanonical = modulesByLower
+                        .get(dependency.toLowerCase(Locale.ROOT))
+                        .name();
+                deps.add(dependencyCanonical);
+            }
+            modNode.set("dependsOn", deps);
+
+            ArrayNode exposes = mapper.createArrayNode();
+            module.events().forEach(event -> exposes.add(event.name()));
+            modNode.set("exposesEvents", exposes);
+            modNode.set("subscribesToEvents", mapper.createArrayNode());
+
+            modulesNode.set(id, modNode);
+        }
+
+        root.set("modules", modulesNode);
+        writeJson(zos, "runtime/module_graph.json", root);
+    }
+
+    private void writeManifest(
+            ZipOutputStream zos,
+            Manifest manifest
+    ) throws IOException {
+        Map<String, Object> map = new LinkedHashMap<>();
+
+        map.put("schemaVersion", manifest.schemaVersion());
+        map.put("tenantId", manifest.tenantId());
+        map.put("version", manifest.version());
+        map.put("builtAt", manifest.builtAt().toString());
+        map.put("builtBy", manifest.builtBy());
+        map.put("sha256", manifest.sha256());
+        map.put("signature", manifest.signature());
+        map.put("moduleGraph", manifest.moduleGraph());
+
+        if (manifest.metadata() != null && manifest.metadata().containsKey("plugins")) {
+            Map<String, Object> flexibleMetadata = new LinkedHashMap<>(manifest.metadata());
+
+            try {
+                flexibleMetadata.put(
+                        "plugins",
+                        mapper.readTree(manifest.metadata().get("plugins"))
+                );
+            } catch (Exception ignored) {
+            }
+
+            map.put("metadata", flexibleMetadata);
+        } else {
+            map.put("metadata", manifest.metadata());
+        }
+
+        map.put("multiTenant", manifest.multiTenant());
+        map.put("keywordAliases", manifest.keywordAliases());
+
+        writeJson(zos, "manifest.json", map);
+    }
+
+    private void writeJson(
+            ZipOutputStream zos,
+            String path,
+            Object obj
+    ) throws IOException {
+        zos.putNextEntry(new ZipEntry(path));
+        zos.write(mapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(obj));
+        zos.closeEntry();
+    }
+
+    private void writeBytes(
+            ZipOutputStream zos,
+            String path,
+            byte[] data
+    ) throws IOException {
+        zos.putNextEntry(new ZipEntry(path));
+        zos.write(data);
+        zos.closeEntry();
+    }
+}
+
+
+================================================================
+ADDITIONAL: COMPILER MODELS REFERENCED BY RUNTIME
+================================================================
+
+
+----- FILE: compiler-blueprint/src/main/java/io/devinebyte/compiler/blueprint/model/ModuleIR.java -----
+
+package io.devinebyte.compiler.blueprint.model;
+
+import java.util.List;
+import java.util.Set;
+
+public record ModuleIR(
+    String id,
+    String name,
+    boolean enabled,
+    Set<String> dependencies,
+    List<EntityIR> entities,
+    List<EventIR> events,
+    List<WorkflowIR> workflows
+) {}
+
+
+----- FILE: compiler-workflow/src/main/java/io/devinebyte/compiler/workflow/model/State.java -----
+
+package io.devinebyte.compiler.workflow.model;
+
+import java.util.List;
+
+public record State(
+    String name,
+    boolean isInitial,
+    boolean isFinal,
+    List<Transition> transitions
+) {}
+
+
+----- FILE: compiler-workflow/src/main/java/io/devinebyte/compiler/workflow/model/Transition.java -----
+
+package io.devinebyte.compiler.workflow.model;
+
+public record Transition(
+    String triggerEvent,
+    String targetState,
+    String action // name of command/handler to execute
+) {}
+
+
+================================================================
+COLLECTION COMPLETE
+================================================================
+
+Output:
+/home/devine/DevineByteOS/PHASE4_CRM_CONTEXT.txt
+
+Size:
+2612 /home/devine/DevineByteOS/PHASE4_CRM_CONTEXT.txt

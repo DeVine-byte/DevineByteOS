@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="io.devinebyte.runtime.orchestration.LoadDbpkgOrchestrationTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-08-28T16:01:23.204Z" hostname="localhost" time="0.128">
+<testsuite name="io.devinebyte.runtime.orchestration.LoadDbpkgOrchestrationTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-08-28T17:26:52" hostname="DESKTOP-EE228O3" time="0.031">
   <properties/>
-  <testcase name="bootDbpkg_then_RejectNonContractRoute()" classname="io.devinebyte.runtime.orchestration.LoadDbpkgOrchestrationTest" time="0.062"/>
+  <testcase name="bootDbpkg_then_RejectNonContractRoute()" classname="io.devinebyte.runtime.orchestration.LoadDbpkgOrchestrationTest" time="0.031"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

@@ -1,4 +1,16 @@
 [ {
+  "name" : "CustomerCreated",
+  "version" : "1.0",
+  "fields" : {
+    "eventId" : "UUID",
+    "tenantId" : "STRING",
+    "customerId" : "STRING",
+    "name" : "STRING",
+    "version" : "STRING",
+    "email" : "STRING",
+    "timestamp" : "DATETIME"
+  }
+}, {
   "name" : "OrderCreated",
   "version" : "1.0",
   "fields" : {

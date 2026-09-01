@@ -1,5 +1,5 @@
 [ {
-  "name" : "Order",
+  "name" : "Customer",
   "key" : "id",
   "fields" : [ {
     "name" : "id",
@@ -7,7 +7,7 @@
     "required" : true
   } ]
 }, {
-  "name" : "Customer",
+  "name" : "Order",
   "key" : "id",
   "fields" : [ {
     "name" : "id",

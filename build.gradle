@@ -1,11 +1,11 @@
 plugins {
-    id 'java'
+    id 'java' 
 }
 
-group = 'io.devinebyte'
-version = '1.0.0-SNAPSHOT'
-
 allprojects {
+    group = 'io.devinebyte'
+    version = '1.0.0-SNAPSHOT'
+
     repositories {
         mavenCentral()
     }
@@ -34,4 +34,52 @@ subprojects {
     }
 }
 
+// --- Root Project Tasks & Logic (Moved outside subprojects) ---
 
+def pluginsStagingDir = layout.buildDirectory.dir("plugins")
+
+// 1. Task: Collect all module jars into build/plugins/
+tasks.register('stagePluginJars', Copy) {
+    group = "build"
+    description = "Collects all module jars for packaging"
+
+    // Use evaluationDependsOnChildren if subprojects aren't fully evaluated yet
+    def pluginModules = [':modules:crm', ':modules:sales', ':modules:inventory', ':modules:finance']
+    
+    pluginModules.each { modulePath ->
+        dependsOn "${modulePath}:jar"
+        from(project(modulePath).tasks.named('jar'))
+    }
+
+    into pluginsStagingDir
+    include "*.jar"
+
+    // Ensure naming convention: crm-1.0.0.jar
+    eachFile { details ->
+        details.name = details.name.replace("-${project.version}", "-1.0.0")
+    }
+}
+
+// 2. Task: Run compiler-cli with the staged jars
+tasks.register('packageDbpkg', Exec) {
+    group = "build"
+    description = "Builds the tenant .dbpkg with plugins injected"
+    
+    dependsOn stagePluginJars
+    dependsOn ":compiler-cli:jar" // Changed from :build to :jar for speed and correctness
+
+    workingDir rootDir
+    
+    // Using providers to cleanly read the staging path at execution time
+    def stagingPath = providers.provider { pluginsStagingDir.get().asFile.absolutePath }
+    
+    commandLine "java", "-jar", "compiler-cli/build/libs/compiler-cli-1.0.0-SNAPSHOT.jar", 
+                "build", "samples/acme.dbdsl", 
+                "--plugins-dir", stagingPath.get(), 
+                "-o", "execution/acme/tenant-acme-v1.0.0.dbpkg"
+}
+
+// 3. Convenience task
+tasks.register('buildAndPackage') {
+    dependsOn packageDbpkg
+}

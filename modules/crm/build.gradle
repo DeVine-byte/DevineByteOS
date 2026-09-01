@@ -1,0 +1,10 @@
+plugins { id 'java' }
+
+dependencies {
+    implementation project(':runtime-plugin')
+    implementation project(':runtime-core') 
+    implementation project(':runtime-orchestration') // for WorkflowEngine
+    implementation project(':runtime-event')
+    implementation project(':runtime-observability') // for StructuredLogger
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.2'
+}

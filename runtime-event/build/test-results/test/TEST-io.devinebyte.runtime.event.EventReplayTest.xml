@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="io.devinebyte.runtime.event.EventReplayTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-08-26T16:05:59.642Z" hostname="localhost" time="1.456">
+<testsuite name="io.devinebyte.runtime.event.EventReplayTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-08-21T22:05:14" hostname="DESKTOP-EE228O3" time="0.309">
   <properties/>
-  <testcase name="replay_afterAppend_returnsAllEventsInOrder(Path)" classname="io.devinebyte.runtime.event.EventReplayTest" time="1.373"/>
+  <testcase name="replay_afterAppend_returnsAllEventsInOrder(Path)" classname="io.devinebyte.runtime.event.EventReplayTest" time="0.309"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

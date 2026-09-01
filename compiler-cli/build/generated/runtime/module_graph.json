@@ -7,10 +7,17 @@
       "exposesEvents" : [ ],
       "subscribesToEvents" : [ ]
     },
+    "CRM" : {
+      "moduleId" : "CRM",
+      "enabled" : true,
+      "dependsOn" : [ ],
+      "exposesEvents" : [ "CustomerCreated" ],
+      "subscribesToEvents" : [ ]
+    },
     "SALES" : {
       "moduleId" : "SALES",
       "enabled" : true,
-      "dependsOn" : [ ],
+      "dependsOn" : [ "crm" ],
       "exposesEvents" : [ "OrderCreated" ],
       "subscribesToEvents" : [ ]
     },

@@ -1,4 +1,25 @@
 [ {
+  "module" : "crm",
+  "paths" : [ {
+    "method" : "GET",
+    "path" : "/crm/customer",
+    "handler" : "HandleCustomerGET",
+    "requiredPermission" : "CRM_CUSTOMER_GET",
+    "commandOrQuery" : "Query"
+  }, {
+    "method" : "POST",
+    "path" : "/crm/customer",
+    "handler" : "HandleCustomerPOST",
+    "requiredPermission" : "CRM_CUSTOMER_POST",
+    "commandOrQuery" : "Command"
+  }, {
+    "method" : "PUT",
+    "path" : "/crm/customer",
+    "handler" : "HandleCustomerPUT",
+    "requiredPermission" : "CRM_CUSTOMER_PUT",
+    "commandOrQuery" : "Command"
+  } ]
+}, {
   "module" : "sales",
   "paths" : [ {
     "method" : "GET",
@@ -11,18 +32,6 @@
     "path" : "/sales/order",
     "handler" : "HandleOrderPOST",
     "requiredPermission" : "SALES_ORDER_POST",
-    "commandOrQuery" : "Command"
-  }, {
-    "method" : "GET",
-    "path" : "/sales/customer",
-    "handler" : "HandleCustomerGET",
-    "requiredPermission" : "SALES_CUSTOMER_GET",
-    "commandOrQuery" : "Query"
-  }, {
-    "method" : "PUT",
-    "path" : "/sales/customer",
-    "handler" : "HandleCustomerPUT",
-    "requiredPermission" : "SALES_CUSTOMER_PUT",
     "commandOrQuery" : "Command"
   } ]
 }, {

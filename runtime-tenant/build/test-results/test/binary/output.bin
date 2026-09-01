@@ -1,0 +1,4 @@
++[DBRT] Loaded 0 routes from APISchema.json
+6[DBRT] HTTP Server listening on http://localhost:8080
+#[DBRT] Registering tenant: tenant1
+3[DBRT] Tenant tenant1 online. Press Ctrl+C to stop

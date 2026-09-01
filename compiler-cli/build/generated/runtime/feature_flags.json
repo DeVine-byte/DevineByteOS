@@ -1,5 +1,6 @@
 {
   "INVENTORY" : true,
   "RUNTIME" : true,
-  "SALES" : true
+  "SALES" : true,
+  "CRM" : true
 }

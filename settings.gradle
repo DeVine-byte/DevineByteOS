@@ -1,5 +1,10 @@
 rootProject.name = 'DevineByteOS'
 
+include ':modules:crm'
+include ':modules:sales'
+include ':modules:inventory'
+include ':modules:finance'
+
 include 'compiler-audit'
 include 'compiler-core'
 include 'compiler-dsl'

@@ -1,17 +1,29 @@
-module sales enable {
+module crm enable {
+    entity Customer {
+        id: String;
+        name: String;
+        email: String;
+        phone: String;
+        createdAt: DateTime;
+        expose api [GET, POST, PUT];
+    }
+
+    event CustomerCreated {
+        payload: {
+            customerId: String,
+            name: String,
+            email: String
+        }
+    }
+}
+
+module sales depends on crm enable {
     entity Order {
         id: String;
         customerId: String;
         total: Decimal;
         status: String;
         expose api [GET, POST];
-    }
-
-    entity Customer {
-        id: String;
-        name: String;
-        email: String;
-        expose api [GET, PUT];
     }
 
     event OrderCreated {

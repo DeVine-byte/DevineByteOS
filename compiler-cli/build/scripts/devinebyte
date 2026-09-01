@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright © 2015 the original authors.
+# Copyright © 2015-2021 the original authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@
 #       Darwin, MinGW, and NonStop.
 #
 #   (3) This script is generated from the Groovy template
-#       https://github.com/gradle/gradle/blob/3d91ce3b8caaf77ad09f381f43615b715b53f72c/platforms/jvm/plugins-application/src/main/resources/org/gradle/api/internal/plugins/unixStartScript.txt
+#       https://github.com/gradle/gradle/blob/HEAD/platforms/jvm/plugins-application/src/main/resources/org/gradle/api/internal/plugins/unixStartScript.txt
 #       within the Gradle project.
 #
 #       You can find Gradle at https://github.com/gradle/gradle/.
@@ -86,7 +86,8 @@ done
 # shellcheck disable=SC2034
 APP_BASE_NAME=${0##*/}
 # Discard cd standard output in case $CDPATH is set (https://github.com/gradle/gradle/issues/25036)
-APP_HOME=$( cd -P "${APP_HOME:-./}.." > /dev/null && printf '%s\n' "$PWD" ) || exit
+APP_HOME=$( cd -P "${APP_HOME:-./}.." > /dev/null && printf '%s
+' "$PWD" ) || exit
 
 # Use the maximum available, or set MAX_FD != -1 to use that value.
 MAX_FD=maximum
@@ -114,7 +115,7 @@ case "$( uname )" in                #(
   NONSTOP* )        nonstop=true ;;
 esac
 
-CLASSPATH=$APP_HOME/lib/compiler-cli-1.0.0.jar:$APP_HOME/lib/compiler-sdk.jar:$APP_HOME/lib/compiler-packaging.jar:$APP_HOME/lib/compiler-optimizer.jar:$APP_HOME/lib/compiler-generator.jar:$APP_HOME/lib/compiler-reporting-1.0.0.jar:$APP_HOME/lib/compiler-contracts.jar:$APP_HOME/lib/compiler-workflow.jar:$APP_HOME/lib/compiler-projection.jar:$APP_HOME/lib/compiler-blueprint.jar:$APP_HOME/lib/compiler-audit.jar:$APP_HOME/lib/compiler-dsl.jar:$APP_HOME/lib/compiler-core.jar:$APP_HOME/lib/runtime-plugin.jar:$APP_HOME/lib/runtime-event.jar:$APP_HOME/lib/runtime-module.jar:$APP_HOME/lib/runtime-config.jar:$APP_HOME/lib/micronaut-runtime-4.5.0.jar:$APP_HOME/lib/micronaut-discovery-core-4.5.0.jar:$APP_HOME/lib/micronaut-http-4.5.0.jar:$APP_HOME/lib/micronaut-context-propagation-4.5.0.jar:$APP_HOME/lib/micronaut-retry-4.5.0.jar:$APP_HOME/lib/micronaut-context-4.5.0.jar:$APP_HOME/lib/micronaut-aop-4.5.0.jar:$APP_HOME/lib/micronaut-inject-4.5.0.jar:$APP_HOME/lib/runtime-observability.jar:$APP_HOME/lib/runtime-core-1.0.0.jar:$APP_HOME/lib/jakarta.inject-api-2.0.1.jar:$APP_HOME/lib/picocli-4.7.6.jar:$APP_HOME/lib/jackson-module-jakarta-xmlbind-annotations-2.17.2.jar:$APP_HOME/lib/jackson-core-2.17.2.jar:$APP_HOME/lib/jackson-annotations-2.17.2.jar:$APP_HOME/lib/jackson-datatype-jsr310-2.17.2.jar:$APP_HOME/lib/logstash-logback-encoder-7.4.jar:$APP_HOME/lib/jackson-databind-2.17.2.jar:$APP_HOME/lib/slf4j-simple-2.0.17.jar:$APP_HOME/lib/micronaut-core-reactive-4.5.0.jar:$APP_HOME/lib/micronaut-core-4.5.0.jar:$APP_HOME/lib/logback-classic-1.5.6.jar:$APP_HOME/lib/slf4j-api-2.0.17.jar:$APP_HOME/lib/jakarta.annotation-api-2.1.1.jar:$APP_HOME/lib/reactor-core-3.5.11.jar:$APP_HOME/lib/asm-9.6.jar:$APP_HOME/lib/jakarta.xml.bind-api-3.0.1.jar:$APP_HOME/lib/jakarta.activation-api-2.1.0.jar:$APP_HOME/lib/reactive-streams-1.0.4.jar:$APP_HOME/lib/guice-5.1.0.jar:$APP_HOME/lib/opentelemetry-exporter-prometheus-1.35.0-alpha.jar:$APP_HOME/lib/opentelemetry-sdk-extension-autoconfigure-spi-1.35.0.jar:$APP_HOME/lib/opentelemetry-sdk-1.35.0.jar:$APP_HOME/lib/opentelemetry-sdk-metrics-1.35.0.jar:$APP_HOME/lib/opentelemetry-sdk-trace-1.35.0.jar:$APP_HOME/lib/opentelemetry-sdk-logs-1.35.0.jar:$APP_HOME/lib/opentelemetry-sdk-common-1.35.0.jar:$APP_HOME/lib/opentelemetry-extension-incubator-1.35.0-alpha.jar:$APP_HOME/lib/opentelemetry-api-events-1.35.0-alpha.jar:$APP_HOME/lib/opentelemetry-api-1.35.0.jar:$APP_HOME/lib/jakarta.activation-2.0.1.jar:$APP_HOME/lib/javax.inject-1.jar:$APP_HOME/lib/aopalliance-1.0.jar:$APP_HOME/lib/guava-30.1-jre.jar:$APP_HOME/lib/opentelemetry-context-1.35.0.jar:$APP_HOME/lib/prometheus-metrics-exporter-httpserver-1.1.0.jar:$APP_HOME/lib/logback-core-1.5.6.jar:$APP_HOME/lib/failureaccess-1.0.1.jar:$APP_HOME/lib/listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar:$APP_HOME/lib/jsr305-3.0.2.jar:$APP_HOME/lib/checker-qual-3.5.0.jar:$APP_HOME/lib/error_prone_annotations-2.3.4.jar:$APP_HOME/lib/j2objc-annotations-1.3.jar:$APP_HOME/lib/prometheus-metrics-exporter-common-1.1.0.jar:$APP_HOME/lib/prometheus-metrics-exposition-formats-1.1.0.jar:$APP_HOME/lib/prometheus-metrics-model-1.1.0.jar:$APP_HOME/lib/prometheus-metrics-config-1.1.0.jar:$APP_HOME/lib/prometheus-metrics-shaded-protobuf-1.1.0.jar
+CLASSPATH=$APP_HOME/lib/compiler-cli-1.0.0.jar:$APP_HOME/lib/compiler-sdk-1.0.0-SNAPSHOT.jar:$APP_HOME/lib/compiler-packaging-1.0.0-SNAPSHOT.jar:$APP_HOME/lib/compiler-optimizer-1.0.0-SNAPSHOT.jar:$APP_HOME/lib/compiler-generator-1.0.0-SNAPSHOT.jar:$APP_HOME/lib/compiler-reporting-1.0.0.jar:$APP_HOME/lib/compiler-contracts-1.0.0-SNAPSHOT.jar:$APP_HOME/lib/compiler-workflow-1.0.0-SNAPSHOT.jar:$APP_HOME/lib/compiler-projection-1.0.0-SNAPSHOT.jar:$APP_HOME/lib/compiler-blueprint-1.0.0-SNAPSHOT.jar:$APP_HOME/lib/compiler-audit-1.0.0-SNAPSHOT.jar:$APP_HOME/lib/compiler-dsl-1.0.0-SNAPSHOT.jar:$APP_HOME/lib/compiler-core-1.0.0-SNAPSHOT.jar:$APP_HOME/lib/runtime-plugin-1.0.0-SNAPSHOT.jar:$APP_HOME/lib/runtime-event-1.0.0-SNAPSHOT.jar:$APP_HOME/lib/runtime-module-1.0.0-SNAPSHOT.jar:$APP_HOME/lib/runtime-config-1.0.0-SNAPSHOT.jar:$APP_HOME/lib/micronaut-runtime-4.5.0.jar:$APP_HOME/lib/micronaut-discovery-core-4.5.0.jar:$APP_HOME/lib/micronaut-http-4.5.0.jar:$APP_HOME/lib/micronaut-context-propagation-4.5.0.jar:$APP_HOME/lib/micronaut-retry-4.5.0.jar:$APP_HOME/lib/micronaut-context-4.5.0.jar:$APP_HOME/lib/micronaut-aop-4.5.0.jar:$APP_HOME/lib/micronaut-inject-4.5.0.jar:$APP_HOME/lib/runtime-observability-1.0.0-SNAPSHOT.jar:$APP_HOME/lib/runtime-core-1.0.0.jar:$APP_HOME/lib/jakarta.inject-api-2.0.1.jar:$APP_HOME/lib/picocli-4.7.6.jar:$APP_HOME/lib/jackson-module-jakarta-xmlbind-annotations-2.17.2.jar:$APP_HOME/lib/jackson-core-2.17.2.jar:$APP_HOME/lib/jackson-annotations-2.17.2.jar:$APP_HOME/lib/jackson-datatype-jsr310-2.17.2.jar:$APP_HOME/lib/logstash-logback-encoder-7.4.jar:$APP_HOME/lib/jackson-databind-2.17.2.jar:$APP_HOME/lib/slf4j-simple-2.0.17.jar:$APP_HOME/lib/micronaut-core-reactive-4.5.0.jar:$APP_HOME/lib/micronaut-core-4.5.0.jar:$APP_HOME/lib/logback-classic-1.5.6.jar:$APP_HOME/lib/slf4j-api-2.0.17.jar:$APP_HOME/lib/jakarta.annotation-api-2.1.1.jar:$APP_HOME/lib/reactor-core-3.5.11.jar:$APP_HOME/lib/asm-9.6.jar:$APP_HOME/lib/jakarta.xml.bind-api-3.0.1.jar:$APP_HOME/lib/jakarta.activation-api-2.1.0.jar:$APP_HOME/lib/reactive-streams-1.0.4.jar:$APP_HOME/lib/guice-5.1.0.jar:$APP_HOME/lib/opentelemetry-exporter-prometheus-1.35.0-alpha.jar:$APP_HOME/lib/opentelemetry-sdk-extension-autoconfigure-spi-1.35.0.jar:$APP_HOME/lib/opentelemetry-sdk-1.35.0.jar:$APP_HOME/lib/opentelemetry-sdk-metrics-1.35.0.jar:$APP_HOME/lib/opentelemetry-sdk-trace-1.35.0.jar:$APP_HOME/lib/opentelemetry-sdk-logs-1.35.0.jar:$APP_HOME/lib/opentelemetry-sdk-common-1.35.0.jar:$APP_HOME/lib/opentelemetry-extension-incubator-1.35.0-alpha.jar:$APP_HOME/lib/opentelemetry-api-events-1.35.0-alpha.jar:$APP_HOME/lib/opentelemetry-api-1.35.0.jar:$APP_HOME/lib/jakarta.activation-2.0.1.jar:$APP_HOME/lib/javax.inject-1.jar:$APP_HOME/lib/aopalliance-1.0.jar:$APP_HOME/lib/guava-30.1-jre.jar:$APP_HOME/lib/opentelemetry-context-1.35.0.jar:$APP_HOME/lib/prometheus-metrics-exporter-httpserver-1.1.0.jar:$APP_HOME/lib/logback-core-1.5.6.jar:$APP_HOME/lib/failureaccess-1.0.1.jar:$APP_HOME/lib/listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar:$APP_HOME/lib/jsr305-3.0.2.jar:$APP_HOME/lib/checker-qual-3.5.0.jar:$APP_HOME/lib/error_prone_annotations-2.3.4.jar:$APP_HOME/lib/j2objc-annotations-1.3.jar:$APP_HOME/lib/prometheus-metrics-exporter-common-1.1.0.jar:$APP_HOME/lib/prometheus-metrics-exposition-formats-1.1.0.jar:$APP_HOME/lib/prometheus-metrics-model-1.1.0.jar:$APP_HOME/lib/prometheus-metrics-config-1.1.0.jar:$APP_HOME/lib/prometheus-metrics-shaded-protobuf-1.1.0.jar
 
 
 # Determine the Java command to use to start the JVM.
@@ -205,7 +206,7 @@ fi
 DEFAULT_JVM_OPTS=""
 
 # Collect all arguments for the java command:
-#   * DEFAULT_JVM_OPTS, JAVA_OPTS, and optsEnvironmentVar are not allowed to contain shell fragments,
+#   * DEFAULT_JVM_OPTS, JAVA_OPTS, JAVA_OPTS, and optsEnvironmentVar are not allowed to contain shell fragments,
 #     and any embedded shellness will be escaped.
 #   * For example: A user cannot expect ${Hostname} to be expanded, as it is an environment variable and will be
 #     treated as '${Hostname}' itself on the command line.
