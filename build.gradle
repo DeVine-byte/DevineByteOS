@@ -1,5 +1,5 @@
 plugins {
-    id 'java' 
+    id 'java'
 }
 
 allprojects {
@@ -34,7 +34,7 @@ subprojects {
     }
 }
 
-// --- Root Project Tasks & Logic (Moved outside subprojects) ---
+// --- Root Project Tasks & Logic ---
 
 def pluginsStagingDir = layout.buildDirectory.dir("plugins")
 
@@ -43,9 +43,8 @@ tasks.register('stagePluginJars', Copy) {
     group = "build"
     description = "Collects all module jars for packaging"
 
-    // Use evaluationDependsOnChildren if subprojects aren't fully evaluated yet
     def pluginModules = [':modules:crm', ':modules:sales', ':modules:inventory', ':modules:finance']
-    
+
     pluginModules.each { modulePath ->
         dependsOn "${modulePath}:jar"
         from(project(modulePath).tasks.named('jar'))
@@ -54,32 +53,34 @@ tasks.register('stagePluginJars', Copy) {
     into pluginsStagingDir
     include "*.jar"
 
-    // Ensure naming convention: crm-1.0.0.jar
     eachFile { details ->
         details.name = details.name.replace("-${project.version}", "-1.0.0")
     }
 }
 
-// 2. Task: Run compiler-cli with the staged jars
-tasks.register('packageDbpkg', Exec) {
+// 2. Task: Run compiler-cli natively using JavaExec matching your precise parameters
+tasks.register('packageDbpkg', JavaExec) {
     group = "build"
     description = "Builds the tenant .dbpkg with plugins injected"
-    
+
     dependsOn stagePluginJars
-    dependsOn ":compiler-cli:jar" // Changed from :build to :jar for speed and correctness
+
+    def cliProject = project(':compiler-cli')
+    mainClass = 'io.devinebyte.compiler.cli.CompilerCli'
+    classpath = cliProject.configurations.runtimeClasspath + cliProject.tasks.named('jar').get().outputs.files
 
     workingDir rootDir
-    
-    // Using providers to cleanly read the staging path at execution time
-    def stagingPath = providers.provider { pluginsStagingDir.get().asFile.absolutePath }
-    
-    commandLine "java", "-jar", "compiler-cli/build/libs/compiler-cli-1.0.0-SNAPSHOT.jar", 
-                "build", "samples/acme.dbdsl", 
-                "--plugins-dir", stagingPath.get(), 
-                "-o", "execution/acme/tenant-acme-v1.0.0.dbpkg"
+
+    // FIX: Aligned perfectly with your manual compiler arguments signature
+    args 'compile', 
+         '-d', "${rootDir.absolutePath}/samples/acme.dbdsl",
+         '-t', 'acme',
+         '-v', '1.0.0',
+         '-o', "${rootDir.absolutePath}/execution"
 }
 
 // 3. Convenience task
 tasks.register('buildAndPackage') {
     dependsOn packageDbpkg
 }
+

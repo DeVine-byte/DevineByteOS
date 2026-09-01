@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 
 public record WorkflowDefinition(
     String name,
+    String moduleId, // FIX: Track the module ownership context
     String version,
     Map<String, State> statesByName,
     String initialState
@@ -21,7 +22,9 @@ public record WorkflowDefinition(
             .map(State::name)
             .findFirst()
             .orElseThrow(() -> new IllegalArgumentException("No initial state for " + machine.workflowName()));
-        return new WorkflowDefinition(machine.workflowName(), machine.version(), states, initial);
+        
+        // FIX: Extract and forward the compiler's moduleId parameter
+        return new WorkflowDefinition(machine.workflowName(), machine.moduleId(), machine.version(), states, initial);
     }
 
     public Transition findTransition(String currentState, String eventType) {
@@ -33,3 +36,4 @@ public record WorkflowDefinition(
             .orElse(null);
     }
 }
+

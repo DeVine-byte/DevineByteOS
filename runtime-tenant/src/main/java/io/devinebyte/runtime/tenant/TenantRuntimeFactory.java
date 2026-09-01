@@ -37,6 +37,7 @@ public class TenantRuntimeFactory {
     private final ModuleLoader moduleLoader;
     private final ModuleRegistry moduleRegistry;
     private final RuntimeRegistry runtimeRegistry;
+    private final WorkflowEngine workflowEngine;
 
     @Inject
     public TenantRuntimeFactory(
@@ -44,13 +45,15 @@ public class TenantRuntimeFactory {
         ObjectMapper mapper,
         ModuleLoader moduleLoader,
         ModuleRegistry moduleRegistry,
-        RuntimeRegistry runtimeRegistry
+        RuntimeRegistry runtimeRegistry,
+        WorkflowEngine workflowEngine
     ) {
         this.configManager = configManager;
         this.mapper = mapper;
         this.moduleLoader = moduleLoader;
         this.moduleRegistry = moduleRegistry;
         this.runtimeRegistry = runtimeRegistry;
+        this.workflowEngine = workflowEngine;
     }
 
     public TenantRuntime create(TenantContext tenant, BootstrapResult bootstrap, FileSystem fs, DiagnosticCollector diagnostics) throws Exception {
@@ -65,9 +68,12 @@ public class TenantRuntimeFactory {
         EventDispatcher dispatcher = new EventDispatcher(handlerRegistry, guard);
         EventBus eventBus = new EventBus(eventStore, dispatcher, guard);
 
+        // FIX: Construct real active repository and executor infrastructure components
         var workflowRepo = new FileWorkflowInstanceRepository(eventStore, tenantBase);
         var workflowExecutor = new WorkflowExecutor(eventStore, guard);
-        WorkflowEngine workflowEngine = new WorkflowEngine(workflowRepo, workflowExecutor);
+
+        // FIX: Re-wire the shared global workflowEngine with your live state resources to clear NPE bugs!
+        this.workflowEngine.wireDependencies(workflowRepo, workflowExecutor);
 
         // Load modules from dbpkg so guard allows events
         Path graphPath = fs.getPath("runtime/module_graph.json");
@@ -75,7 +81,7 @@ public class TenantRuntimeFactory {
         moduleRegistry.register(tenant, graph.modules());
 
         RuntimeOrchestrationModule orchestration = RuntimeOrchestrationModule.create(
-            eventBus, moduleRegistry, runtimeRegistry, workflowEngine, fs
+            eventBus, moduleRegistry, runtimeRegistry, this.workflowEngine, fs
         );
 
         // Publish boot event from "runtime" module - this creates events.log
@@ -100,3 +106,4 @@ public class TenantRuntimeFactory {
         );
     }
 }
+

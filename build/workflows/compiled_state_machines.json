@@ -1,0 +1,75 @@
+[ {
+  "workflowName" : "FulfillOrder",
+  "moduleId" : "SALES",
+  "version" : "1.0.0",
+  "states" : [ {
+    "name" : "ReserveInventory",
+    "isInitial" : true,
+    "isFinal" : false,
+    "transitions" : [ {
+      "triggerEvent" : "ReserveInventoryCompleted",
+      "targetState" : "ChargePayment",
+      "action" : "ReserveInventory"
+    } ]
+  }, {
+    "name" : "ChargePayment",
+    "isInitial" : false,
+    "isFinal" : false,
+    "transitions" : [ {
+      "triggerEvent" : "ChargePaymentCompleted",
+      "targetState" : "ShipOrder",
+      "action" : "ChargePayment"
+    } ]
+  }, {
+    "name" : "ShipOrder",
+    "isInitial" : false,
+    "isFinal" : true,
+    "transitions" : [ {
+      "triggerEvent" : "ShipOrderCompleted",
+      "targetState" : "END",
+      "action" : "ShipOrder"
+    } ]
+  } ]
+}, {
+  "workflowName" : "HandleCustomerPOST",
+  "moduleId" : "CRM",
+  "version" : "1.0.0",
+  "states" : [ {
+    "name" : "UpsertEntity",
+    "isInitial" : true,
+    "isFinal" : true,
+    "transitions" : [ {
+      "triggerEvent" : "HandleCustomerPOSTCompleted",
+      "targetState" : "END",
+      "action" : "builtin:repository:upsert"
+    } ]
+  } ]
+}, {
+  "workflowName" : "HandleOrderPOST",
+  "moduleId" : "SALES",
+  "version" : "1.0.0",
+  "states" : [ {
+    "name" : "UpsertEntity",
+    "isInitial" : true,
+    "isFinal" : true,
+    "transitions" : [ {
+      "triggerEvent" : "HandleOrderPOSTCompleted",
+      "targetState" : "END",
+      "action" : "builtin:repository:upsert"
+    } ]
+  } ]
+}, {
+  "workflowName" : "HandleStockPOST",
+  "moduleId" : "INVENTORY",
+  "version" : "1.0.0",
+  "states" : [ {
+    "name" : "UpsertEntity",
+    "isInitial" : true,
+    "isFinal" : true,
+    "transitions" : [ {
+      "triggerEvent" : "HandleStockPOSTCompleted",
+      "targetState" : "END",
+      "action" : "builtin:repository:upsert"
+    } ]
+  } ]
+} ]

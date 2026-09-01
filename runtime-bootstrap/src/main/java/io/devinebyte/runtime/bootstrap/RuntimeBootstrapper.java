@@ -8,11 +8,13 @@ import io.devinebyte.runtime.core.context.TenantContext;
 import io.devinebyte.runtime.core.diagnostics.DiagnosticCollector;
 import io.devinebyte.runtime.module.ModuleLoader;
 import io.devinebyte.runtime.module.ModuleRegistry;
-import io.devinebyte.runtime.plugin.DbpkgExtractor; // NEW
+import io.devinebyte.runtime.plugin.DbpkgExtractor;
 import io.devinebyte.runtime.plugin.PluginContext;
 import io.devinebyte.runtime.plugin.PluginLoader;
 import io.devinebyte.runtime.plugin.PluginManifest;
 import io.devinebyte.runtime.plugin.RuntimePlugin;
+import io.devinebyte.runtime.workflow.engine.WorkflowEngine;
+import io.devinebyte.runtime.workflow.model.WorkflowDefinition;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
@@ -29,6 +31,7 @@ public class RuntimeBootstrapper {
     private final ManifestReader manifestReader;
     private final ModuleLoader moduleLoader;
     private final ModuleRegistry moduleRegistry;
+    private final WorkflowEngine workflowEngine;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Inject
@@ -36,12 +39,14 @@ public class RuntimeBootstrapper {
         DbpkgVerifier verifier,
         ManifestReader manifestReader,
         ModuleLoader moduleLoader,
-        ModuleRegistry moduleRegistry
+        ModuleRegistry moduleRegistry,
+        WorkflowEngine workflowEngine
     ) {
         this.verifier = verifier;
         this.manifestReader = manifestReader;
         this.moduleLoader = moduleLoader;
         this.moduleRegistry = moduleRegistry;
+        this.workflowEngine = workflowEngine;
     }
 
     public BootstrapResult boot(TenantContext tenant, Path dbpkgPath) {
@@ -104,6 +109,11 @@ public class RuntimeBootstrapper {
             Map<String, ModuleDefinition> moduleMap = moduleGraph.modules();
             moduleRegistry.register(bootContext, moduleMap);
 
+            // Load all workflows from dbpkg
+            for (WorkflowDefinition def : loadWorkflowsFromDbpkg(zip, diagnostics)) {
+                workflowEngine.register(def);
+            }
+
             // 3. Load Plugins from /bootstrap/plugins/
             Path tempExtractDir = Files.createTempDirectory("dbos-" + tenant.tenantId());
             DbpkgExtractor.extract(zip, tempExtractDir, diagnostics);
@@ -134,6 +144,46 @@ public class RuntimeBootstrapper {
         }
     }
 
+    private List<WorkflowDefinition> loadWorkflowsFromDbpkg(ZipFile zip, DiagnosticCollector diagnostics) {
+        List<WorkflowDefinition> defs = new java.util.ArrayList<>();
+        
+        var workflowsEntry = zip.getEntry("workflows/compiled_state_machines.json");
+        if (workflowsEntry == null) {
+            workflowsEntry = zip.getEntry("compiled_state_machines.json");
+        }
+
+        if (workflowsEntry != null) {
+            try (InputStream is = zip.getInputStream(workflowsEntry)) {
+                // FIX: Parse raw array elements as Maps to bypass module dependency boundaries completely
+                List<Map<String, Object>> rawMachines = objectMapper.readValue(
+                    is, 
+                    objectMapper.getTypeFactory().constructCollectionType(List.class, Map.class)
+                );
+                
+                if (rawMachines != null) {
+                    for (Map<String, Object> rawMachine : rawMachines) {
+                        // FIX: Explicitly convert individual item elements to Jackson JSON trees,
+                        // then hand them directly over to WorkflowDefinition's internal mapping engine!
+                        byte[] itemBytes = objectMapper.writeValueAsBytes(rawMachine);
+                        io.devinebyte.compiler.workflow.model.ExecutableStateMachine machineObj = 
+                            objectMapper.readValue(itemBytes, io.devinebyte.compiler.workflow.model.ExecutableStateMachine.class);
+                        
+                        WorkflowDefinition runtimeDef = WorkflowDefinition.from(machineObj);
+                        defs.add(runtimeDef);
+                        System.out.println("[BOOTSTRAP] Successfully registered workflow definition: " + runtimeDef.name());
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                diagnostics.error("BOOT_WORKFLOW_ERR", "Failed parsing compiled_state_machines.json: " + e.getMessage(), "SYSTEM");
+            }
+        } else {
+            System.out.println("[BOOTSTRAP WARNING] workflows/compiled_state_machines.json not found in dbpkg!");
+        }
+
+        return defs;
+    }
+
     private PluginManifest readPluginManifest(Path pluginsPath, DiagnosticCollector diagnostics) {
         try {
             return objectMapper.readValue(pluginsPath.resolve("manifest.json").toFile(), PluginManifest.class);
@@ -143,3 +193,4 @@ public class RuntimeBootstrapper {
         }
     }
 }
+

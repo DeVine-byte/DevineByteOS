@@ -1,0 +1,15 @@
+{
+  "workflowName" : "HandleCustomerPOST",
+  "moduleId" : "CRM",
+  "version" : "1.0.0",
+  "states" : [ {
+    "name" : "UpsertEntity",
+    "isInitial" : true,
+    "isFinal" : true,
+    "transitions" : [ {
+      "triggerEvent" : "HandleCustomerPOSTCompleted",
+      "targetState" : "END",
+      "action" : "builtin:repository:upsert"
+    } ]
+  } ]
+}

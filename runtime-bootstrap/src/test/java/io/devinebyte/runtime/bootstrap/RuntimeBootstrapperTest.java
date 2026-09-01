@@ -3,8 +3,9 @@ package io.devinebyte.runtime.bootstrap;
 import io.devinebyte.runtime.core.context.TenantContext;
 import io.devinebyte.runtime.core.context.TenantLifecycle;
 import io.devinebyte.runtime.core.diagnostics.DiagnosticCollector;
-import io.devinebyte.runtime.module.ModuleLoader;        // NEW
-import io.devinebyte.runtime.module.ModuleRegistry;      // NEW
+import io.devinebyte.runtime.module.ModuleLoader;
+import io.devinebyte.runtime.module.ModuleRegistry;
+import io.devinebyte.runtime.workflow.engine.WorkflowEngine; // FIX: Added import
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -17,12 +18,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class RuntimeBootstrapperTest {
 
-    // FIX: pass all 4 dependencies now
+    // FIX: Pass all 5 dependencies now by adding a dummy WorkflowEngine instance
     private final RuntimeBootstrapper bootstrapper = new RuntimeBootstrapper(
         new DbpkgVerifier(true),
         new ManifestReader(),
         new ModuleLoader(new DiagnosticCollector()),
-        new ModuleRegistry()
+        new ModuleRegistry(),
+        new WorkflowEngine(null, null) 
     );
 
     private Path dbpkgPath;
@@ -69,3 +71,4 @@ class RuntimeBootstrapperTest {
         }
     }
 }
+

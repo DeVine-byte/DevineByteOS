@@ -3,7 +3,7 @@ package io.devinebyte.runtime.tenant;
 import io.devinebyte.runtime.bootstrap.RuntimeBootstrapper;
 import io.devinebyte.runtime.bootstrap.DbpkgVerifier;
 import io.devinebyte.runtime.bootstrap.ManifestReader;
-import io.devinebyte.runtime.tenant.http.JdkHttpAdapter; 
+import io.devinebyte.runtime.tenant.http.JdkHttpAdapter;
 import io.devinebyte.runtime.tenant.registry.TenantRegistry;
 import io.devinebyte.runtime.tenant.registry.TenantRuntimeHandle;
 import io.devinebyte.runtime.tenant.TenantRuntime;
@@ -13,12 +13,14 @@ import io.devinebyte.runtime.core.diagnostics.DiagnosticCollector;
 import io.devinebyte.runtime.module.ModuleLoader;
 import io.devinebyte.runtime.module.ModuleRegistry;
 import io.devinebyte.runtime.core.registry.RuntimeRegistry;
+import io.devinebyte.runtime.workflow.engine.WorkflowEngine;
+import io.devinebyte.runtime.workflow.engine.WorkflowExecutor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.file.Path;
 
 public class RuntimeLauncher {
 
-    // Move adapter instantiation to an isolated, lazy holder pattern 
+    // Move adapter instantiation to an isolated, lazy holder pattern
     // This allows multi-tenant test rigs to boot multiple bundles without breaking port 8080
     private static JdkHttpAdapter sharedHttpAdapter;
 
@@ -46,7 +48,7 @@ public class RuntimeLauncher {
     }
 
     private static void runInternal(Path dbpkg, String tenantId, boolean skipVerify) throws Exception {
-        ObjectMapper mapper = new ObjectMapper().findAndRegisterModules(); // FIXED
+        ObjectMapper mapper = new ObjectMapper().findAndRegisterModules();
         ConfigurationManager config = new ConfigurationManager(mapper);
 
         DiagnosticCollector diagnostics = new DiagnosticCollector();
@@ -57,8 +59,13 @@ public class RuntimeLauncher {
         DbpkgVerifier verifier = new DbpkgVerifier();
         ManifestReader manifestReader = new ManifestReader();
 
-        TenantRuntimeFactory factory = new TenantRuntimeFactory(config, mapper, loader, registry, runtimeRegistry);
-        RuntimeBootstrapper bootstrapper = new RuntimeBootstrapper(verifier, manifestReader, loader, registry);
+        // Construct the single source of truth workflow engine reference
+        WorkflowExecutor executor = new WorkflowExecutor(null, null);
+        WorkflowEngine workflowEngine = new WorkflowEngine(null, executor);
+
+        // FIX: Inject the unified workflowEngine into BOTH constructors to share registered state
+        TenantRuntimeFactory factory = new TenantRuntimeFactory(config, mapper, loader, registry, runtimeRegistry, workflowEngine);
+        RuntimeBootstrapper bootstrapper = new RuntimeBootstrapper(verifier, manifestReader, loader, registry, workflowEngine);
 
         TenantRegistry tenantRegistry = new TenantRegistry();
         TenantRuntimeManager manager = new TenantRuntimeManager(bootstrapper, factory, tenantRegistry);
@@ -69,7 +76,7 @@ public class RuntimeLauncher {
 
         // WIRE HTTP SERVER (Idempotent socket instantiation)
         JdkHttpAdapter http = getHttpAdapter(8080);
-        http.registerTenant(runtime); 
+        http.registerTenant(runtime);
 
         // ADD GRACEFUL SHUTDOWN HOOK
         // This flushes internal diagnostics logs and clears network traffic when Ctrl+C is caught
@@ -86,3 +93,4 @@ public class RuntimeLauncher {
         Thread.currentThread().join();
     }
 }
+

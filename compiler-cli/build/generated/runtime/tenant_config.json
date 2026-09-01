@@ -1,6 +1,0 @@
-{
-  "lifecycle" : "ACTIVE",
-  "requestedModules" : [ "crm", "inventory", "runtime", "sales" ],
-  "version" : "1.0.0",
-  "tenantId" : "acme"
-}
