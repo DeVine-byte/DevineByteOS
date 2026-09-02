@@ -1,0 +1,28 @@
+plugins {
+    id 'java-library'
+}
+
+dependencies {
+    // Core Engine Context Dependencies - Must align on Java 21 compatibility bounds
+    implementation project(':runtime-core')
+
+    // Jackson for schema-agnostic JSON payload mapping
+    implementation "com.fasterxml.jackson.core:jackson-databind:2.15.2"
+    implementation "com.fasterxml.jackson.core:jackson-core:2.15.2"
+
+    // H2 Embedded Database Server Engine
+    implementation "com.h2database:h2:2.2.224"
+
+    // Jakarta Injection for cross-module component loading
+    implementation "jakarta.inject:jakarta.inject-api:2.0.1"
+}
+
+// FIX: Target Java 21 cleanly, neutralizing the SystemInfo android/sandbox blocker
+tasks.withType(JavaCompile).configureEach {
+    options.release.set(21)
+}
+
+test {
+    useJUnitPlatform()
+}
+

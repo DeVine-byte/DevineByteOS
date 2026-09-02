@@ -11,7 +11,7 @@ dependencies {
     implementation project(':runtime-event')
     implementation project(':runtime-module')
     implementation project(':compiler-workflow')
-
+    implementation project(':runtime-repository')
     // Pin versions to match runtime-main transitive deps
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.2'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.17.2'
