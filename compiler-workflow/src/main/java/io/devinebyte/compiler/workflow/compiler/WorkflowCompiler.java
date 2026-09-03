@@ -1,10 +1,10 @@
 package io.devinebyte.compiler.workflow.compiler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.SerializationFeature;      
 import io.devinebyte.compiler.blueprint.model.BlueprintIR;
 import io.devinebyte.compiler.blueprint.model.ModuleIR;
-import io.devinebyte.compiler.blueprint.model.EntityIR;
+import io.devinebyte.compiler.blueprint.model.EntityIR;          
 import io.devinebyte.compiler.blueprint.model.WorkflowIR;
 import io.devinebyte.compiler.core.context.CompilationContext;
 import io.devinebyte.compiler.core.context.TenantContext;
@@ -15,13 +15,13 @@ import jakarta.inject.Singleton;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.List;                                           
 
-@Singleton
+@Singleton                                                       
 public class WorkflowCompiler {
 
-    private final ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
-
+    private final ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);                            
+    
     public void compile(TenantContext tenant, CompilationContext context, BlueprintIR ir) {
         List<ExecutableStateMachine> machines = new ArrayList<>();
 
@@ -48,18 +48,16 @@ public class WorkflowCompiler {
                 if (module.entities() == null) continue;
 
                 for (EntityIR entity : module.entities()) {
-                    // For DevineByte OS: Having an entity implies implicit CRUD availability.
-                    // We automatically generate the missing POST handler for every entity found.
-                    String generatedWfName = "Handle" + entity.name() + "POST";
-
-                    // Prevent overlapping if a user manually declared a workflow with this exact name
-                    boolean alreadyExists = false;
-                    if (ir.workflows() != null) {
-                        alreadyExists = ir.workflows().stream().anyMatch(w -> w.name().equals(generatedWfName));
+                    // Generate implicit Write Pipeline
+                    String postWfName = "Handle" + entity.name() + "POST";
+                    if (ir.workflows() == null || ir.workflows().stream().noneMatch(w -> w.name().equals(postWfName))) {
+                        machines.add(createImplicitCrudStateMachine(postWfName, module.id(), ir.version(), entity));
                     }
 
-                    if (!alreadyExists) {
-                        machines.add(createImplicitCrudStateMachine(generatedWfName, module.id(), ir.version()));
+                    // ADDED FOR PHASE 1.2: Generate implicit Read Pipeline
+                    String getWfName = "Handle" + entity.name() + "GET";
+                    if (ir.workflows() == null || ir.workflows().stream().noneMatch(w -> w.name().equals(getWfName))) {
+                        machines.add(createImplicitGetStateMachine(getWfName, module.id(), ir.version()));
                     }
                 }
             }
@@ -88,28 +86,24 @@ public class WorkflowCompiler {
         List<State> states = new ArrayList<>();
         List<String> steps = w.steps();
 
-        for (int i = 0; i < steps.size(); i++) {
-            String stepName = steps.get(i);
-            String nextState = (i + 1 < steps.size()) ? steps.get(i + 1) : "END";
-
-            State state = new State(
-                stepName,
-                i == 0,
-                i == steps.size() - 1,
-                List.of(new Transition(stepName + "Completed", nextState, stepName))
-            );
-            states.add(state);
+        if (steps != null) {
+            for (int i = 0; i < steps.size(); i++) {
+                String stepName = steps.get(i);
+                boolean isInitial = (i == 0);
+                boolean isFinal = (i == steps.size() - 1);
+                
+                String nextState = isFinal ? "END" : steps.get(i + 1);
+                List<Transition> transitions = List.of(
+                    new Transition(stepName + "Completed", nextState, "builtin:step:" + stepName)
+                );
+                
+                states.add(new State(stepName, isInitial, isFinal, transitions));
+            }
         }
-
-        if (states.isEmpty()) {
-            states.add(new State("IDLE", true, true, List.of()));
-        }
-
-        // FIX: Match exact ExecutableStateMachine position parameters: name, moduleId, version, states
         return new ExecutableStateMachine(w.name(), moduleId, version, states);
     }
 
-    private ExecutableStateMachine createImplicitCrudStateMachine(String name, String moduleId, String version) {
+    private ExecutableStateMachine createImplicitCrudStateMachine(String name, String moduleId, String version, EntityIR entity) {
         List<State> states = new ArrayList<>();
         states.add(new State(
             "UpsertEntity",
@@ -117,7 +111,21 @@ public class WorkflowCompiler {
             true, // final
             List.of(new Transition(name + "Completed", "END", "builtin:repository:upsert"))
         ));
-        // FIX: Match exact ExecutableStateMachine position parameters: name, moduleId, version, states
+        return new ExecutableStateMachine(name, moduleId, version, states);
+    }
+
+    private ExecutableStateMachine createImplicitGetStateMachine(String name, String moduleId, String version) {
+        List<State> states = new ArrayList<>();
+        states.add(new State(
+            "FetchEntity",
+            true, // initial state
+            false, // not final
+            List.of(
+                new Transition(name + "FetchSuccess", "END", "builtin:repository:find"),
+                new Transition(name + "FetchFailed", "FailExecution", "builtin:error:500")
+            )
+        ));
+        states.add(new State("FailExecution", false, true, List.of()));
         return new ExecutableStateMachine(name, moduleId, version, states);
     }
 }

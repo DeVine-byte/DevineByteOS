@@ -13,6 +13,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -45,7 +48,7 @@ public class JdkHttpAdapter {
             try {
                 String uriPath = exchange.getRequestURI().getPath();
 
-                // 1. GLOBAL SYSTEM HEALTH PROBE (Bypasses contract and tenant validation)
+                // 1. GLOBAL SYSTEM HEALTH PROBE
                 if ("/api/system/health".equals(uriPath)) {
                     String method = exchange.getRequestMethod().toUpperCase();
                     if ("GET".equals(method)) {
@@ -86,18 +89,36 @@ public class JdkHttpAdapter {
                 }
 
                 String method = exchange.getRequestMethod().toUpperCase();
-
                 Object body = null;
-                try (InputStream is = exchange.getRequestBody()) {
-                    byte[] bytes = is.readAllBytes();
-                    if (bytes.length > 0) {
-                        body = mapper.readValue(bytes, Object.class);
+
+                // FIX: Parse raw URL query string for GET parameters
+                if ("GET".equals(method)) {
+                    String query = exchange.getRequestURI().getRawQuery();
+                    if (query != null && !query.isEmpty()) {
+                        Map<String, String> queryMap = new HashMap<>();
+                        String[] pairs = query.split("&");
+                        for (String pair : pairs) {
+                            int idx = pair.indexOf("=");
+                            if (idx > 0) {
+                                String key = URLDecoder.decode(pair.substring(0, idx), StandardCharsets.UTF_8);
+                                String value = URLDecoder.decode(pair.substring(idx + 1), StandardCharsets.UTF_8);
+                                queryMap.put(key, value);
+                            }
+                        }
+                        body = queryMap; // Pass query map directly into the engine's body channel
+                    }
+                } else {
+                    // Standard POST JSON handler remains unchanged
+                    try (InputStream is = exchange.getRequestBody()) {
+                        byte[] bytes = is.readAllBytes();
+                        if (bytes.length > 0) {
+                            body = mapper.readValue(bytes, Object.class);
+                        }
                     }
                 }
 
                 TenantContext ctx = runtime.context();
                 String principal = "anonymous";
-
                 DiagnosticCollector diag = new DiagnosticCollector();
 
                 RuntimeApiServer apiServer = runtime.orchestration().apiServer();
@@ -108,7 +129,15 @@ public class JdkHttpAdapter {
             } catch (SecurityException e) {
                 send(exchange, 403, Map.of("error", e.getMessage()));
             } catch (IllegalArgumentException e) {
+                // Return proper 400 Bad Request payloads for validation/missing parameter blocks
+                send(exchange, 400, Map.of("error", e.getMessage()));
+            } catch (java.util.NoSuchElementException e) {
+                // FIX: Map engine element absence directly to a true HTTP 404 Not Found response code!
                 send(exchange, 404, Map.of("error", e.getMessage()));
+            } catch (IllegalStateException e) {
+                // Return proper 409 Conflict payloads for unique constraints
+                int status = e.getMessage().contains("409") ? 409 : 500;
+                send(exchange, status, Map.of("error", e.getMessage()));
             } catch (Exception e) {
                 e.printStackTrace();
                 send(exchange, 500, Map.of("error", "Internal execution fault: " + e.getMessage()));
@@ -129,3 +158,4 @@ public class JdkHttpAdapter {
         }
     }
 }
+
