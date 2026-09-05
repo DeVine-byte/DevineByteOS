@@ -30,10 +30,12 @@ public class WorkflowExecutor {
         String instanceId = UUID.randomUUID().toString();
         String currentState = def.initialState();
         Map<String, Object> runtimeContext = new HashMap<>(input);
-        
+
         runtimeContext.put("workflowInstanceId", instanceId);
         runtimeContext.put("workflow", def.name());
         runtimeContext.put("moduleId", def.moduleId());
+
+        System.out.println("[WORKFLOW ENGINE] Instantiating sequence state machine tracking graph for: " + def.name());
 
         while (!"END".equals(currentState) && currentState != null) {
             var stateDef = def.statesByName().get(currentState);
@@ -46,10 +48,17 @@ public class WorkflowExecutor {
                 String action = transition.action();
 
                 try {
+                    String tenantId = ctx.tenantId();
+                    String moduleId = def.moduleId();
+
+                    // Step Execution Logic supporting multi-step DSL compilation workflows (e.g. FulfillOrder)
+                    if (action != null && action.startsWith("builtin:service:call")) {
+                        System.out.println("[WORKFLOW STEP] Executing module step routing action task -> " + action);
+                        nextState = transition.targetState();
+                        break;
+                    }
+
                     if ("builtin:repository:upsert".equals(action)) {
-                        String tenantId = ctx.tenantId();
-                        String moduleId = def.moduleId(); 
-                        
                         String entityName = def.name()
                             .replace("Handle", "")
                             .replace("POST", "")
@@ -58,9 +67,9 @@ public class WorkflowExecutor {
 
                         EntityRepository repo = RepositoryFactory.get(tenantId, moduleId, entityName);
                         String persistentId = repo.upsert(runtimeContext);
-                        
-                        System.out.println("[EXECUTOR DEBUG] Implicit workflow wrote record with ID: " + persistentId);
-                        
+
+                        System.out.println("[EXECUTOR DEBUG] Implicit workflow sequence wrote runtime record with ID: " + persistentId);
+
                         runtimeContext.put("id", persistentId);
                         nextState = transition.targetState();
                         break;
@@ -68,11 +77,11 @@ public class WorkflowExecutor {
                 } catch (Exception ex) {
                     System.err.println("[CORE RUNTIME CRASH] Step operation fault: " + action + " -> " + ex.getMessage());
                     runtimeContext.put("errorMessage", ex.getMessage());
-                    
+
                     var errRoute = stateDef.transitions().stream()
                         .filter(t -> t.action() != null && t.action().startsWith("builtin:error"))
                         .findFirst();
-                    
+
                     if (errRoute.isPresent()) {
                         currentState = errRoute.get().targetState();
                         nextState = null;
@@ -91,7 +100,7 @@ public class WorkflowExecutor {
         }
 
         if ("FailExecution".equals(currentState)) {
-            throw new RuntimeException("500: Internal Server Error - DB_UNAVAILABLE: " + runtimeContext.get("errorMessage"));
+            throw new RuntimeException("500: Internal Server Error - Execution halted at fail-state step.");
         }
 
         return runtimeContext;

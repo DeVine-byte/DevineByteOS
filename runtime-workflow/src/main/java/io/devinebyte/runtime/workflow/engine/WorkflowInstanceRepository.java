@@ -26,6 +26,13 @@ public class WorkflowInstanceRepository {
         return cache.get(instanceId);
     }
 
+    // ==========================================================
+    // 🛠 THE FIX: REGULATING THE LOOKUP INTERFACES FOR THE ENGINE
+    // ==========================================================
+    public WorkflowInstance findById(UUID instanceId) {
+        return cache.get(instanceId);
+    }
+
     public void save(WorkflowInstance instance) {
         cache.put(instance.instanceId(), instance);
     }
@@ -34,3 +41,4 @@ public class WorkflowInstanceRepository {
         // TODO: Fold events from EventStore to rebuild state. Rule 1: Event Sourced Only
     }
 }
+

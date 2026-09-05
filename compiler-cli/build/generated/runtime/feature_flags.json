@@ -1,0 +1,8 @@
+{
+  "INVENTORY" : true,
+  "CLINICAL" : true,
+  "FINANCE" : true,
+  "RUNTIME" : true,
+  "SALES" : true,
+  "CRM" : true
+}

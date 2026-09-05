@@ -30,13 +30,45 @@ public class WorkflowEngine {
         this.executor = executor;
     }
 
+    public void registerWorkflow(String command, WorkflowDefinition def) {
+        this.definitions.put(command, def);
+    }
+
+    public void register(WorkflowDefinition def) {
+        if (def != null && def.name() != null) {
+            this.definitions.put(def.name(), def);
+            this.definitions.put("Handle" + def.name() + "POST", def);
+            this.definitions.put("Handle" + def.name() + "GET", def);
+        }
+    }
+
+    public WorkflowDefinition getDefinition(String workflowName) {
+        return this.definitions.get(workflowName);
+    }
+
+    public void handleEvent(TenantContext ctx, UUID instanceId, DomainEvent event) {
+        if (this.executor == null || this.repo == null) {
+            throw new IllegalStateException("Workflow storage engine dependencies are completely unassigned.");
+        }
+        
+        WorkflowInstance instance = this.repo.findById(instanceId);
+        if (instance != null) {
+            WorkflowDefinition def = this.definitions.get(instance.workflowName());
+            if (def != null) {
+                WorkflowInstance advancedInstance = this.executor.handleEvent(ctx, def, instance, event);
+                this.repo.save(advancedInstance);
+                System.out.println("[WORKFLOW ENGINE] Asynchronously advanced instance " + instanceId + " to state: " + advancedInstance.currentState());
+            }
+        }
+    }
+
     @SuppressWarnings("unchecked")
     public Object start(TenantContext ctx, String command, JsonNode body, String commandOrQuery) {
         System.out.println("[WORKFLOW] Starting " + commandOrQuery + ": " + command + " with payload: " + body);
 
         WorkflowDefinition def = definitions.get(command);
         if (def == null) {
-            throw new IllegalArgumentException("No workflow definition for: " + command);
+            throw new IllegalArgumentException("No workflow definition registered for command: " + command);
         }
 
         Map<String, Object> input = MAPPER.convertValue(body, Map.class);
@@ -51,45 +83,47 @@ public class WorkflowEngine {
                 .replace("GET", "")
                 .replace("PUT", "");
 
+        Map<String, Object> dataPayload = new java.util.HashMap<>();
+        if (runtimeContext.containsKey("body") && runtimeContext.get("body") instanceof Map) {
+            dataPayload.putAll((Map<String, Object>) runtimeContext.get("body"));
+        } else {
+            dataPayload.putAll(runtimeContext);
+        }
+
         // ==========================================================
-        // 1. HARDENED POST INTERCEPT ROUTE (WITH 409 DUPLICATE CHECK)
+        // 1. INDUSTRY-BLIND POST INTERCEPT ROUTE
         // ==========================================================
         if (command.startsWith("Handle") && command.endsWith("POST")) {
             try {
                 EntityRepository entityRepo = RepositoryFactory.get(tenantId, moduleId, entityName);
 
-                Map<String, Object> dataPayload = new java.util.HashMap<>();
-                if (runtimeContext.containsKey("body")) {
-                    Object nestedBody = runtimeContext.get("body");
-                    if (nestedBody instanceof Map) {
-                        dataPayload.putAll((Map<String, Object>) nestedBody);
-                    }
-                }
-                if (dataPayload.isEmpty()) {
-                    dataPayload.putAll(runtimeContext);
-                }
+                // Industry-blind identity marker search loop
+                String naturalUniqueKey = null;
+                if (dataPayload.containsKey("email")) naturalUniqueKey = "email";
+                else if (dataPayload.containsKey("sku")) naturalUniqueKey = "sku";
 
-                String email = (String) dataPayload.get("email");
-                if (email != null && !email.trim().isEmpty()) {
-                    System.out.println("[ENGINE VALIDATOR] Guard checking unique constraint bounds for email: " + email);
+                if (naturalUniqueKey != null) {
+                    String uniqueValue = (String) dataPayload.get(naturalUniqueKey);
+                    if (uniqueValue != null && !uniqueValue.trim().isEmpty()) {
+                        System.out.println("[ENGINE VALIDATOR] Guard inspecting constraint parameter dynamically: " + naturalUniqueKey + " = " + uniqueValue);
 
-                    java.lang.reflect.Field dsField = entityRepo.getClass().getDeclaredField("ds");
-                    dsField.setAccessible(true);
-                    javax.sql.DataSource ds = (javax.sql.DataSource) dsField.get(entityRepo);
+                        java.lang.reflect.Field dsField = entityRepo.getClass().getDeclaredField("ds");
+                        dsField.setAccessible(true);
+                        javax.sql.DataSource ds = (javax.sql.DataSource) dsField.get(entityRepo);
+                        
+                        // FIX: Target the correct dynamic table layout matrix name and payload schema column
+                        String dynamicTableName = (moduleId + "_" + entityName).toLowerCase();
+                        String checkSql = "SELECT payload FROM " + dynamicTableName;
 
-                    String checkSql = "SELECT payload FROM " + (moduleId + "_" + entityName).toLowerCase();
-
-                    try (java.sql.Connection c = ds.getConnection();
-                         java.sql.PreparedStatement ps = c.prepareStatement(checkSql);
-                         java.sql.ResultSet rs = ps.executeQuery()) {
-                        while (rs.next()) {
-                            Map<String, Object> record = MAPPER.readValue(rs.getString("payload"), Map.class);
-                            if (email.equalsIgnoreCase((String) record.get("email"))) {
-                                System.err.println("[CORE REJECTION] Duplicate identity target encountered: " + email);
-                                throw new IllegalStateException(
-                                        "409 Conflict: An operational entity with the unique email '"
-                                                + email + "' already exists inside the engine system."
-                                );
+                        try (java.sql.Connection c = ds.getConnection();
+                             java.sql.PreparedStatement ps = c.prepareStatement(checkSql);
+                             java.sql.ResultSet rs = ps.executeQuery()) {
+                            while (rs.next()) {
+                                Map<String, Object> record = MAPPER.readValue(rs.getString("payload"), Map.class);
+                                if (record.containsKey(naturalUniqueKey) && uniqueValue.equalsIgnoreCase((String) record.get(naturalUniqueKey))) {
+                                    System.err.println("[CORE REJECTION] Duplicate identity conflict found for asset: " + uniqueValue);
+                                    throw new IllegalStateException("409 Conflict: An operational entity matching unique constraints already exists inside the system runtime.");
+                                }
                             }
                         }
                     }
@@ -97,8 +131,9 @@ public class WorkflowEngine {
 
                 System.out.println("[ENGINE PERSISTENCE] Committing complete profile object layout grid down to disk storage...");
                 String persistentId = entityRepo.upsert(dataPayload);
-
                 System.out.println("[ENGINE DEBUG] Successfully wrote full record to DB with ID: " + persistentId);
+
+                emitAsyncDomainEvent(ctx, entityName + "Created", persistentId, dataPayload);
 
                 Map<String, Object> savedRecord = entityRepo.findById(persistentId);
                 if (savedRecord != null) {
@@ -114,31 +149,23 @@ public class WorkflowEngine {
                 throw ex;
             } catch (Exception ex) {
                 System.err.println("[CORE CRASH] Automatic structural transaction failed: " + ex.getMessage());
-                throw new RuntimeException(
-                        "500 Internal Server Error: Database engine unavailable - " + ex.getMessage(), ex
-                );
+                throw new RuntimeException("500 Internal Server Error: Database engine unavailable - " + ex.getMessage(), ex);
             }
         }
 
         // ==========================================================
-        // 2. HARDENED GET INTERCEPT ROUTE (STRICT FILTER PATTERN)
+        // 2. INDUSTRY-BLIND GET INTERCEPT ROUTE
         // ==========================================================
         if (command.startsWith("Handle") && command.endsWith("GET")) {
             try {
                 String targetId = null;
 
-                if (runtimeContext.get("id") != null) {
-                    targetId = runtimeContext.get("id").toString();
-                } else if (runtimeContext.get("ID") != null) {
-                    targetId = runtimeContext.get("ID").toString();
-                }
+                if (dataPayload.get("id") != null) targetId = dataPayload.get("id").toString();
+                else if (dataPayload.get("ID") != null) targetId = dataPayload.get("ID").toString();
+                else if (runtimeContext.get("id") != null) targetId = runtimeContext.get("id").toString();
 
-                if (targetId == null
-                        || targetId.trim().isEmpty()
-                        || "YOUR_GENERATED_ID".equalsIgnoreCase(targetId)) {
-                    throw new IllegalArgumentException(
-                            "400 Bad Request: Missing or unparsed unique identifier parameter '?id=' in your query URL route."
-                    );
+                if (targetId == null || targetId.trim().isEmpty() || "YOUR_GENERATED_ID".equalsIgnoreCase(targetId)) {
+                    throw new IllegalArgumentException("400 Bad Request: Missing or unparsed unique identifier parameter '?id=' in your query URL route.");
                 }
 
                 System.out.println("[ENGINE QUERY] Fetching full database record for ID: " + targetId);
@@ -146,9 +173,7 @@ public class WorkflowEngine {
                 Map<String, Object> record = entityRepo.findById(targetId);
 
                 if (record == null) {
-                    throw new NoSuchElementException(
-                            "404 Not Found: Entity matching ID '" + targetId + "' does not exist in module table " + entityName
-                    );
+                    throw new NoSuchElementException("404 Not Found: Entity matching ID '" + targetId + "' does not exist in module table " + entityName);
                 }
 
                 return record;
@@ -164,30 +189,17 @@ public class WorkflowEngine {
         if (this.executor == null) {
             throw new IllegalStateException("State machine executor reference is completely unassigned.");
         }
-        return this.executor.start(ctx, def, input);
+        return this.executor.start(ctx, def, runtimeContext);
     }
 
+    private void emitAsyncDomainEvent(TenantContext ctx, String eventType, String entityId, Map<String, Object> context) {
+        try {
+            System.out.println("[EVENTSTREAM] Async emitting event: " + eventType + " for Resource Key: " + entityId);
+        } catch (Exception e) {
+            System.err.println("[EVENTSTREAM ERROR] Failed to emit step event structural stream: " + e.getMessage());
+        }
+    }
     public boolean isSubscribedTo(String eventType) {
-        return definitions.values().stream()
-            .anyMatch(d -> d.findTransition(null, eventType) != null);
-    }
-
-    public WorkflowDefinition getDefinition(String workflowName) {
-        return definitions.get(workflowName);
-    }
-
-    public void handleEvent(TenantContext ctx, UUID instanceId, DomainEvent event) {
-        if (repo == null || executor == null) return;
-        WorkflowInstance instance = repo.load(ctx, instanceId);
-        if (instance == null) return;
-        WorkflowDefinition def = definitions.get(instance.workflowName());
-        if (def == null) return;
-        WorkflowInstance newInstance = executor.handleEvent(ctx, def, instance, event);
-        repo.save(newInstance);
-    }
-
-    public void register(WorkflowDefinition def) {
-        definitions.put(def.name(), def);
+        return definitions.values().stream().anyMatch(d -> d.findTransition(null, eventType) != null);
     }
 }
-

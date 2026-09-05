@@ -1,58 +1,168 @@
+// ==========================================================
+// MODULE 1: PATIENT MANAGEMENT = CRM
+// ==========================================================
 module crm enable {
-    entity Customer {
+    entity Patient {
         id: String;
         name: String;
         email: String;
         phone: String;
+        dob: DateTime;
+        gender: String;
+        bloodGroup: String;
+        address: String;
         createdAt: DateTime;
         expose api [GET, POST, PUT];
     }
 
-    event CustomerCreated {
+    event PatientRegistered {
         payload: {
-            customerId: String,
+            patientId: String,
             name: String,
-            email: String
+            phone: String
         }
     }
 }
 
+// ==========================================================
+// MODULE 2: BILLING & APPOINTMENTS = SALES
+// ==========================================================
 module sales depends on crm enable {
-    entity Order {
+    entity Appointment {
         id: String;
-        customerId: String;
+        patientId: String;
+        doctorId: String;
+        department: String;
+        appointmentDate: DateTime;
+        status: String;
         total: Decimal;
+        expose api [GET, POST, PUT];
+    }
+
+    entity Invoice {
+        id: String;
+        appointmentId: String;
+        patientId: String;
+        amount: Decimal;
         status: String;
         expose api [GET, POST];
     }
 
-    event OrderCreated {
+    event AppointmentBooked {
         payload: {
-            orderId: String,
-            customerId: String
+            appointmentId: String,
+            patientId: String,
+            department: String
         }
     }
 
-    workflow FulfillOrder {
-        ReserveInventory;
-        ChargePayment;
-        ShipOrder;
+    workflow PatientCheckinToDischarge {
+        ReserveBed;
+        AssignDoctor;
+        ProcessBilling;
+        DischargePatient;
     }
 
-    kpi OrderConversionRate: OrdersPaid;
+    kpi AppointmentConversionRate: AppointmentsCompleted;
 }
 
+// ==========================================================
+// MODULE 3: PHARMACY & SUPPLIES = INVENTORY
+// ==========================================================
 module inventory depends on sales enable {
     entity Stock {
         sku: String;
+        name: String;
         qty: Int;
+        unit: String;
         warehouse: String;
+        expiryDate: DateTime;
         expose api [GET, PUT];
     }
 
-    event InventoryReserved();
+    entity Prescription {
+        id: String;
+        appointmentId: String;
+        patientId: String;
+        drugSku: String;
+        dosage: String;
+        status: String;
+        expose api [GET, POST];
+    }
+
+    event MedicationDispensed {
+        payload: {
+            prescriptionId: String,
+            appointmentId: String,
+            status: String
+        }
+    }
+}
+
+// ==========================================================
+// MODULE 4: INSURANCE & PAYMENTS = FINANCE
+// ==========================================================
+module finance depends on inventory enable {
+    entity Payment {
+        id: String;
+        invoiceId: String;
+        appointmentId: String;
+        patientId: String;
+        amount: Decimal;
+        method: String;
+        status: String;
+        expose api [GET];
+    }
+
+    entity InsuranceClaim {
+        id: String;
+        invoiceId: String;
+        hmoCode: String;
+        status: String;
+        expose api [GET, POST];
+    }
+
+    event PaymentConfirmed {
+        payload: {
+            paymentId: String,
+            invoiceId: String,
+            status: String
+        }
+    }
+}
+
+// ==========================================================
+// MODULE 5: CLINICAL = CORE HOSPITAL OPS
+// ==========================================================
+module clinical depends on sales enable {
+    entity MedicalRecord {
+        id: String;
+        patientId: String;
+        appointmentId: String;
+        diagnosis: String;
+        notes: String;
+        doctorId: String;
+        createdAt: DateTime;
+        expose api [GET, POST];
+    }
+
+    entity Bed {
+        id: String;
+        ward: String;
+        status: String;
+        expose api [GET, PUT];
+    }
+
+    event PatientDischarged {
+        payload: {
+            appointmentId: String,
+            patientId: String,
+            status: String
+        }
+    }
 }
 
 module runtime enable {
     event SystemBooted();
 }
+

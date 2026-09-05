@@ -1,0 +1,53 @@
+{
+  "modules" : {
+    "runtime" : {
+      "moduleId" : "runtime",
+      "enabled" : true,
+      "dependsOn" : [ ],
+      "exposesEvents" : [ ],
+      "subscribesToEvents" : [ ]
+    },
+    "CRM" : {
+      "moduleId" : "CRM",
+      "enabled" : true,
+      "dependsOn" : [ ],
+      "exposesEvents" : [ "PatientRegistered" ],
+      "subscribesToEvents" : [ ]
+    },
+    "SALES" : {
+      "moduleId" : "SALES",
+      "enabled" : true,
+      "dependsOn" : [ "crm" ],
+      "exposesEvents" : [ "AppointmentBooked" ],
+      "subscribesToEvents" : [ ]
+    },
+    "INVENTORY" : {
+      "moduleId" : "INVENTORY",
+      "enabled" : true,
+      "dependsOn" : [ "sales" ],
+      "exposesEvents" : [ "MedicationDispensed" ],
+      "subscribesToEvents" : [ ]
+    },
+    "FINANCE" : {
+      "moduleId" : "FINANCE",
+      "enabled" : true,
+      "dependsOn" : [ "inventory" ],
+      "exposesEvents" : [ "PaymentConfirmed" ],
+      "subscribesToEvents" : [ ]
+    },
+    "CLINICAL" : {
+      "moduleId" : "CLINICAL",
+      "enabled" : true,
+      "dependsOn" : [ "sales" ],
+      "exposesEvents" : [ "PatientDischarged" ],
+      "subscribesToEvents" : [ ]
+    },
+    "RUNTIME" : {
+      "moduleId" : "RUNTIME",
+      "enabled" : true,
+      "dependsOn" : [ ],
+      "exposesEvents" : [ "SystemBooted" ],
+      "subscribesToEvents" : [ ]
+    }
+  }
+}

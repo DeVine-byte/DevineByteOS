@@ -1,0 +1,70 @@
+[ {
+  "name" : "PatientRegistered",
+  "version" : "1.0",
+  "fields" : {
+    "eventId" : "UUID",
+    "patientId" : "STRING",
+    "phone" : "STRING",
+    "tenantId" : "STRING",
+    "name" : "STRING",
+    "version" : "STRING",
+    "timestamp" : "DATETIME"
+  }
+}, {
+  "name" : "AppointmentBooked",
+  "version" : "1.0",
+  "fields" : {
+    "eventId" : "UUID",
+    "patientId" : "STRING",
+    "appointmentId" : "STRING",
+    "tenantId" : "STRING",
+    "department" : "STRING",
+    "version" : "STRING",
+    "timestamp" : "DATETIME"
+  }
+}, {
+  "name" : "MedicationDispensed",
+  "version" : "1.0",
+  "fields" : {
+    "eventId" : "UUID",
+    "prescriptionId" : "STRING",
+    "appointmentId" : "STRING",
+    "tenantId" : "STRING",
+    "version" : "STRING",
+    "timestamp" : "DATETIME",
+    "status" : "STRING"
+  }
+}, {
+  "name" : "PaymentConfirmed",
+  "version" : "1.0",
+  "fields" : {
+    "eventId" : "UUID",
+    "paymentId" : "STRING",
+    "tenantId" : "STRING",
+    "invoiceId" : "STRING",
+    "version" : "STRING",
+    "timestamp" : "DATETIME",
+    "status" : "STRING"
+  }
+}, {
+  "name" : "PatientDischarged",
+  "version" : "1.0",
+  "fields" : {
+    "eventId" : "UUID",
+    "patientId" : "STRING",
+    "appointmentId" : "STRING",
+    "tenantId" : "STRING",
+    "version" : "STRING",
+    "timestamp" : "DATETIME",
+    "status" : "STRING"
+  }
+}, {
+  "name" : "SystemBooted",
+  "version" : "1.0",
+  "fields" : {
+    "eventId" : "UUID",
+    "tenantId" : "STRING",
+    "version" : "STRING",
+    "timestamp" : "DATETIME"
+  }
+} ]

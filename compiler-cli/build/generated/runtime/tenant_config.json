@@ -1,0 +1,6 @@
+{
+  "version" : "1.0.0",
+  "requestedModules" : [ "clinical", "crm", "finance", "inventory", "runtime", "sales" ],
+  "lifecycle" : "ACTIVE",
+  "tenantId" : "acme"
+}

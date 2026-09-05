@@ -1,0 +1,15 @@
+{
+  "workflowName" : "HandleMedicalRecordPOST",
+  "moduleId" : "CLINICAL",
+  "version" : "1.0.0",
+  "states" : [ {
+    "name" : "UpsertEntity",
+    "isInitial" : true,
+    "isFinal" : true,
+    "transitions" : [ {
+      "triggerEvent" : "HandleMedicalRecordPOSTCompleted",
+      "targetState" : "END",
+      "action" : "builtin:repository:upsert"
+    } ]
+  } ]
+}

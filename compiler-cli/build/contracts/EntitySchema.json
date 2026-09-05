@@ -1,0 +1,73 @@
+[ {
+  "name" : "Patient",
+  "key" : "id",
+  "fields" : [ {
+    "name" : "id",
+    "type" : "UUID",
+    "required" : true
+  } ]
+}, {
+  "name" : "Appointment",
+  "key" : "id",
+  "fields" : [ {
+    "name" : "id",
+    "type" : "UUID",
+    "required" : true
+  } ]
+}, {
+  "name" : "Invoice",
+  "key" : "id",
+  "fields" : [ {
+    "name" : "id",
+    "type" : "UUID",
+    "required" : true
+  } ]
+}, {
+  "name" : "Stock",
+  "key" : "id",
+  "fields" : [ {
+    "name" : "id",
+    "type" : "UUID",
+    "required" : true
+  } ]
+}, {
+  "name" : "Prescription",
+  "key" : "id",
+  "fields" : [ {
+    "name" : "id",
+    "type" : "UUID",
+    "required" : true
+  } ]
+}, {
+  "name" : "Payment",
+  "key" : "id",
+  "fields" : [ {
+    "name" : "id",
+    "type" : "UUID",
+    "required" : true
+  } ]
+}, {
+  "name" : "InsuranceClaim",
+  "key" : "id",
+  "fields" : [ {
+    "name" : "id",
+    "type" : "UUID",
+    "required" : true
+  } ]
+}, {
+  "name" : "MedicalRecord",
+  "key" : "id",
+  "fields" : [ {
+    "name" : "id",
+    "type" : "UUID",
+    "required" : true
+  } ]
+}, {
+  "name" : "Bed",
+  "key" : "id",
+  "fields" : [ {
+    "name" : "id",
+    "type" : "UUID",
+    "required" : true
+  } ]
+} ]

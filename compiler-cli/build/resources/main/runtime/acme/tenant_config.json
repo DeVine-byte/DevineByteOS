@@ -1,0 +1,6 @@
+{
+  "tenantId": "acme",
+  "version": "1.0.0",
+  "lifecycle": "ACTIVE",
+  "requestedModules": ["event", "projection", "runtime"]
+}

@@ -1,0 +1,15 @@
+{
+  "workflowName" : "HandleAppointmentPOST",
+  "moduleId" : "SALES",
+  "version" : "1.0.0",
+  "states" : [ {
+    "name" : "UpsertEntity",
+    "isInitial" : true,
+    "isFinal" : true,
+    "transitions" : [ {
+      "triggerEvent" : "HandleAppointmentPOSTCompleted",
+      "targetState" : "END",
+      "action" : "builtin:repository:upsert"
+    } ]
+  } ]
+}

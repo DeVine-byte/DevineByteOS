@@ -4,57 +4,67 @@
   "success" : true,
   "phaseTimings" : [ {
     "phaseName" : "semantic",
-    "duration" : 0.007594769,
+    "duration" : 0.007757153,
     "success" : true
   }, {
     "phaseName" : "audit",
-    "duration" : 0.031027961,
+    "duration" : 0.029192808,
     "success" : true
   }, {
     "phaseName" : "blueprint",
-    "duration" : 0.045233538,
+    "duration" : 0.038696270,
     "success" : true
   }, {
     "phaseName" : "contracts",
-    "duration" : 0.246800192,
+    "duration" : 0.225308346,
     "success" : true
   }, {
     "phaseName" : "workflow",
-    "duration" : 0.057769154,
+    "duration" : 0.062328769,
     "success" : true
   }, {
     "phaseName" : "projection",
-    "duration" : 0.003278885,
+    "duration" : 0.003307923,
     "success" : true
   }, {
     "phaseName" : "generator",
-    "duration" : 0.070833923,
+    "duration" : 0.065458500,
     "success" : true
   }, {
     "phaseName" : "reporting",
-    "duration" : 0.000929462,
+    "duration" : 0.000888654,
     "success" : true
   }, {
     "phaseName" : "packaging",
-    "duration" : 0.482036769,
+    "duration" : 0.424718116,
     "success" : true
   } ],
   "dependencyGraph" : {
-    "edges" : [ ],
-    "topologicalOrder" : [ "runtime", "inventory", "sales", "crm" ]
+    "edges" : [ {
+      "fromModule" : "sales",
+      "toModule" : "clinical",
+      "contractType" : "USES_ENTITY:ReserveBed"
+    }, {
+      "fromModule" : "sales",
+      "toModule" : "crm",
+      "contractType" : "USES_ENTITY:DischargePatient"
+    } ],
+    "topologicalOrder" : [ "clinical", "runtime", "inventory", "finance", "sales", "crm" ]
   },
   "moduleCounts" : {
-    "inventory" : 2,
-    "entities" : 3,
-    "runtime" : 1,
-    "kpis" : 1,
-    "sales" : 3,
-    "events" : 4,
     "workflows" : 1,
+    "finance" : 3,
+    "entities" : 9,
+    "inventory" : 3,
     "crm" : 2,
-    "modules" : 4
+    "kpis" : 1,
+    "runtime" : 1,
+    "modules" : 6,
+    "clinical" : 3,
+    "sales" : 4,
+    "events" : 6
   },
-  "warnings" : [ "SEMANTIC_COMPLETE: Semantic analysis finished", "GAP_ANALYSIS_COMPLETE: Found 0 gaps", "RISK_ANALYSIS_COMPLETE: Found 1 risks", "RECOMMENDATION_COMPLETE: Generated 1 recommendations", "BLUEPRINT_START: Compiling Blueprint for tenant acme", "TREE_SHAKE: Enabled modules: [INVENTORY, RUNTIME, SALES, CRM]", "CONTRACT_VALIDATION: Contract validation complete. 0 violations", "CONTRACTS: Generating 4 contract schemas for tenant acme", "API_001: Generated 3 API contracts", "WORKFLOW: Compiling 7 workflows for tenant acme", "WORKFLOW: Wrote 7 state machines to build/workflows/", "PROJECTION: Dashboard module disabled for tenant acme. Skipping.", "GENERATOR: Generated domain, runtime, bootstrap for tenant acme", "PKG_003: Dependency validation: No cycles found", "PKG_001: Package built: /data/data/com.termux/files/home/DevineByteOS/execution/acme/tenant-acme-v1.0.0.dbpkg", "REPORT: Found 1 workflows in final blueprint" ],
+  "warnings" : [ "SEMANTIC_COMPLETE: Semantic analysis finished", "GAP_ANALYSIS_COMPLETE: Found 0 gaps", "RISK_ANALYSIS_COMPLETE: Found 1 risks", "RECOMMENDATION_COMPLETE: Generated 1 recommendations", "BLUEPRINT_START: Compiling Blueprint for tenant acme", "TREE_SHAKE: Enabled modules: [CLINICAL, INVENTORY, RUNTIME, FINANCE, SALES, CRM]", "CONTRACT_VALIDATION: Contract validation complete. 0 violations", "CONTRACTS: Generating 4 contract schemas for tenant acme", "API_001: Generated 5 API contracts", "WORKFLOW: Compiling 19 workflows for tenant acme", "WORKFLOW: Wrote 19 state machines to build/workflows/", "PROJECTION: Dashboard module disabled for tenant acme. Skipping.", "GENERATOR: Generated domain, runtime, bootstrap for tenant acme", "PKG_003: Dependency validation: No cycles found", "PKG_001: Package built: /data/data/com.termux/files/home/DevineByteOS/execution/acme/tenant-acme-v1.0.0.dbpkg", "REPORT: Found 1 workflows in final blueprint" ],
   "errors" : [ ],
   "dbpkgPath" : "/data/data/com.termux/files/home/DevineByteOS/execution/acme/tenant-acme-v1.0.0.dbpkg"
 }
