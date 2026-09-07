@@ -100,31 +100,4 @@
     "requiredPermission" : "FINANCE_INSURANCECLAIM_POST",
     "commandOrQuery" : "Command"
   } ]
-}, {
-  "module" : "clinical",
-  "paths" : [ {
-    "method" : "GET",
-    "path" : "/clinical/medicalrecord",
-    "handler" : "HandleMedicalRecordGET",
-    "requiredPermission" : "CLINICAL_MEDICALRECORD_GET",
-    "commandOrQuery" : "Query"
-  }, {
-    "method" : "POST",
-    "path" : "/clinical/medicalrecord",
-    "handler" : "HandleMedicalRecordPOST",
-    "requiredPermission" : "CLINICAL_MEDICALRECORD_POST",
-    "commandOrQuery" : "Command"
-  }, {
-    "method" : "GET",
-    "path" : "/clinical/bed",
-    "handler" : "HandleBedGET",
-    "requiredPermission" : "CLINICAL_BED_GET",
-    "commandOrQuery" : "Query"
-  }, {
-    "method" : "PUT",
-    "path" : "/clinical/bed",
-    "handler" : "HandleBedPUT",
-    "requiredPermission" : "CLINICAL_BED_PUT",
-    "commandOrQuery" : "Command"
-  } ]
 } ]

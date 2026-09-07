@@ -37,22 +37,38 @@ public class WorkflowExecutor {
 
         System.out.println("[WORKFLOW ENGINE] Instantiating sequence state machine tracking graph for: " + def.name());
 
-        while (!"END".equals(currentState) && currentState != null) {
+        boolean executionHaltedForEvent = false;
+
+        while (!"END".equals(currentState) && currentState != null && !executionHaltedForEvent) {
             var stateDef = def.statesByName().get(currentState);
             if (stateDef == null || stateDef.isFinal()) {
                 break;
             }
 
             String nextState = null;
+            
+            // If the state has no transitions, or transitions require an explicit external event type,
+            // we treat it as an asynchronous wait block to honor Rule 4 (Everything is an Event)
+            if (stateDef.transitions() == null || stateDef.transitions().isEmpty()) {
+                break;
+            }
+
             for (var transition : stateDef.transitions()) {
                 String action = transition.action();
+
+                // If a transition action is blank or completely missing, it represents a state
+                // that expects a dynamic external event message payload to trigger it.
+                if (action == null || action.trim().isEmpty()) {
+                    System.out.println("[WORKFLOW WAIT] Step [" + currentState + "] shifting to sleep state. Awaiting domain event stream notification...");
+                    executionHaltedForEvent = true;
+                    break;
+                }
 
                 try {
                     String tenantId = ctx.tenantId();
                     String moduleId = def.moduleId();
 
-                    // Step Execution Logic supporting multi-step DSL compilation workflows (e.g. FulfillOrder)
-                    if (action != null && action.startsWith("builtin:service:call")) {
+                    if (action.startsWith("builtin:service:call")) {
                         System.out.println("[WORKFLOW STEP] Executing module step routing action task -> " + action);
                         nextState = transition.targetState();
                         break;
@@ -83,8 +99,7 @@ public class WorkflowExecutor {
                         .findFirst();
 
                     if (errRoute.isPresent()) {
-                        currentState = errRoute.get().targetState();
-                        nextState = null;
+                        nextState = errRoute.get().targetState();
                         break;
                     } else {
                         throw new RuntimeException("Unhandled execution loop breakdown", ex);
@@ -92,10 +107,12 @@ public class WorkflowExecutor {
                 }
             }
 
-            if (nextState != null) {
-                currentState = nextState;
-            } else {
-                break;
+            if (!executionHaltedForEvent) {
+                if (nextState != null) {
+                    currentState = nextState;
+                } else {
+                    break;
+                }
             }
         }
 
@@ -112,7 +129,7 @@ public class WorkflowExecutor {
         if (transition == null) return instance;
 
         String nextState = transition.targetState();
-        boolean isFinal = "END".equals(nextState) || def.statesByName().get(nextState).isFinal();
+        boolean isFinal = "END".equals(nextState) || (def.statesByName().get(nextState) != null && def.statesByName().get(nextState).isFinal());
         WorkflowInstance newInstance = instance.advance(nextState, isFinal);
 
         ObjectNode payload = (ObjectNode) event.payload();

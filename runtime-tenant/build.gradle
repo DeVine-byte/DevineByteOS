@@ -20,6 +20,7 @@ dependencies {
     implementation project(':runtime-event')
     implementation project(':runtime-workflow')
     implementation project(':runtime-orchestration')
+    implementation project(':runtime-projection')
     implementation project(':compiler-dsl') // for ApiSchema
 
     // DI

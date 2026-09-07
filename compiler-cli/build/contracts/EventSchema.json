@@ -46,25 +46,4 @@
     "timestamp" : "DATETIME",
     "status" : "STRING"
   }
-}, {
-  "name" : "PatientDischarged",
-  "version" : "1.0",
-  "fields" : {
-    "eventId" : "UUID",
-    "patientId" : "STRING",
-    "appointmentId" : "STRING",
-    "tenantId" : "STRING",
-    "version" : "STRING",
-    "timestamp" : "DATETIME",
-    "status" : "STRING"
-  }
-}, {
-  "name" : "SystemBooted",
-  "version" : "1.0",
-  "fields" : {
-    "eventId" : "UUID",
-    "tenantId" : "STRING",
-    "version" : "STRING",
-    "timestamp" : "DATETIME"
-  }
 } ]

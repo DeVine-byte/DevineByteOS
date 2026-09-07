@@ -1,0 +1,67 @@
+{
+  "portalName": "St. Jude Hospital Executive Operations Center",
+  "refreshRateSeconds": 5,
+  "layoutGrid": {
+    "columns": 12,
+    "rows": "auto"
+  },
+  "widgets": [
+    {
+      "id": "w-total-appointments",
+      "type": "KPI_METRIC_CARD",
+      "title": "Total Intake Volume",
+      "width": 3,
+      "height": 2,
+      "dataSource": {
+        "kpiName": "TotalAppointmentsMade"
+      },
+      "visualization": {
+        "style": "NUMBER_DISPLAY",
+        "colorTheme": "NEUTRAL_BLUE"
+      }
+    },
+    {
+      "id": "w-conversion-rate",
+      "type": "KPI_METRIC_CARD",
+      "title": "Appointment Completion Velocity",
+      "width": 3,
+      "height": 2,
+      "dataSource": {
+        "kpiName": "AppointmentConversionRate"
+      },
+      "visualization": {
+        "style": "PERCENTAGE_DIAL",
+        "colorTheme": "EMERALD_GREEN"
+      }
+    },
+    {
+      "id": "w-missed-rate",
+      "type": "KPI_METRIC_CARD",
+      "title": "Patient Absenteeism Rate",
+      "width": 3,
+      "height": 2,
+      "dataSource": {
+        "kpiName": "AppointmentMissedRate"
+      },
+      "visualization": {
+        "style": "PERCENTAGE_DIAL",
+        "colorTheme": "AMBER_WARNING"
+      }
+    },
+    {
+      "id": "w-cancelled-rate",
+      "type": "KPI_METRIC_CARD",
+      "title": "Operational Cancellation Rate",
+      "width": 3,
+      "height": 2,
+      "dataSource": {
+        "kpiName": "AppointmentCancelledRate"
+      },
+      "visualization": {
+        "style": "PERCENTAGE_DIAL",
+        "colorTheme": "CRIMSON_RED"
+      }
+    }
+  ]
+}
+

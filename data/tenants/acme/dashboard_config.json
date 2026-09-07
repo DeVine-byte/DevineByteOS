@@ -1,0 +1,30 @@
+{
+  "dashboardTitle": "St. Jude Hospital Executive Portal",
+  "kpiCalculations": [
+    {
+      "name": "TotalAppointmentsMade",
+      "operation": "SUM",
+      "numerator": "AppointmentCreated_COUNT",
+      "denominator": "ZERO_VALUE_FALLBACK"
+    },
+    {
+      "name": "AppointmentConversionRate",
+      "operation": "RATIO",
+      "numerator": "Appointment_completed_COUNT",
+      "denominator": "AppointmentCreated_COUNT"
+    },
+    {
+      "name": "AppointmentMissedRate",
+      "operation": "RATIO",
+      "numerator": "Appointment_missed_COUNT",
+      "denominator": "AppointmentCreated_COUNT"
+    },
+    {
+      "name": "AppointmentCancelledRate",
+      "operation": "RATIO",
+      "numerator": "Appointment_cancelled_COUNT",
+      "denominator": "AppointmentCreated_COUNT"
+    }
+  ]
+}
+

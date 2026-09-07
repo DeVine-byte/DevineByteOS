@@ -7,6 +7,7 @@ import io.devinebyte.runtime.tenant.http.JdkHttpAdapter;
 import io.devinebyte.runtime.tenant.registry.TenantRegistry;
 import io.devinebyte.runtime.tenant.registry.TenantRuntimeHandle;
 import io.devinebyte.runtime.tenant.TenantRuntime;
+import io.devinebyte.runtime.projection.kpi.KPIEngine;
 
 import io.devinebyte.runtime.config.ConfigurationManager;
 import io.devinebyte.runtime.core.diagnostics.DiagnosticCollector;
@@ -61,7 +62,8 @@ public class RuntimeLauncher {
 
         // Construct the single source of truth workflow engine reference
         WorkflowExecutor executor = new WorkflowExecutor(null, null);
-        WorkflowEngine workflowEngine = new WorkflowEngine(null, executor);
+        KPIEngine kpiEngine = new KPIEngine();
+        WorkflowEngine workflowEngine = new WorkflowEngine(null, executor, kpiEngine);
 
         // FIX: Inject the unified workflowEngine into BOTH constructors to share registered state
         TenantRuntimeFactory factory = new TenantRuntimeFactory(config, mapper, loader, registry, runtimeRegistry, workflowEngine);

@@ -64,6 +64,7 @@ module sales depends on crm enable {
     }
 
     kpi AppointmentConversionRate: AppointmentsCompleted;
+
 }
 
 // ==========================================================
@@ -129,40 +130,5 @@ module finance depends on inventory enable {
             status: String
         }
     }
-}
-
-// ==========================================================
-// MODULE 5: CLINICAL = CORE HOSPITAL OPS
-// ==========================================================
-module clinical depends on sales enable {
-    entity MedicalRecord {
-        id: String;
-        patientId: String;
-        appointmentId: String;
-        diagnosis: String;
-        notes: String;
-        doctorId: String;
-        createdAt: DateTime;
-        expose api [GET, POST];
-    }
-
-    entity Bed {
-        id: String;
-        ward: String;
-        status: String;
-        expose api [GET, PUT];
-    }
-
-    event PatientDischarged {
-        payload: {
-            appointmentId: String,
-            patientId: String,
-            status: String
-        }
-    }
-}
-
-module runtime enable {
-    event SystemBooted();
 }
 

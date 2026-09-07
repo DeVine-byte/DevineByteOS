@@ -1,3 +1,0 @@
-2026-09-05 18:11:35.826220Z jdbc[4]: exception
-org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "DATA_MATRIX" not found; SQL statement:
-SELECT DATA_CLOB FROM DATA_MATRIX [42102-224]

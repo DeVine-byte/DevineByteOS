@@ -34,20 +34,6 @@
       "dependsOn" : [ "inventory" ],
       "exposesEvents" : [ "PaymentConfirmed" ],
       "subscribesToEvents" : [ ]
-    },
-    "CLINICAL" : {
-      "moduleId" : "CLINICAL",
-      "enabled" : true,
-      "dependsOn" : [ "sales" ],
-      "exposesEvents" : [ "PatientDischarged" ],
-      "subscribesToEvents" : [ ]
-    },
-    "RUNTIME" : {
-      "moduleId" : "RUNTIME",
-      "enabled" : true,
-      "dependsOn" : [ ],
-      "exposesEvents" : [ "SystemBooted" ],
-      "subscribesToEvents" : [ ]
     }
   }
 }

@@ -6,6 +6,7 @@ import io.devinebyte.runtime.core.diagnostics.DiagnosticCollector;
 import io.devinebyte.runtime.module.ModuleLoader;
 import io.devinebyte.runtime.module.ModuleRegistry;
 import io.devinebyte.runtime.workflow.engine.WorkflowEngine; // FIX: Added import
+import io.devinebyte.runtime.projection.kpi.KPIEngine;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -24,7 +25,7 @@ class RuntimeBootstrapperTest {
         new ManifestReader(),
         new ModuleLoader(new DiagnosticCollector()),
         new ModuleRegistry(),
-        new WorkflowEngine(null, null) 
+        new WorkflowEngine(null, null, null) 
     );
 
     private Path dbpkgPath;
