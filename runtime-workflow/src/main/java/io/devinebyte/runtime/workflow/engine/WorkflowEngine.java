@@ -18,16 +18,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Singleton
 public class WorkflowEngine {
-
     private WorkflowInstanceRepository repo;
     private WorkflowExecutor executor;
     private KPIEngine kpiEngine;
 
     private final Map<String, WorkflowDefinition> definitions =
             new ConcurrentHashMap<>();
-
-    private static final ObjectMapper MAPPER =
-            new ObjectMapper();
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     public WorkflowEngine(
             WorkflowInstanceRepository repo,
@@ -52,63 +49,53 @@ public class WorkflowEngine {
     public void registerWorkflow(
             String command,
             WorkflowDefinition def) {
-        this.definitions.put(command, def);
+        definitions.put(command, def);
     }
 
     public void register(WorkflowDefinition def) {
         if (def != null && def.name() != null) {
-            this.definitions.put(def.name(), def);
-
-            this.definitions.put(
-                    "Handle" + def.name() + "POST",
-                    def);
-
-            this.definitions.put(
-                    "Handle" + def.name() + "GET",
-                    def);
+            definitions.put(def.name(), def);
+            definitions.put("Handle" + def.name() + "POST", def);
+            definitions.put("Handle" + def.name() + "GET", def);
         }
     }
 
-    public WorkflowDefinition getDefinition(
-            String workflowName) {
-        return this.definitions.get(workflowName);
+    public WorkflowDefinition getDefinition(String workflowName) {
+        return definitions.get(workflowName);
     }
 
     public void handleEvent(
             TenantContext ctx,
             UUID instanceId,
             DomainEvent event) {
-
-        if (this.executor == null || this.repo == null) {
+        if (executor == null || repo == null) {
             throw new IllegalStateException(
                     "Workflow storage engine dependencies are completely unassigned.");
         }
 
-        WorkflowInstance instance =
-                this.repo.findById(instanceId);
+        WorkflowInstance instance = repo.findById(instanceId);
 
-        if (instance != null) {
-            WorkflowDefinition def =
-                    this.definitions.get(
-                            instance.workflowName());
-
-            if (def != null) {
-                WorkflowInstance advancedInstance =
-                        this.executor.handleEvent(
-                                ctx,
-                                def,
-                                instance,
-                                event);
-
-                this.repo.save(advancedInstance);
-
-                System.out.println(
-                        "[WORKFLOW ENGINE] Asynchronously advanced instance "
-                                + instanceId
-                                + " to state: "
-                                + advancedInstance.currentState());
-            }
+        if (instance == null) {
+            return;
         }
+
+        WorkflowDefinition def =
+                definitions.get(instance.workflowName());
+
+        if (def == null) {
+            return;
+        }
+
+        WorkflowInstance advanced =
+                executor.handleEvent(ctx, def, instance, event);
+
+        repo.save(advanced);
+
+        System.out.println(
+                "[WORKFLOW ENGINE] Asynchronously advanced instance "
+                        + instanceId
+                        + " to state: "
+                        + advanced.currentState());
     }
 
     @SuppressWarnings("unchecked")
@@ -127,32 +114,25 @@ public class WorkflowEngine {
                         + body);
 
         String normalizedCmd =
-                command != null
-                        ? command.trim().toLowerCase()
-                        : "";
+                command != null ? command.trim().toLowerCase() : "";
 
-        if (normalizedCmd.contains(
-                    "fetchdashboardmetrics")
-                || normalizedCmd.contains(
-                    "dashboardkpis")
-                || normalizedCmd.contains(
-                    "dashboard/kpis")
-                || normalizedCmd.endsWith(
-                    "dashboardget")
-                || normalizedCmd.endsWith(
-                    "kpisget")) {
+        if (normalizedCmd.contains("fetchdashboardmetrics")
+                || normalizedCmd.contains("dashboardkpis")
+                || normalizedCmd.contains("dashboard/kpis")
+                || normalizedCmd.endsWith("dashboardget")
+                || normalizedCmd.endsWith("kpisget")) {
 
-            if (this.kpiEngine == null) {
+            if (kpiEngine == null) {
                 throw new IllegalStateException(
                         "Dashboard KPI engine dependency is completely unassigned.");
             }
 
             System.out.println(
-                    "[ENGINE QUERY] Dispatching real-time agnostic KPI matrix for tenant: "
+                    "[ENGINE QUERY] Dispatching real-time agnostic KPI "
+                            + "matrix for tenant: "
                             + ctx.tenantId());
 
-            return this.kpiEngine.getTenantMetricsGrid(
-                    ctx.tenantId());
+            return kpiEngine.getTenantMetricsGrid(ctx.tenantId());
         }
 
         Map<String, Object> input =
@@ -163,58 +143,39 @@ public class WorkflowEngine {
                         ? new HashMap<>(input)
                         : new HashMap<>();
 
-        Map<String, Object> dataPayload =
-                new HashMap<>();
+        Map<String, Object> dataPayload = new HashMap<>();
 
-        if (runtimeContext.containsKey("body")
-                && runtimeContext.get("body") instanceof Map) {
-
+        if (runtimeContext.get("body") instanceof Map) {
             dataPayload.putAll(
-                    (Map<String, Object>)
-                            runtimeContext.get("body"));
-
+                    (Map<String, Object>) runtimeContext.get("body"));
         } else {
             dataPayload.putAll(runtimeContext);
         }
 
-        String tenantId =
-                ctx.tenantId();
+        String tenantId = ctx.tenantId();
 
-        String entityName =
-                command
-                        .replace("Handle", "")
-                        .replace("POST", "")
-                        .replace("GET", "")
-                        .replace("PUT", "");
+        String entityName = command
+                .replace("Handle", "")
+                .replace("POST", "")
+                .replace("GET", "")
+                .replace("PUT", "");
 
-        String moduleId =
-                "crm";
-
-        String lowerEntity =
-                entityName.toLowerCase();
+        String moduleId = "crm";
+        String lowerEntity = entityName.toLowerCase();
 
         if (lowerEntity.contains("appointment")
                 || lowerEntity.contains("invoice")) {
-
-            moduleId =
-                    "sales";
-
+            moduleId = "sales";
         } else if (lowerEntity.contains("stock")
                 || lowerEntity.contains("prescription")) {
-
-            moduleId =
-                    "inventory";
-
+            moduleId = "inventory";
         } else if (lowerEntity.contains("payment")
                 || lowerEntity.contains("insurance")) {
-
-            moduleId =
-                    "finance";
+            moduleId = "finance";
         }
 
         if (command.startsWith("Handle")
                 && command.endsWith("POST")) {
-
             try {
                 EntityRepository entityRepo =
                         RepositoryFactory.get(
@@ -222,91 +183,75 @@ public class WorkflowEngine {
                                 moduleId,
                                 entityName);
 
-                String naturalUniqueKey =
-                        null;
+                String naturalUniqueKey = null;
 
                 if (dataPayload.containsKey("email")) {
-                    naturalUniqueKey =
-                            "email";
-
+                    naturalUniqueKey = "email";
                 } else if (dataPayload.containsKey("sku")) {
-                    naturalUniqueKey =
-                            "sku";
+                    naturalUniqueKey = "sku";
                 }
 
                 if (naturalUniqueKey != null) {
-
                     String uniqueValue =
-                            (String)
-                                    dataPayload.get(
-                                            naturalUniqueKey);
+                            (String) dataPayload.get(naturalUniqueKey);
 
                     if (uniqueValue != null
                             && !uniqueValue.trim().isEmpty()) {
 
                         System.out.println(
-                                "[ENGINE VALIDATOR] Guard inspecting constraint parameter dynamically: "
+                                "[ENGINE VALIDATOR] Guard inspecting "
+                                        + "constraint parameter dynamically: "
                                         + naturalUniqueKey
                                         + " = "
                                         + uniqueValue);
 
+                        // NOTE: This reflection will fail on Termux. Recommend removing later
                         java.lang.reflect.Field dsField =
-                                entityRepo
-                                        .getClass()
-                                        .getDeclaredField(
-                                                "ds");
+                                entityRepo.getClass()
+                                        .getDeclaredField("ds");
 
-                        dsField.setAccessible(
-                                true);
+                        dsField.setAccessible(true);
 
                         javax.sql.DataSource ds =
-                                (javax.sql.DataSource)
-                                        dsField.get(
-                                                entityRepo);
+                                (javax.sql.DataSource) dsField.get(entityRepo);
 
-                        String dynamicTableName =
-                                (
-                                        moduleId
-                                                + "_"
-                                                + entityName
-                                ).toLowerCase();
+                        String table =
+                                (moduleId + "_" + entityName).toLowerCase();
 
                         String checkSql =
-                                "SELECT payload FROM "
-                                        + dynamicTableName;
+                                "SELECT payload FROM " + table;
 
                         try (
                                 java.sql.Connection c =
                                         ds.getConnection();
-
                                 java.sql.PreparedStatement ps =
-                                        c.prepareStatement(
-                                                checkSql);
-
+                                        c.prepareStatement(checkSql);
                                 java.sql.ResultSet rs =
                                         ps.executeQuery()) {
 
                             while (rs.next()) {
-
                                 Map<String, Object> record =
                                         MAPPER.readValue(
-                                                rs.getString(
-                                                        "payload"),
+                                                rs.getString("payload"),
                                                 Map.class);
 
-                                if (record.containsKey(
-                                            naturalUniqueKey)
+                                if (record.containsKey(naturalUniqueKey)
                                         && uniqueValue.equalsIgnoreCase(
-                                                (String)
-                                                        record.get(
-                                                                naturalUniqueKey))) {
+                                                (String) record.get(
+                                                        naturalUniqueKey))) {
 
                                     System.err.println(
-                                            "[CORE REJECTION] Duplicate identity conflict found for asset: "
+                                            "[CORE REJECTION] Duplicate "
+                                                    + "identity conflict found "
+                                                    + "for asset: "
                                                     + uniqueValue);
 
                                     throw new IllegalStateException(
-                                            "409 Conflict: An operational entity matching unique constraints already exists inside the system runtime.");
+                                            "409 Conflict: An operational "
+                                                    + "entity matching unique "
+                                                    + "constraints already "
+                                                    + "exists inside the system "
+                                                    + "runtime.");
                                 }
                             }
                         }
@@ -314,23 +259,20 @@ public class WorkflowEngine {
                 }
 
                 System.out.println(
-                        "[ENGINE PERSISTENCE] Committing complete profile object layout grid down to disk storage...");
+                        "[ENGINE PERSISTENCE] Committing complete profile "
+                                + "object layout grid down to disk storage...");
 
                 String persistentId =
-                        entityRepo.upsert(
-                                dataPayload);
+                        entityRepo.upsert(dataPayload);
 
                 System.out.println(
-                        "[ENGINE DEBUG] Successfully wrote full record to DB with ID: "
+                        "[ENGINE DEBUG] Successfully wrote full record "
+                                + "to DB with ID: "
                                 + persistentId);
 
-                // ==========================================================
-                // FIXED: GENERIC INDUSTRY-BLIND STATUS COUNTER BROADCASTER
-                // ==========================================================
-                if (this.kpiEngine != null) {
-
-                    // Record baseline creation telemetry counts.
-                    this.kpiEngine.recordMetric(
+                // KPI METRIC RECORDING
+                if (kpiEngine != null) {
+                    kpiEngine.recordMetric(
                             tenantId,
                             entityName + "Created_COUNT",
                             1.0);
@@ -340,75 +282,86 @@ public class WorkflowEngine {
 
                         String statusVal =
                                 String.valueOf(
-                                        dataPayload.get(
-                                                "status"))
-                                        .trim();
+                                        dataPayload.get("status")).trim();
 
-                        // Record entity update telemetry.
-                        this.kpiEngine.recordMetric(
+                        kpiEngine.recordMetric(
                                 tenantId,
                                 entityName + "Updated_COUNT",
                                 1.0);
 
-                        // Generate standardized status telemetry.
-                        // Example:
-                        // Appointment + missed + COUNT
-                        // => Appointment_missed_COUNT
-                        String statusTelemetryToken =
-                                entityName
-                                        + "_"
-                                        + statusVal
-                                        + "_COUNT";
-
-                        this.kpiEngine.recordMetric(
+                        kpiEngine.recordMetric(
                                 tenantId,
-                                statusTelemetryToken,
+                                entityName + "_"
+                                        + statusVal
+                                        + "_COUNT",
                                 1.0);
                     }
                 }
 
-                // Asynchronously emit functional audit event hook.
-                System.out.println(
-                        "[EVENTSTREAM] Async emitting event: "
-                                + entityName
-                                + "Created for Resource Key: "
-                                + persistentId);
+                // ==========================================================
+                // FIXED: ROBUST EVENT DERIVATION AND VERBOSE DEBUGGING
+                // REPLACED NOTIFICATION ENGINE BLOCK
+                // ==========================================================
+                System.out.println("[EVENTSTREAM] Async emitting event: " + entityName + "Created for Resource Key: " + persistentId);
+
+                try {
+                    com.fasterxml.jackson.databind.node.ObjectNode eventPayload = MAPPER.createObjectNode();
+                    for (Map.Entry<String, Object> entry : dataPayload.entrySet()) {
+                        if (entry.getValue() != null) {
+                            eventPayload.put(entry.getKey(), entry.getValue().toString());
+                        }
+                    }
+                    eventPayload.put("id", persistentId);
+
+                    io.devinebyte.runtime.event.model.EventMetadata meta = new io.devinebyte.runtime.event.model.EventMetadata(
+                        java.util.UUID.randomUUID(), null, moduleId, java.time.Instant.now(),
+                        java.util.Map.of("tenantId", tenantId, "source", "workflow-engine")
+                    );
+
+                    // FIXED: Simple, iron-clad logic. If the input contains a record 'id', it IS a lifecycle status update transaction request!
+                    boolean isStatusUpdate = dataPayload.containsKey("id") || (dataPayload.containsKey("status") && !"SCHEDULED".equalsIgnoreCase(eventPayload.get("status").asText()));
+                    String derivedEventType = isStatusUpdate ? entityName + "Updated" : entityName + "Created";
+
+                    System.out.println("[NOTIFICATION DESCRIPTOR] Inferred Event Type Channel => " + derivedEventType);
+
+                    io.devinebyte.runtime.event.model.DomainEvent domainEvent = new io.devinebyte.runtime.event.model.DomainEvent(
+                        derivedEventType, "1.0", eventPayload, meta
+                    );
+
+                    io.devinebyte.runtime.event.handler.NotificationCenterHandler directAlertHandler = 
+                        new io.devinebyte.runtime.event.handler.NotificationCenterHandler(domainEvent.type());
+                    
+                    directAlertHandler.handle(ctx, domainEvent);
+
+                } catch (Exception e) {
+                    System.err.println("[EVENTSTREAM ERROR] Direct bypass notification dispatch failed: " + e.getMessage());
+                }
+                // ==========================================================
 
                 Map<String, Object> savedRecord =
-                        entityRepo.findById(
-                                persistentId);
+                        entityRepo.findById(persistentId);
 
                 if (savedRecord != null) {
-
-                    savedRecord.put(
-                            "status",
-                            "SUCCESS");
-
+                    savedRecord.put("status", "SUCCESS");
                     return savedRecord;
                 }
 
-                dataPayload.put(
-                        "id",
-                        persistentId);
-
-                dataPayload.put(
-                        "status",
-                        "SUCCESS");
+                dataPayload.put("id", persistentId);
+                dataPayload.put("status", "SUCCESS");
 
                 return dataPayload;
 
             } catch (IllegalStateException ex) {
-
                 throw ex;
-
             } catch (Exception ex) {
-
                 System.err.println(
-                        "[CORE CRASH] Automatic structural transaction failed: "
+                        "[CORE CRASH] Automatic structural transaction "
+                                + "failed: "
                                 + ex.getMessage());
 
                 throw new RuntimeException(
-                        "500 Internal Server Error: Database engine unavailable - "
+                        "500 Internal Server Error: Database engine "
+                                + "unavailable - "
                                 + ex.getMessage(),
                         ex);
             }
@@ -416,35 +369,26 @@ public class WorkflowEngine {
 
         if (command.startsWith("Handle")
                 && command.endsWith("GET")) {
-
             try {
-                String targetId =
-                        null;
+                String targetId = null;
 
                 if (dataPayload.get("id") != null) {
-
-                    targetId =
-                            dataPayload
-                                    .get("id")
-                                    .toString();
-
+                    targetId = dataPayload.get("id").toString();
                 } else if (runtimeContext.get("id") != null) {
-
                     targetId =
-                            runtimeContext
-                                    .get("id")
-                                    .toString();
+                            runtimeContext.get("id").toString();
                 }
 
                 if (targetId == null
                         || targetId.trim().isEmpty()) {
-
                     throw new IllegalArgumentException(
-                            "400 Bad Request: Missing unique identifier parameter 'id'.");
+                            "400 Bad Request: Missing unique identifier "
+                                    + "parameter 'id'.");
                 }
 
                 System.out.println(
-                        "[ENGINE QUERY] Fetching full database record for ID: "
+                        "[ENGINE QUERY] Fetching full database record "
+                                + "for ID: "
                                 + targetId);
 
                 EntityRepository entityRepo =
@@ -454,11 +398,9 @@ public class WorkflowEngine {
                                 entityName);
 
                 Map<String, Object> record =
-                        entityRepo.findById(
-                                targetId);
+                        entityRepo.findById(targetId);
 
                 if (record == null) {
-
                     throw new NoSuchElementException(
                             "404 Not Found: Entity matching ID '"
                                     + targetId
@@ -468,47 +410,36 @@ public class WorkflowEngine {
                 return record;
 
             } catch (Exception ex) {
-
                 throw new RuntimeException(
                         "500 Internal Server Error: Database query failed.",
                         ex);
             }
         }
 
-        WorkflowDefinition def =
-                definitions.get(
-                        command);
+        WorkflowDefinition def = definitions.get(command);
 
         if (def == null) {
-
             throw new IllegalArgumentException(
                     "No workflow definition registered for command: "
                             + command);
         }
 
-        if (this.executor == null) {
-
+        if (executor == null) {
             throw new IllegalStateException(
-                    "State machine executor reference is completely unassigned.");
+                    "State machine executor reference is completely "
+                            + "unassigned.");
         }
 
-        return this.executor.start(
+        return executor.start(
                 ctx,
                 def,
                 runtimeContext);
     }
 
-    public boolean isSubscribedTo(
-            String eventType) {
-
+    public boolean isSubscribedTo(String eventType) {
         return definitions.values()
                 .stream()
                 .anyMatch(
-                        d ->
-                                d.findTransition(
-                                        null,
-                                        eventType)
-                                        != null);
+                        d -> d.findTransition(null, eventType) != null);
     }
 }
-

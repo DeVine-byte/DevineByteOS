@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="io.devinebyte.runtime.projection.ProjectionEngineE2ETest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-09-07T18:09:44.816Z" hostname="localhost" time="0.186">
+<testsuite name="io.devinebyte.runtime.projection.ProjectionEngineE2ETest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-09-08T16:35:45.228Z" hostname="localhost" time="0.283">
   <properties/>
-  <testcase name="replay_produces_identical_state()" classname="io.devinebyte.runtime.projection.ProjectionEngineE2ETest" time="0.105"/>
+  <testcase name="replay_produces_identical_state()" classname="io.devinebyte.runtime.projection.ProjectionEngineE2ETest" time="0.159"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

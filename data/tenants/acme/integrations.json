@@ -1,0 +1,17 @@
+{
+  "channels": {
+    "hospital_ops_mail": {
+      "provider": "MOCK_SMTP",
+      "targetSmtpServer": "smtp.devinebyteos.internal",
+      "port": 587,
+      "defaultSender": "system-noreply@stjude.org"
+    },
+    "patient_notification_channel": {
+      "provider": "MOCK_SMTP",
+      "targetSmtpServer": "smtp.devinebyteos.internal",
+      "port": 587,
+      "defaultSender": "care-team@stjude.org"
+    }
+  }
+}
+

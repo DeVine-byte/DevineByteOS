@@ -1,0 +1,23 @@
+{
+  "templates": [
+    {
+      "eventTrigger": "AppointmentCreated",
+      "channelRef": "hospital_ops_mail",
+      "destinationAddress": "devinebyte31@gmail.com",
+      "messageTemplate": "Subject: [System Alert] New Intake Encoded\n\nEncounter scheduled under tracking token ID {id}. Target Department: {department}. Value: NGN {total}."
+    },
+    {
+      "eventTrigger": "AppointmentUpdated",
+      "channelRef": "patient_notification_channel",
+      "destinationAddress": "{email}",
+      "messageTemplate": "Subject: St. Jude Medical Update Notification\n\nDear Patient,\nThis message confirms that your scheduled visit protocol with ID {id} has transitioned to a state of: {status}."
+    },
+    {
+      "eventTrigger": "PaymentConfirmed",
+      "channelRef": "hospital_ops_mail",
+      "destinationAddress": "devinebyte31@gmail.com",
+      "messageTemplate": "Subject: [Finance] Ledger Update Received\n\nLedger confirmation for transaction payload key ID {id}. Invoice code ref: {invoiceId}. Amount processed: NGN {amount}. Status: {status}."
+    }
+  ]
+}
+

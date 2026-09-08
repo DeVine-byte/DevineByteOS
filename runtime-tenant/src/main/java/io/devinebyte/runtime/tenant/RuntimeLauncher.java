@@ -16,13 +16,14 @@ import io.devinebyte.runtime.module.ModuleRegistry;
 import io.devinebyte.runtime.core.registry.RuntimeRegistry;
 import io.devinebyte.runtime.workflow.engine.WorkflowEngine;
 import io.devinebyte.runtime.workflow.engine.WorkflowExecutor;
+import io.devinebyte.runtime.event.handler.HandlerRegistry;
+import io.devinebyte.runtime.event.handler.NotificationCenterHandler;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.file.Path;
 
 public class RuntimeLauncher {
 
-    // Move adapter instantiation to an isolated, lazy holder pattern
-    // This allows multi-tenant test rigs to boot multiple bundles without breaking port 8080
     private static JdkHttpAdapter sharedHttpAdapter;
 
     private static synchronized JdkHttpAdapter getHttpAdapter(int port) throws Exception {
@@ -65,7 +66,16 @@ public class RuntimeLauncher {
         KPIEngine kpiEngine = new KPIEngine();
         WorkflowEngine workflowEngine = new WorkflowEngine(null, executor, kpiEngine);
 
-        // FIX: Inject the unified workflowEngine into BOTH constructors to share registered state
+        // ==========================================================
+        // FIXED: RE-ROUTE HOOK REGISTRATION VIA THE HANDLER REGISTRY
+        // ==========================================================
+        HandlerRegistry handlerRegistry = new HandlerRegistry();
+        
+        // Dynamically register our asynchronous notification centers matching the lifecycle events matrix
+        handlerRegistry.register(new NotificationCenterHandler("AppointmentCreated"));
+        handlerRegistry.register(new NotificationCenterHandler("AppointmentUpdated"));
+        handlerRegistry.register(new NotificationCenterHandler("PaymentConfirmed"));
+
         TenantRuntimeFactory factory = new TenantRuntimeFactory(config, mapper, loader, registry, runtimeRegistry, workflowEngine);
         RuntimeBootstrapper bootstrapper = new RuntimeBootstrapper(verifier, manifestReader, loader, registry, workflowEngine);
 
@@ -76,16 +86,14 @@ public class RuntimeLauncher {
         TenantRuntime runtime = handle.runtime();
         runtime.boot();
 
-        // WIRE HTTP SERVER (Idempotent socket instantiation)
+        // WIRE HTTP SERVER 
         JdkHttpAdapter http = getHttpAdapter(8080);
         http.registerTenant(runtime);
 
-        // ADD GRACEFUL SHUTDOWN HOOK
-        // This flushes internal diagnostics logs and clears network traffic when Ctrl+C is caught
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("\n[DBRT] Shutting down cleanly...");
             try {
-                runtime.close(); // Cleans up file system hooks, tracks BOOT_002 diagnostic event
+                runtime.close();
             } catch (Exception e) {
                 System.err.println("[DBRT] Error releasing tenant resources: " + e.getMessage());
             }
