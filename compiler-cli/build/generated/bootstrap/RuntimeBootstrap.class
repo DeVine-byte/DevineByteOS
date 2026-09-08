@@ -1,4 +1,0 @@
-package tenant.acme.bootstrap;
-public class RuntimeBootstrap {
-    public static void boot() {}
-}

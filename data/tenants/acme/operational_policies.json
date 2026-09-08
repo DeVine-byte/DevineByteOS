@@ -1,0 +1,13 @@
+{
+  "tenantId": "acme",
+  "reactiveTriggers": [
+    {
+      "onEvent": "AppointmentUpdated",
+      "conditionField": "status",
+      "conditionValue": "CHECKED_IN",
+      "autoPromptAction": "PUT:/clinical/bed",
+      "uiInstruction": "Patient has checked in. Please assign an available clinical bed space immediately."
+    }
+  ]
+}
+

@@ -12,10 +12,12 @@ import java.util.*;
 @Singleton
 public class ModuleLoader {
     private final DependencyResolver resolver;
+    private final DynamicPluginJarLoader jarPluginLoader; // FIXED
 
     @Inject
     public ModuleLoader(DiagnosticCollector diagnostics) {
         this.resolver = new DependencyResolver(diagnostics);
+        this.jarPluginLoader = new DynamicPluginJarLoader(); // FIXED
     }
 
     public record LoadResult(List<ModuleDefinition> loadOrder, Set<String> enabledModules) {}
@@ -26,7 +28,6 @@ public class ModuleLoader {
         String tenantId = tenant.tenantId();
 
         if (requested.isEmpty()) {
-            // no warn, so just continue with empty
             return new LoadResult(List.of(), Set.of());
         }
 
@@ -56,6 +57,14 @@ public class ModuleLoader {
             return new LoadResult(List.of(), Set.of());
         }
 
+        // ==========================================================
+        // FIXED: AUTOMATIC EXTENSION JAR PLUGINS MOUNT LOOP (STEP 8)
+        // ==========================================================
+        if (!loadOrder.isEmpty()) {
+            this.jarPluginLoader.loadPluginComponents(tenant, loadOrder, diagnostics);
+        }
+
         return new LoadResult(loadOrder, enabledIds);
     }
 }
+

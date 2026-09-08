@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="io.devinebyte.runtime.event.EventReplayTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-09-08T16:35:44.393Z" hostname="localhost" time="2.013">
-  <properties/>
-  <testcase name="replay_afterAppend_returnsAllEventsInOrder(Path)" classname="io.devinebyte.runtime.event.EventReplayTest" time="1.894"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>
