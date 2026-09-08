@@ -1,0 +1,15 @@
+{
+  "tenantId": "acme",
+  "businessName": "St. Jude Specialist Hospital",
+  "logoUrl": "assets/logos/stjude.png",
+  "theme": {
+    "primaryColor": "#059669", 
+    "backgroundColor": "#F9FAFB",
+    "fontFamily": "Inter, sans-serif"
+  },
+  "footer": {
+    "customText": "© 2026 St. Jude Healthcare Network.",
+    "trademarkText": "Powered by DevineByte"
+  }
+}
+

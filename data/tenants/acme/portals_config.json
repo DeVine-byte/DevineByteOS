@@ -1,0 +1,31 @@
+{
+  "tenantId": "acme",
+  "industryProfile": "healthcare",
+  "availablePortals": {
+    "patient_portal": {
+      "portalTitle": "St. Jude Patient Care Desk",
+      "allowedRoles": ["PATIENT"],
+      "allowedActions": ["GET:/crm/patient", "POST:/sales/appointment", "GET:/inventory/prescription"],
+      "navigationMenu": ["My Records", "Book Encounter", "My Prescriptions"]
+    },
+    "doctor_portal": {
+      "portalTitle": "Clinical Physician Command Hub",
+      "allowedRoles": ["DOCTOR", "CHIEF_MEDICAL_OFFICER"],
+      "allowedActions": ["GET:/crm/patient", "GET:/sales/appointment", "POST:/inventory/prescription"],
+      "navigationMenu": ["Patient Directory", "My Schedule", "Issue Prescription"]
+    },
+    "nurse_portal": {
+      "portalTitle": "Inpatient Nursing Shift Board",
+      "allowedRoles": ["NURSE", "TRIAGE_STAFF"],
+      "allowedActions": ["GET:/crm/patient", "POST:/sales/appointment"],
+      "navigationMenu": ["Vitals Intake", "Active Bed Registry"]
+    },
+    "executive_portal": {
+      "portalTitle": "Hospital Operations & Finance Suite",
+      "allowedRoles": ["CHIEF_MEDICAL_OFFICER", "ADMINISTRATOR"],
+      "allowedActions": ["GET:/dashboard", "GET:/dashboard/kpis"],
+      "navigationMenu": ["Live Telemetry Grid", "Ledger Auditing"]
+    }
+  }
+}
+
