@@ -1,0 +1,15 @@
+{
+  "workflowName" : "HandlePrescriptionPOST",
+  "moduleId" : "INVENTORY",
+  "version" : "1.0.0",
+  "states" : [ {
+    "name" : "UpsertEntity",
+    "isInitial" : true,
+    "isFinal" : true,
+    "transitions" : [ {
+      "triggerEvent" : "HandlePrescriptionPOSTCompleted",
+      "targetState" : "END",
+      "action" : "builtin:repository:upsert"
+    } ]
+  } ]
+}

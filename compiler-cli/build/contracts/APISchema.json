@@ -1,0 +1,103 @@
+[ {
+  "module" : "crm",
+  "paths" : [ {
+    "method" : "GET",
+    "path" : "/crm/patient",
+    "handler" : "HandlePatientGET",
+    "requiredPermission" : "CRM_PATIENT_GET",
+    "commandOrQuery" : "Query"
+  }, {
+    "method" : "POST",
+    "path" : "/crm/patient",
+    "handler" : "HandlePatientPOST",
+    "requiredPermission" : "CRM_PATIENT_POST",
+    "commandOrQuery" : "Command"
+  }, {
+    "method" : "PUT",
+    "path" : "/crm/patient",
+    "handler" : "HandlePatientPUT",
+    "requiredPermission" : "CRM_PATIENT_PUT",
+    "commandOrQuery" : "Command"
+  } ]
+}, {
+  "module" : "sales",
+  "paths" : [ {
+    "method" : "GET",
+    "path" : "/sales/appointment",
+    "handler" : "HandleAppointmentGET",
+    "requiredPermission" : "SALES_APPOINTMENT_GET",
+    "commandOrQuery" : "Query"
+  }, {
+    "method" : "POST",
+    "path" : "/sales/appointment",
+    "handler" : "HandleAppointmentPOST",
+    "requiredPermission" : "SALES_APPOINTMENT_POST",
+    "commandOrQuery" : "Command"
+  }, {
+    "method" : "PUT",
+    "path" : "/sales/appointment",
+    "handler" : "HandleAppointmentPUT",
+    "requiredPermission" : "SALES_APPOINTMENT_PUT",
+    "commandOrQuery" : "Command"
+  }, {
+    "method" : "GET",
+    "path" : "/sales/invoice",
+    "handler" : "HandleInvoiceGET",
+    "requiredPermission" : "SALES_INVOICE_GET",
+    "commandOrQuery" : "Query"
+  }, {
+    "method" : "POST",
+    "path" : "/sales/invoice",
+    "handler" : "HandleInvoicePOST",
+    "requiredPermission" : "SALES_INVOICE_POST",
+    "commandOrQuery" : "Command"
+  } ]
+}, {
+  "module" : "inventory",
+  "paths" : [ {
+    "method" : "GET",
+    "path" : "/inventory/stock",
+    "handler" : "HandleStockGET",
+    "requiredPermission" : "INVENTORY_STOCK_GET",
+    "commandOrQuery" : "Query"
+  }, {
+    "method" : "PUT",
+    "path" : "/inventory/stock",
+    "handler" : "HandleStockPUT",
+    "requiredPermission" : "INVENTORY_STOCK_PUT",
+    "commandOrQuery" : "Command"
+  }, {
+    "method" : "GET",
+    "path" : "/inventory/prescription",
+    "handler" : "HandlePrescriptionGET",
+    "requiredPermission" : "INVENTORY_PRESCRIPTION_GET",
+    "commandOrQuery" : "Query"
+  }, {
+    "method" : "POST",
+    "path" : "/inventory/prescription",
+    "handler" : "HandlePrescriptionPOST",
+    "requiredPermission" : "INVENTORY_PRESCRIPTION_POST",
+    "commandOrQuery" : "Command"
+  } ]
+}, {
+  "module" : "finance",
+  "paths" : [ {
+    "method" : "GET",
+    "path" : "/finance/payment",
+    "handler" : "HandlePaymentGET",
+    "requiredPermission" : "FINANCE_PAYMENT_GET",
+    "commandOrQuery" : "Query"
+  }, {
+    "method" : "GET",
+    "path" : "/finance/insuranceclaim",
+    "handler" : "HandleInsuranceClaimGET",
+    "requiredPermission" : "FINANCE_INSURANCECLAIM_GET",
+    "commandOrQuery" : "Query"
+  }, {
+    "method" : "POST",
+    "path" : "/finance/insuranceclaim",
+    "handler" : "HandleInsuranceClaimPOST",
+    "requiredPermission" : "FINANCE_INSURANCECLAIM_POST",
+    "commandOrQuery" : "Command"
+  } ]
+} ]

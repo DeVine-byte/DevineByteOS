@@ -4,7 +4,6 @@ package io.devinebyte.runtime.workflow.engine;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import io.devinebyte.modules.operations.OperationalPolicyEngine;
 import io.devinebyte.runtime.core.context.TenantContext;
 import io.devinebyte.runtime.event.handler.NotificationCenterHandler;
 import io.devinebyte.runtime.event.model.DomainEvent;
@@ -399,20 +398,11 @@ public class WorkflowEngine {
                     // ======================================================
                     // OPERATIONAL POLICY ENGINE ROUTING
                     // ======================================================
-                    try {
-                        OperationalPolicyEngine policyEngine =
-                                new OperationalPolicyEngine();
-
-                        policyEngine.evaluateEvent(
-                                ctx,
-                                domainEvent,
-                                kpiEngine != null
-                                        ? kpiEngine.getTenantMetricsGrid(
-                                                tenantId)
-                                        : null);
-
-                    } catch (Exception ignored) {
-                    }
+                            
+                try {
+                    OperationalPolicyEngine policyEngine = new OperationalPolicyEngine();
+                    policyEngine.evaluateEvent(ctx, domainEvent, this.kpiEngine != null ? this.kpiEngine.getTenantMetricsGrid(tenantId) : null);
+                } catch (Exception ignored) {}
 
                 } catch (Exception e) {
                     System.err.println(

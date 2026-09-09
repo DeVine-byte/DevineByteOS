@@ -1,0 +1,24 @@
+{
+  "workflowName" : "HandleAppointmentGET",
+  "moduleId" : "SALES",
+  "version" : "1.0.0",
+  "states" : [ {
+    "name" : "FetchEntity",
+    "isInitial" : true,
+    "isFinal" : false,
+    "transitions" : [ {
+      "triggerEvent" : "HandleAppointmentGETFetchSuccess",
+      "targetState" : "END",
+      "action" : "builtin:repository:find"
+    }, {
+      "triggerEvent" : "HandleAppointmentGETFetchFailed",
+      "targetState" : "FailExecution",
+      "action" : "builtin:error:500"
+    } ]
+  }, {
+    "name" : "FailExecution",
+    "isInitial" : false,
+    "isFinal" : true,
+    "transitions" : [ ]
+  } ]
+}
