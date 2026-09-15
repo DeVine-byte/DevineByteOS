@@ -14,6 +14,7 @@ import io.devinebyte.runtime.config.ModuleGraph;
 import io.devinebyte.runtime.config.ModuleGraph.ModuleDefinition;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Set;
@@ -39,26 +40,43 @@ public class GeneratorPhase implements CompilerPhase {
 
     @Override
     public CompilerResult<GenerationResult> execute(CompilationContext context, CompilerResult input) {
+
         BlueprintIR ir = (BlueprintIR) input.output();
         try {
-            Path base = Path.of("build/generated");
+            // FIXED: Fulfill path extraction via key-value data maps to prevent signature compilation errors
+            String customOutPath = (String) context.get("out");
+            Path base;
 
-            // 1. Generate artifacts
+            if (customOutPath != null && !customOutPath.isBlank()) {
+                base = Path.of(customOutPath);
+            } else {
+                // FIXED: Enforce cross-platform sandbox isolation by extracting the JVM's dynamic temp path property
+                String systemTmp = System.getProperty("java.io.tmpdir", "/tmp");
+                String tenantId = context.tenant().tenantId();
+                String version = (String) context.get("version");
+                if (version == null || version.isBlank()) {
+                    version = "1.0.0";
+                }
+                base = Path.of(systemTmp).resolve("devinebyte-build").resolve(tenantId).resolve(version);
+            }
+
+            Files.createDirectories(base);
+
+            // 1. Generate artifacts inside the properly isolated build directory partition
             GenerationResult domainResult = domainGenerator.generate(context.tenant(), ir, base);
             GenerationResult configResult = configGenerator.generate(context.tenant(), ir, base.resolve("runtime"));
             byte[] bootstrap = bootstrapGenerator.generate(context.tenant(), base.resolve("bootstrap"));
 
-            // 2. FIX: Build ModuleGraph with UPPERCASE ids so deps match keys
-            // Parser gives "sales", "inventory" -> we convert to "SALES", "INVENTORY"
+            // 2. Build ModuleGraph with UPPERCASE ids so deps match keys
             Map<String, ModuleDefinition> modules = ir.modules().stream()
                 .collect(Collectors.toMap(
-                    m -> m.name().toUpperCase(), // KEY: SALES, INVENTORY, RUNTIME
+                    m -> m.name().toUpperCase(),
                     m -> new ModuleDefinition(
-                        m.name().toUpperCase(), // id
-                        context.tenant().enabledModules().contains(m.name().toUpperCase()), // enabled check
-                        m.dependencies().stream().map(String::toUpperCase).collect(Collectors.toSet()), // DEPS: SALES
+                        m.name().toUpperCase(),
+                        context.tenant().enabledModules().contains(m.name().toUpperCase()),
+                        m.dependencies().stream().map(String::toUpperCase).collect(Collectors.toSet()),
                         m.events().stream().map(EventIR::name).collect(Collectors.toSet()),
-                        Set.of() // consumedEvents
+                        Set.of()
                     )
                 ));
             ModuleGraph moduleGraph = new ModuleGraph(modules);
@@ -74,9 +92,9 @@ public class GeneratorPhase implements CompilerPhase {
             context.put("runtimeBootstrap", bootstrap);
             context.put("tenantConfig", configResult.config());
             context.put("featureFlags", configResult.featureFlags());
-            context.put("moduleGraph", moduleGraph); // NOW HAS PROPER DEPS
+            context.put("moduleGraph", moduleGraph);
 
-            context.diagnostics().addInfo("GENERATOR", "Generated domain, runtime, bootstrap for tenant " + context.tenant().tenantId());
+            context.diagnostics().addInfo("GENERATOR", "Generated domain, runtime, bootstrap for tenant " + context.tenant().tenantId() + " at target: " + base.toAbsolutePath());
             return new CompilerResult<>(context.tenant(), context.diagnostics(), configResult);
 
         } catch (Exception e) {
@@ -85,3 +103,4 @@ public class GeneratorPhase implements CompilerPhase {
         }
     }
 }
+

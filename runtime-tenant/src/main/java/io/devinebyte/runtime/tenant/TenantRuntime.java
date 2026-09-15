@@ -1,8 +1,8 @@
 package io.devinebyte.runtime.tenant;
 
 import io.devinebyte.compiler.dsl.generator.ApiSchemaWriter.ApiSchema;
+import io.devinebyte.compiler.packaging.model.Manifest; // FIXED: Import central model
 import io.devinebyte.runtime.bootstrap.BootstrapResult;
-import io.devinebyte.runtime.bootstrap.ManifestReader;
 import io.devinebyte.runtime.core.context.TenantContext;
 import io.devinebyte.runtime.core.context.TenantLifecycle;
 import io.devinebyte.runtime.core.diagnostics.DiagnosticCollector;
@@ -25,7 +25,7 @@ import java.util.UUID;
 @Singleton
 public final class TenantRuntime implements AutoCloseable {
     private final TenantContext context;
-    private final ManifestReader.Manifest manifest;
+    private final Manifest manifest; // FIXED
     private final Path dbpkgPath;
     private final EventBus eventBus;
     private final EventStore eventStore;
@@ -37,7 +37,7 @@ public final class TenantRuntime implements AutoCloseable {
     @Inject
     public TenantRuntime(
         TenantContext context,
-        ManifestReader.Manifest manifest,
+        Manifest manifest, // FIXED
         Path dbpkgPath,
         EventBus eventBus,
         EventStore eventStore,
@@ -61,7 +61,7 @@ public final class TenantRuntime implements AutoCloseable {
     public EventBus eventBus() { return eventBus; }
     public EventStore eventStore() { return eventStore; }
     public RuntimeOrchestrationModule orchestration() { return orchestration; }
-    public ManifestReader.Manifest manifest() { return manifest; }
+    public Manifest manifest() { return manifest; } // FIXED
 
     public void boot() {
         diagnostics.add(new io.devinebyte.runtime.core.diagnostics.Diagnostic(
@@ -78,3 +78,4 @@ public final class TenantRuntime implements AutoCloseable {
         ));
     }
 }
+

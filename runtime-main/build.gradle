@@ -3,6 +3,11 @@ plugins {
     id 'application'
 }
 
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
 dependencies {
     implementation project(':runtime-core')
     implementation project(':runtime-module')
@@ -13,10 +18,10 @@ dependencies {
     implementation project(':runtime-workflow')
     implementation project(':runtime-projection')
     implementation project(':compiler-workflow')
-    implementation project(':compiler-projection')   
+    implementation project(':compiler-projection')
     implementation project(':runtime-orchestration')
 
-    implementation 'com.google.inject:guice:5.1.0' // ADD THIS for Guice.createInjector
+    implementation 'com.google.inject:guice:5.1.0'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2'
     implementation 'jakarta.inject:jakarta.inject-api:2.0.1'
@@ -24,4 +29,6 @@ dependencies {
 
 application {
     mainClass = 'io.devinebyte.runtime.Main'
+    applicationName = 'dbos-runtime'
 }
+

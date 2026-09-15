@@ -1,0 +1,34 @@
+/var/lib/devinebyte/dbos.service
+[Unit]
+Description=DevineByteOS Isolated Multi-Tenant Substrate Engine
+After=network.target
+
+[Service]
+Type=simple
+User=dbos
+Group=dbos
+WorkingDirectory=/var/lib/devinebyte
+
+# Enforce Item 4 Out-of-Band Package Roots
+Environment=DBPKG_ROOT=/var/lib/devinebyte/tenants
+Environment=JAVA_HOME=/usr/lib/jvm/java-21-openjdk
+
+# Native binary launch paths matching distribution rules
+ExecStart=/usr/bin/dbos-runtime run --tenant acme
+
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=dbos-substrate
+
+# Security hardening configurations
+CapabilityBoundingSet=
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/devinebyte
+
+[Install]
+WantedBy=multi-user.target
+

@@ -47,16 +47,26 @@ public class Lexer {
             case ']' -> addToken(TokenType.RBRACK);
             case '-' -> { if (match('>')) addToken(TokenType.ARROW); }
             case '/' -> {
-                if (match('/')) { // // comment
+                if (match('/')) { 
                     while (peek() != '\n' && !isAtEnd()) advance();
-                } else if (match('*')) { // /* comment */
+                } else if (match('*')) { 
                     while (!(peek() == '*' && peekNext() == '/') && !isAtEnd()) {
                         if (peek() == '\n') { line++; column = 1; }
                         advance();
                     }
-                    if (!isAtEnd()) { advance(); advance(); } // consume */
+                    if (!isAtEnd()) { advance(); advance(); } 
                 } else {
-                    context.diagnostics().addError("LEXER_001", "Unexpected character: /");
+                    context.diagnostics().addError("LEXER_001", "Unexpected character: /", context.tenant().tenantId());
+                }
+            }
+            case '@' -> {
+                // ITEM 16 FIXED: Native annotation tracking implementation loops
+                while (isAlphaNumeric(peek())) advance();
+                String text = source.substring(start, current);
+                if ("@NotNull".equalsIgnoreCase(text)) {
+                    addToken(TokenType.AT_NOTNULL);
+                } else {
+                    context.diagnostics().addError("LEXER_003", "Unsupported validation annotation constraint: " + text, context.tenant().tenantId());
                 }
             }
             case ' ', '\r', '\t' -> {}
@@ -65,7 +75,7 @@ public class Lexer {
             default -> {
                 if (isAlpha(c)) identifier();
                 else if (isDigit(c)) number();
-                else context.diagnostics().addError("LEXER_001", "Unexpected character: " + c);
+                else context.diagnostics().addError("LEXER_001", "Unexpected character: " + c, context.tenant().tenantId());
             }
         }
     }
@@ -81,13 +91,13 @@ public class Lexer {
 
     private void string(CompilationContext context) {
         while (peek() != '"' && !isAtEnd()) { if (peek() == '\n') { line++; column = 1; } advance(); }
-        if (isAtEnd()) { context.diagnostics().addError("LEXER_002", "Unterminated string"); return; }
+        if (isAtEnd()) { context.diagnostics().addError("LEXER_002", "Unterminated string", context.tenant().tenantId()); return; }
         advance(); addToken(TokenType.STRING, source.substring(start + 1, current - 1));
     }
 
     private boolean match(char expected) { if (isAtEnd() || source.charAt(current) != expected) return false; current++; column++; return true; }
     private char peek() { return isAtEnd()? '\0' : source.charAt(current); }
-    private char peekNext() { return current + 1 >= source.length() ? '\0' : source.charAt(current + 1); } // NEW
+    private char peekNext() { return current + 1 >= source.length() ? '\0' : source.charAt(current + 1); } 
     private boolean isAlpha(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'; }
     private boolean isDigit(char c) { return c >= '0' && c <= '9'; }
     private boolean isAlphaNumeric(char c) { return isAlpha(c) || isDigit(c); }
@@ -96,3 +106,4 @@ public class Lexer {
     private void addToken(TokenType type) { addToken(type, null); }
     private void addToken(TokenType type, String literal) { tokens.add(new Token(type, literal != null ? literal : source.substring(start, current), line, column)); }
 }
+

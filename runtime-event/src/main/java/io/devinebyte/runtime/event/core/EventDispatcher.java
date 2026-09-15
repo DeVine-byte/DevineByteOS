@@ -1,4 +1,4 @@
-package io.devinebyte.runtime.event.core;
+package io.devinebyte.runtime.event.core;                        
 
 import io.devinebyte.runtime.core.context.TenantContext;
 import io.devinebyte.runtime.event.handler.HandlerRegistry;
@@ -14,21 +14,41 @@ public final class EventDispatcher {
 
     @Inject
     public EventDispatcher(HandlerRegistry registry, ModuleIsolationGuard guard) {
-        this.registry = registry;
+        this.registry = registry;                                        
         this.guard = guard;
     }
 
     public void dispatch(TenantContext ctx, DomainEvent event) {
+        if (event == null || event.metadata() == null) {
+            return;
+        }
+
+        // Extract the explicit tracking metadata sourceModule that emitted the event payload
+        String sourceModule = event.metadata().sourceModule();
+        if (sourceModule == null || sourceModule.isBlank()) {
+            sourceModule = "RUNTIME"; // Global engine core fallback mapping boundary
+        }
+
+        final String finalSourceModule = sourceModule;
+
         registry.getHandlers(event.type())
             .stream()
             .filter(h -> {
-                try {
-                    guard.assertEnabled(ctx, h.moduleId(), "handle:" + event.type());
+                try {                                                                
+                    // FIXED: Fulfill strict Item 5 cross-module dependency mapping checks to stop telemetry leaks
+                    guard.assertAccessPermitted(
+                        ctx, 
+                        finalSourceModule, 
+                        h.moduleId(), 
+                        "subscribe:" + event.type()
+                    );
                     return true;
                 } catch (Exception e) {
-                    return false; // module disabled, skip handler
+                    // Suppress rogue handler execution routes if authorization checks fail
+                    return false; 
                 }
             })
             .forEach(h -> h.handle(ctx, event));
     }
 }
+

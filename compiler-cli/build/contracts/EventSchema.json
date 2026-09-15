@@ -9,7 +9,37 @@
     "name" : "STRING",
     "version" : "STRING",
     "timestamp" : "DATETIME"
-  }
+  },
+  "additionalProperties" : false,
+  "properties" : {
+    "eventId" : {
+      "type" : "string",
+      "format" : "uuid"
+    },
+    "patientId" : {
+      "type" : "string"
+    },
+    "phone" : {
+      "type" : "string"
+    },
+    "tenantId" : {
+      "type" : "string"
+    },
+    "name" : {
+      "type" : "string"
+    },
+    "version" : {
+      "type" : "string"
+    },
+    "timestamp" : {
+      "type" : "string",
+      "format" : "date-time"
+    }
+  },
+  "type" : "object",
+  "$id" : "https://devinebyte.ioPatientRegistered-v1.0.json",
+  "required" : [ "tenantId", "eventId", "timestamp", "version", "patientId", "phone", "name" ],
+  "$schema" : "https://json-schema.org"
 }, {
   "name" : "AppointmentBooked",
   "version" : "1.0",
@@ -21,7 +51,37 @@
     "department" : "STRING",
     "version" : "STRING",
     "timestamp" : "DATETIME"
-  }
+  },
+  "additionalProperties" : false,
+  "properties" : {
+    "eventId" : {
+      "type" : "string",
+      "format" : "uuid"
+    },
+    "patientId" : {
+      "type" : "string"
+    },
+    "appointmentId" : {
+      "type" : "string"
+    },
+    "tenantId" : {
+      "type" : "string"
+    },
+    "department" : {
+      "type" : "string"
+    },
+    "version" : {
+      "type" : "string"
+    },
+    "timestamp" : {
+      "type" : "string",
+      "format" : "date-time"
+    }
+  },
+  "type" : "object",
+  "$id" : "https://devinebyte.ioAppointmentBooked-v1.0.json",
+  "required" : [ "tenantId", "eventId", "timestamp", "version", "patientId", "appointmentId", "department" ],
+  "$schema" : "https://json-schema.org"
 }, {
   "name" : "MedicationDispensed",
   "version" : "1.0",
@@ -33,7 +93,37 @@
     "version" : "STRING",
     "timestamp" : "DATETIME",
     "status" : "STRING"
-  }
+  },
+  "additionalProperties" : false,
+  "properties" : {
+    "eventId" : {
+      "type" : "string",
+      "format" : "uuid"
+    },
+    "prescriptionId" : {
+      "type" : "string"
+    },
+    "appointmentId" : {
+      "type" : "string"
+    },
+    "tenantId" : {
+      "type" : "string"
+    },
+    "version" : {
+      "type" : "string"
+    },
+    "timestamp" : {
+      "type" : "string",
+      "format" : "date-time"
+    },
+    "status" : {
+      "type" : "string"
+    }
+  },
+  "type" : "object",
+  "$id" : "https://devinebyte.ioMedicationDispensed-v1.0.json",
+  "required" : [ "tenantId", "eventId", "timestamp", "version", "prescriptionId", "appointmentId", "status" ],
+  "$schema" : "https://json-schema.org"
 }, {
   "name" : "PaymentConfirmed",
   "version" : "1.0",
@@ -45,5 +135,107 @@
     "version" : "STRING",
     "timestamp" : "DATETIME",
     "status" : "STRING"
-  }
+  },
+  "additionalProperties" : false,
+  "properties" : {
+    "eventId" : {
+      "type" : "string",
+      "format" : "uuid"
+    },
+    "paymentId" : {
+      "type" : "string"
+    },
+    "tenantId" : {
+      "type" : "string"
+    },
+    "invoiceId" : {
+      "type" : "string"
+    },
+    "version" : {
+      "type" : "string"
+    },
+    "timestamp" : {
+      "type" : "string",
+      "format" : "date-time"
+    },
+    "status" : {
+      "type" : "string"
+    }
+  },
+  "type" : "object",
+  "$id" : "https://devinebyte.ioPaymentConfirmed-v1.0.json",
+  "required" : [ "tenantId", "eventId", "timestamp", "version", "paymentId", "invoiceId", "status" ],
+  "$schema" : "https://json-schema.org"
+}, {
+  "name" : "PatientDischarged",
+  "version" : "1.0",
+  "fields" : {
+    "eventId" : "UUID",
+    "patientId" : "STRING",
+    "appointmentId" : "STRING",
+    "tenantId" : "STRING",
+    "version" : "STRING",
+    "timestamp" : "DATETIME",
+    "status" : "STRING"
+  },
+  "additionalProperties" : false,
+  "properties" : {
+    "eventId" : {
+      "type" : "string",
+      "format" : "uuid"
+    },
+    "patientId" : {
+      "type" : "string"
+    },
+    "appointmentId" : {
+      "type" : "string"
+    },
+    "tenantId" : {
+      "type" : "string"
+    },
+    "version" : {
+      "type" : "string"
+    },
+    "timestamp" : {
+      "type" : "string",
+      "format" : "date-time"
+    },
+    "status" : {
+      "type" : "string"
+    }
+  },
+  "type" : "object",
+  "$id" : "https://devinebyte.ioPatientDischarged-v1.0.json",
+  "required" : [ "tenantId", "eventId", "timestamp", "version", "patientId", "appointmentId", "status" ],
+  "$schema" : "https://json-schema.org"
+}, {
+  "name" : "SystemBooted",
+  "version" : "1.0",
+  "fields" : {
+    "eventId" : "UUID",
+    "tenantId" : "STRING",
+    "version" : "STRING",
+    "timestamp" : "DATETIME"
+  },
+  "additionalProperties" : false,
+  "properties" : {
+    "eventId" : {
+      "type" : "string",
+      "format" : "uuid"
+    },
+    "tenantId" : {
+      "type" : "string"
+    },
+    "version" : {
+      "type" : "string"
+    },
+    "timestamp" : {
+      "type" : "string",
+      "format" : "date-time"
+    }
+  },
+  "type" : "object",
+  "$id" : "https://devinebyte.ioSystemBooted-v1.0.json",
+  "required" : [ "tenantId", "eventId", "timestamp", "version" ],
+  "$schema" : "https://json-schema.org"
 } ]

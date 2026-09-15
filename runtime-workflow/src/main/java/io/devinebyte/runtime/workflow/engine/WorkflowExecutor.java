@@ -47,8 +47,6 @@ public class WorkflowExecutor {
 
             String nextState = null;
             
-            // If the state has no transitions, or transitions require an explicit external event type,
-            // we treat it as an asynchronous wait block to honor Rule 4 (Everything is an Event)
             if (stateDef.transitions() == null || stateDef.transitions().isEmpty()) {
                 break;
             }
@@ -56,8 +54,6 @@ public class WorkflowExecutor {
             for (var transition : stateDef.transitions()) {
                 String action = transition.action();
 
-                // If a transition action is blank or completely missing, it represents a state
-                // that expects a dynamic external event message payload to trigger it.
                 if (action == null || action.trim().isEmpty()) {
                     System.out.println("[WORKFLOW WAIT] Step [" + currentState + "] shifting to sleep state. Awaiting domain event stream notification...");
                     executionHaltedForEvent = true;
@@ -124,6 +120,13 @@ public class WorkflowExecutor {
     }
 
     public WorkflowInstance handleEvent(TenantContext ctx, WorkflowDefinition def, WorkflowInstance instance, DomainEvent event) {
+        // ==========================================================
+        // ITEM 7 FIXED: EXECUTOR LEVEL INTERCEPTOR SANDBOX
+        // ==========================================================
+        if (instance.tenant() != null && !ctx.tenantId().equalsIgnoreCase(instance.tenant().tenantId())) {
+            throw new IllegalArgumentException("Security Restriction Violation: Mismatched routing scope parameters at executor level.");
+        }
+
         guard.assertEnabled(ctx, def.moduleId(), "handleEvent for " + def.name());
         var transition = def.findTransition(instance.currentState(), event.type());
         if (transition == null) return instance;
@@ -145,4 +148,3 @@ public class WorkflowExecutor {
         return newInstance;
     }
 }
-

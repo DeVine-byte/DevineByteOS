@@ -76,8 +76,6 @@ public class RuntimeConfigGenerator {
         mapper.writeValue(outDir.resolve("feature_flags.json").toFile(), flags);
         mapper.writeValue(outDir.resolve("module_graph.json").toFile(), moduleGraph);
 
-        System.out.println("[GENERATOR] Wrote module_graph.json with " + modules.size() + " modules");
-
         return new GenerationResult(List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), resultConfig, flags, moduleGraph);
     }
 }

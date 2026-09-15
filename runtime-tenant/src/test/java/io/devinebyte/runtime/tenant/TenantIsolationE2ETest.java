@@ -1,5 +1,6 @@
 package io.devinebyte.runtime.tenant;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -20,7 +21,6 @@ import java.util.zip.ZipOutputStream;
 import static org.junit.jupiter.api.Assertions.*;
 
 class TenantIsolationE2ETest {
-    // FIX: disable WRITE_DATES_AS_TIMESTAMPS so Instant becomes ISO string
     private static final ObjectMapper MAPPER = new ObjectMapper()
             .registerModule(new JavaTimeModule())
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
@@ -30,20 +30,28 @@ class TenantIsolationE2ETest {
         Path dbpkg = tempDir.resolve("test.dbpkg");
         createValidDbpkg(dbpkg);
         Path baseData = Path.of("build/data/tenants");
-        if (Files.exists(baseData)) Files.walk(baseData).sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(java.io.File::delete);
+        
+        if (Files.exists(baseData)) {
+            Files.walk(baseData)
+                 .sorted(Comparator.reverseOrder())
+                 .map(Path::toFile)
+                 .forEach(java.io.File::delete);
+        }
 
-        RuntimeLauncher.launch(dbpkg, "tenant1", true);
-        RuntimeLauncher.launch(dbpkg, "tenant2", true);
-        Thread.sleep(100); // let FileEventStore flush
+        RuntimeLauncher.launch(dbpkg, "tenant1");
+        RuntimeLauncher.launch(dbpkg, "tenant2");
+        Thread.sleep(150); 
 
-        assertTrue(Files.exists(baseData.resolve("tenant1/events.log")));
-        assertTrue(Files.exists(baseData.resolve("tenant2/events.log")));
-        assertNotEquals(Files.readString(baseData.resolve("tenant1/events.log")), Files.readString(baseData.resolve("tenant2/events.log")));
+        assertTrue(Files.exists(baseData.resolve("tenant1/events.log")), "Tenant 1 events registry file should exist.");
+        assertTrue(Files.exists(baseData.resolve("tenant2/events.log")), "Tenant 2 events registry file should exist.");
+        assertNotEquals(
+            Files.readString(baseData.resolve("tenant1/events.log")), 
+            Files.readString(baseData.resolve("tenant2/events.log")),
+            "Tenants data tracking states must remain entirely isolated."
+        );
     }
 
     private void createValidDbpkg(Path dbpkg) throws Exception {
-        record TestManifest(String schemaVersion, String tenantId, String version, Instant builtAt, String builtBy, String sha256, String signature, boolean multiTenant) {}
-        
         String moduleGraph = """
         {
           "modules": {
@@ -58,37 +66,48 @@ class TenantIsolationE2ETest {
         }
         """;
         String apiSchema = "[]";
+
+        // FIXED: Order payload parts alphabetically to mirror the verifier's sorted entry validation mechanism
+        // "contracts/APISchema.json" comes alphabetically BEFORE "runtime/module_graph.json"
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        digest.update(apiSchema.getBytes(StandardCharsets.UTF_8));
+        digest.update(moduleGraph.getBytes(StandardCharsets.UTF_8));
+        String trueContentSha = HexFormat.of().formatHex(digest.digest());
+
+        record TestManifest(
+            String schemaVersion, 
+            String tenantId, 
+            String version, 
+            Instant builtAt, 
+            String builtBy, 
+            @JsonProperty("sha256") String checksumSha256, 
+            String signature, 
+            boolean multiTenant
+        ) {}
+
+        TestManifest verifiedManifest = new TestManifest("2.0", "template", "0.1.0", Instant.now(), "test-suite", trueContentSha, "secure-signature", true);
         
-        TestManifest dummy = new TestManifest("1.0", "template", "0.1.0", Instant.now(), "test", "DUMMY", "fake", true);
-        writeZip(dbpkg, MAPPER.writeValueAsString(dummy), moduleGraph, apiSchema);
-        
-        byte[] bytes = Files.readAllBytes(dbpkg);
-        String sha = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
-        TestManifest real = new TestManifest("1.0", "template", "0.1.0", dummy.builtAt(), "test", sha, "fake", true);
-        writeZip(dbpkg, MAPPER.writeValueAsString(real), moduleGraph, apiSchema);
-    }
-    
-    private void writeZip(Path dbpkg, String manifest, String moduleGraph, String apiSchema) throws Exception {
         try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(dbpkg.toFile()))) {
-            writeEntry(zos, "manifest.json", manifest);
-            writeEntry(zos, "runtime/module_graph.json", moduleGraph);
             writeEntry(zos, "contracts/APISchema.json", apiSchema);
-            writeDir(zos, "contracts/"); 
-            writeDir(zos, "workflows/"); 
-            writeDir(zos, "projections/"); 
-            writeDir(zos, "runtime/"); 
+            writeEntry(zos, "runtime/module_graph.json", moduleGraph);
+            writeDir(zos, "contracts/");
+            writeDir(zos, "workflows/");
+            writeDir(zos, "projections/");
+            writeDir(zos, "runtime/");
             writeDir(zos, "bootstrap/");
+            writeEntry(zos, "manifest.json", MAPPER.writeValueAsString(verifiedManifest));
         }
     }
-    
-    private void writeEntry(ZipOutputStream zos, String name, String content) throws Exception { 
-        zos.putNextEntry(new ZipEntry(name)); 
-        zos.write(content.getBytes(StandardCharsets.UTF_8)); 
-        zos.closeEntry(); 
+
+    private void writeEntry(ZipOutputStream zos, String name, String content) throws Exception {
+        zos.putNextEntry(new ZipEntry(name));
+        zos.write(content.getBytes(StandardCharsets.UTF_8));
+        zos.closeEntry();
     }
-    
-    private void writeDir(ZipOutputStream zos, String name) throws Exception { 
-        zos.putNextEntry(new ZipEntry(name)); 
-        zos.closeEntry(); 
+
+    private void writeDir(ZipOutputStream zos, String name) throws Exception {
+        zos.putNextEntry(new ZipEntry(name));
+        zos.closeEntry();
     }
 }
+

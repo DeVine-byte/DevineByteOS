@@ -4,8 +4,6 @@ import io.devinebyte.runtime.core.context.TenantContext;
 import io.devinebyte.runtime.core.diagnostics.DiagnosticCollector;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,76 +11,98 @@ import java.security.MessageDigest;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-@Singleton
-public class DbpkgVerifier {
+public final class DbpkgVerifier {
     private final DbpkgStructure structure = DbpkgStructure.required();
-    private final boolean skipChecksum;
     private final ObjectMapper mapper = new ObjectMapper();
 
-    @Inject
-    public DbpkgVerifier() {
-        this(false);
-    }
-
-    public DbpkgVerifier(boolean skipChecksum) {
-        this.skipChecksum = true;
-    }
+    // Pure Java structure initialization constructor
+    public DbpkgVerifier() {}
 
     public boolean verifyStructure(TenantContext tenant, Path dbpkgPath, DiagnosticCollector diagnostics) {
         try (ZipFile zip = new ZipFile(dbpkgPath.toFile())) {
             ZipEntry manifestEntry = zip.getEntry(structure.manifestPath());
             if (manifestEntry == null) {
-                diagnostics.fatal("DBRT002", "Missing required file: /manifest.json", tenant.tenantId());
+                diagnostics.fatal("DBRT002", "Security Failure: Missing critical tracking file /manifest.json", tenant.tenantId());
                 return false;
             }
 
-            // HYBRID: Validate tenantId matches only if not multiTenant
             try (InputStream is = zip.getInputStream(manifestEntry)) {
                 JsonNode manifest = mapper.readTree(is);
                 String manifestTenant = manifest.path("tenantId").asText(null);
+                String embeddedSha = manifest.path("sha256").asText(null);
+
                 if (manifestTenant == null) {
-                    diagnostics.fatal("DBRT002", "manifest.json missing tenantId", tenant.tenantId());
+                    diagnostics.fatal("DBRT002", "Security Failure: manifest.json structure is missing tenantId reference", tenant.tenantId());
                     return false;
                 }
 
-                boolean isMultiTenant = manifest.path("multiTenant").asBoolean(true); // default true
+                if (embeddedSha == null || embeddedSha.isBlank()) {
+                    diagnostics.fatal("DBRT002", "Security Failure: manifest.json structure is missing required sha256 checksum tracking attribute", tenant.tenantId());
+                    return false;
+                }
 
-                if (!isMultiTenant &&!manifestTenant.equals(tenant.tenantId())) {
+                if (!verifyChecksum(tenant, dbpkgPath, embeddedSha, diagnostics)) {
+                    return false;
+                }
+
+                boolean isMultiTenant = manifest.path("multiTenant").asBoolean(true);
+                if (!isMultiTenant && !manifestTenant.equals(tenant.tenantId())) {
                     diagnostics.fatal("DBRT007",
-                        "Tenant mismatch. Manifest: " + manifestTenant + " Requested: " + tenant.tenantId(),
+                        "Tenant Mismatch Gating: Package restricted exclusively to client " + manifestTenant + ", but requested by " + tenant.tenantId(),
                         tenant.tenantId());
                     return false;
                 }
             }
 
-            for (String dir : structure.requiredDirectories()) {
-                if (zip.getEntry(dir + "/") == null) {
-                    diagnostics.fatal("DBRT003", "Missing required directory: /" + dir, tenant.tenantId());
+            // FIXED: Verify partition presence by scanning file path prefixes, preventing empty metadata folder failures
+            for (String requiredDir : structure.requiredDirectories()) {
+                String targetPrefix = requiredDir + "/";
+                boolean prefixDiscovered = zip.stream()
+                    .anyMatch(entry -> entry.getName().startsWith(targetPrefix));
+
+                if (!prefixDiscovered) {
+                    diagnostics.fatal("DBRT003", "Missing required structure partition directory: /" + requiredDir, tenant.tenantId());
                     return false;
                 }
             }
             return true;
         } catch (Exception e) {
-            diagnostics.fatal("DBRT004", "Failed to open.dbpkg: " + e.getMessage(), tenant.tenantId());
+            diagnostics.fatal("DBRT004", "Security Failure: Target package structure manipulation or failure detected: " + e.getMessage(), tenant.tenantId());
             return false;
         }
     }
 
     public boolean verifyChecksum(TenantContext tenant, Path dbpkgPath, String expectedChecksum, DiagnosticCollector diagnostics) {
-        if (skipChecksum) {
-            return true;
-        }
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] bytes = Files.readAllBytes(dbpkgPath);
-            String actual = bytesToHex(digest.digest(bytes));
-            if (!actual.equals(expectedChecksum)) {
-                diagnostics.fatal("DBRT005", "Checksum mismatch. Expected: " + expectedChecksum + " Actual: " + actual, tenant.tenantId());
+            
+            try (ZipFile zip = new ZipFile(dbpkgPath.toFile())) {
+                java.util.List<? extends ZipEntry> sortedEntries = java.util.Collections.list(zip.entries());
+                sortedEntries.sort(java.util.Comparator.comparing(ZipEntry::getName));
+                
+                for (ZipEntry entry : sortedEntries) {
+                    if (entry.isDirectory() || "manifest.json".equals(entry.getName())) {
+                        continue;
+                    }
+                    
+                    try (InputStream is = zip.getInputStream(entry)) {
+                        byte[] buffer = new byte[8192];
+                        int readBytes;
+                        while ((readBytes = is.read(buffer)) != -1) {
+                            digest.update(buffer, 0, readBytes);
+                        }
+                    }
+                }
+            }
+
+            String actual = bytesToHex(digest.digest());
+            if (!actual.equalsIgnoreCase(expectedChecksum)) {
+                diagnostics.fatal("DBRT005", "Security Failure: Package binary footprint modified (SHA-256 Checksum Mismatch). Expected: " + expectedChecksum + " Actual: " + actual, tenant.tenantId());
                 return false;
             }
             return true;
         } catch (Exception e) {
-            diagnostics.fatal("DBRT006", "Checksum verification failed: " + e.getMessage(), tenant.tenantId());
+            diagnostics.fatal("DBRT006", "Security Failure: Critical error calculating stream validation tracking signature: " + e.getMessage(), tenant.tenantId());
             return false;
         }
     }
@@ -93,3 +113,4 @@ public class DbpkgVerifier {
         return sb.toString();
     }
 }
+

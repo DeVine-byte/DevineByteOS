@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="io.devinebyte.runtime.core.TenantContextTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-08-26T15:52:44.724Z" hostname="localhost" time="0.179">
+<testsuite name="io.devinebyte.runtime.core.TenantContextTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-09-15T13:41:43.650Z" hostname="localhost" time="0.878">
   <properties/>
-  <testcase name="tenantContext_requiresTenantId()" classname="io.devinebyte.runtime.core.TenantContextTest" time="0.1"/>
+  <testcase name="tenantContext_requiresTenantId()" classname="io.devinebyte.runtime.core.TenantContextTest" time="0.195"/>
   <testcase name="isModuleEnabled_works()" classname="io.devinebyte.runtime.core.TenantContextTest" time="0.005"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>

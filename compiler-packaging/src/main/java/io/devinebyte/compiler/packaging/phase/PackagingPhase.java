@@ -96,9 +96,6 @@ public class PackagingPhase implements CompilerPhase {
         Boolean strictModeFlag = context.get("strictMode");
         boolean strictMode = strictModeFlag != null && strictModeFlag;
         boolean multiTenant = !strictMode;
-        System.out.println("PKG DEBUG: apiSchemas size = " + (apis == null ? 0 : apis.size()));
-        System.out.println("PKG DEBUG: Verified packaged workflows count = " + workflows.size());
-
         PackageContent pkgContent = new PackageContent(
             context.tenant(), ir.version(), ir,
             events != null ? events : List.of(), entities != null ? entities : List.of(),

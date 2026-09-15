@@ -58,15 +58,6 @@ public class BlueprintCompiler implements CompilerPhase {
         BlueprintIR rawIR = moduleCompiler.compile(context, audit, ast);
         CompilerResult shakenResult = treeShaker.execute(context, new CompilerResult<>(context.tenant(), context.diagnostics(), rawIR));
         BlueprintIR shakenIR = (BlueprintIR) shakenResult.output();
-
-    // DELETE THESE 2 LINES
-    // List<ApiSchemaWriter.ApiSchema> apiSchemas = apiSchemaWriter.generate(context, ast);
-    // context.put("apiSchemas", apiSchemas);
-    // context.diagnostics().addInfo("API_GEN", "Generated " + apiSchemas.size() + " API contracts");
-
-        System.out.println("RAW modules      : " + rawIR.modules().size());
-    // ... rest
-
         violationEngine.validate(context, shakenIR);
 
     // Rebuild IR WITHOUT apiSchemas

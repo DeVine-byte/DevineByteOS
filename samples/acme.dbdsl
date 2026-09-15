@@ -1,13 +1,10 @@
-// ==========================================================
-// MODULE 1: PATIENT MANAGEMENT = CRM
-// ==========================================================
 module crm enable {
     entity Patient {
         id: String;
         name: String;
         email: String;
         phone: String;
-        dob: DateTime;
+        dob: Date;
         gender: String;
         bloodGroup: String;
         address: String;
@@ -30,24 +27,25 @@ module crm enable {
 module sales depends on crm enable {
     entity Appointment {
         id: String;
-        patientId: String;
+        patientId: String; // FK to crm.Patient
         doctorId: String;
-        department: String;
+        department: String; // Cardiology, Radiology, etc
         appointmentDate: DateTime;
-        status: String;
+        status: String; // SCHEDULED, CHECKED_IN, COMPLETED, CANCELLED
         total: Decimal;
         expose api [GET, POST, PUT];
     }
 
     entity Invoice {
         id: String;
-        appointmentId: String;
-        patientId: String;
+        appointmentId: String; // FK to sales.Appointment
+        patientId: String; // FK to crm.Patient
         amount: Decimal;
-        status: String;
+        status: String; // PENDING, PAID, INSURANCE_CLAIM
         expose api [GET, POST];
     }
 
+    // EXPOSES: The initial trigger to start clinical workflow
     event AppointmentBooked {
         payload: {
             appointmentId: String,
@@ -63,8 +61,8 @@ module sales depends on crm enable {
         DischargePatient;
     }
 
+    // KPI mapping definition used in Phase 4 Step 5
     kpi AppointmentConversionRate: AppointmentsCompleted;
-
 }
 
 // ==========================================================
@@ -72,12 +70,12 @@ module sales depends on crm enable {
 // ==========================================================
 module inventory depends on sales enable {
     entity Stock {
-        sku: String;
+        sku: String; // DrugCode, ConsumableCode
         name: String;
         qty: Int;
-        unit: String;
-        warehouse: String;
-        expiryDate: DateTime;
+        unit: String; // mg, pcs, ml
+        warehouse: String; // Main Pharmacy, ER Store
+        expiryDate: Date;
         expose api [GET, PUT];
     }
 
@@ -87,10 +85,11 @@ module inventory depends on sales enable {
         patientId: String;
         drugSku: String;
         dosage: String;
-        status: String;
+        status: String; // ISSUED, DISPENSED
         expose api [GET, POST];
     }
 
+    // EXPOSES: Allows Pharmacy to notify Finance
     event MedicationDispensed {
         payload: {
             prescriptionId: String,
@@ -110,8 +109,8 @@ module finance depends on inventory enable {
         appointmentId: String;
         patientId: String;
         amount: Decimal;
-        method: String;
-        status: String;
+        method: String; // CASH, CARD, HMO, INSURANCE
+        status: String; // SUCCESS, FAILED
         expose api [GET];
     }
 
@@ -119,10 +118,11 @@ module finance depends on inventory enable {
         id: String;
         invoiceId: String;
         hmoCode: String;
-        status: String;
+        status: String; // SUBMITTED, APPROVED, REJECTED
         expose api [GET, POST];
     }
 
+    // EXPOSES: Final step event before discharge
     event PaymentConfirmed {
         payload: {
             paymentId: String,
@@ -130,5 +130,40 @@ module finance depends on inventory enable {
             status: String
         }
     }
+}
+
+// ==========================================================
+// MODULE 5: CLINICAL = CORE HOSPITAL OPS
+// ==========================================================
+module clinical depends on sales enable {
+    entity MedicalRecord {
+        id: String;
+        patientId: String;
+        appointmentId: String;
+        diagnosis: String;
+        notes: String;
+        doctorId: String;
+        createdAt: DateTime;
+        expose api [GET, POST];
+    }
+
+    entity Bed {
+        id: String;
+        ward: String; // ICU, General, Maternity
+        status: String; // AVAILABLE, OCCUPIED, MAINTENANCE
+        expose api [GET, PUT];
+    }
+
+    event PatientDischarged {
+        payload: {
+            appointmentId: String,
+            patientId: String,
+            status: String
+        }
+    }
+}
+
+module runtime enable {
+    event SystemBooted();
 }
 

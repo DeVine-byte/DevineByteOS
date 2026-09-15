@@ -1,14 +1,14 @@
-package io.devinebyte.compiler.cli.commands;
+package io.devinebyte.compiler.cli.commands;                     
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;              
 import io.devinebyte.compiler.cli.util.CliPrinter;
 import io.devinebyte.compiler.core.context.CompilationContext;
 import io.devinebyte.compiler.core.context.TenantContext;
 import io.devinebyte.compiler.core.context.TenantLifecycle;
 import io.devinebyte.compiler.core.diagnostics.DiagnosticCollector;
 import io.devinebyte.compiler.sdk.CompilerOrchestrator;
-import picocli.CommandLine.Command;
+import picocli.CommandLine.Command;                              
 import picocli.CommandLine.Option;
 
 import java.nio.file.Files;
@@ -16,35 +16,58 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.regex.Pattern;
 
 @Command(
     name = "compile",
-    description = "Compile .dbdsl -> tenant-vX.dbpkg",
+    description = "Compile .dbdsl -> tenant-vX.dbpkg using enterprise constraints",
     mixinStandardHelpOptions = true,
     usageHelpAutoWidth = true
 )
 public class CompileCommand implements Callable<Integer> {
 
-    @Option(names = {"-d", "--dsl"}, required = true, description = "Path to .dbdsl file")
+    // Simple SemVer regex rule matching MAJOR.MINOR.PATCH format
+    private static final Pattern SEMVER_PATTERN = Pattern.compile("^\\d+\\.\\d+\\.\\d+(-[a-zA-Z0-9.]+)?$");
+
+    @Option(names = {"-d", "--dsl"}, required = true, description = "Path to the target .dbdsl schema file")
     private Path dslFile;
 
-    @Option(names = {"-t", "--tenant"}, required = true, description = "Tenant ID")
+    @Option(names = {"-t", "--tenant"}, required = true, description = "Unique corporate Tenant ID string")
     private String tenantId;
 
-    @Option(names = {"-v", "--version"}, required = true, description = "Version string e.g. 1.0.0")
+    @Option(names = {"-v", "--version"}, required = true, description = "Semantic version format (e.g., 1.0.0)")
     private String version;
 
-    @Option(names = {"-o", "--output"}, description = "Output directory. Defaults to {repo-root}/execution")
+    @Option(names = {"-o", "--out", "--output"}, description = "Target output container binary location directory")
     private Path outputDir;
 
-    @Option(names = {"--strict"}, description = "Enterprise mode: 1 dbpkg = 1 tenant. Sets multiTenant: false")
+    @Option(names = {"--strict"}, description = "Enterprise Single-Tenant isolation rule. Forces multiTenant=false")
     private boolean strictMode = false;
+
+    @Option(names = {"--multi-tenant"}, description = "SaaS template distribution architecture rule. Sets multiTenant=true")
+    private boolean multiTenantMode = true;
 
     private final CompilerOrchestrator orchestrator = new CompilerOrchestrator();
     private final ObjectMapper mapper = new ObjectMapper();
 
+    @Option(names = {"--debug"}, description = "Verbose Mode: Prints structural syntax tokens and full execution JSON reports")
+    private boolean debugMode = false;
+
     @Override
     public Integer call() {
+        // 1. Strict Validation Rule: Enforce Semantic Versioning Compliance Constraints
+        if (!SEMVER_PATTERN.matcher(version).matches()) {
+            CliPrinter.error("CLI ARGUMENT FAULT: Provided version string [" + version + "] fails SemVer compliance checking rules.");
+            CliPrinter.info("Remediation: Rectify parameter layout to match structural 'MAJOR.MINOR.PATCH' formatting keys.");
+            return 1;
+        }
+
+        // 2. Strict Flag Rule: If --strict is true, multi-tenant distribution behavior is immediately disengaged
+        boolean computeMultiTenantResult = !strictMode;
+        if (strictMode) {
+            this.multiTenantMode = false;
+        }
+
         try {
             Path cwd = Path.of(System.getProperty("user.dir"));
             Path repoRoot = cwd;
@@ -57,10 +80,11 @@ public class CompileCommand implements Callable<Integer> {
 
             Path baseOutputDir = outputDir != null ? outputDir : repoRoot.resolve("execution");
 
-            CliPrinter.info("Compiling: " + dslFile + " for tenant " + tenantId);
-            if (strictMode) CliPrinter.info("Mode: STRICT - multiTenant: false");
-            else CliPrinter.info("Mode: TEMPLATE - multiTenant: true");
-            CliPrinter.info("Output Dir: " + baseOutputDir.toAbsolutePath());
+            CliPrinter.info("Initializing DevineByte Compilation Sequence...");
+            CliPrinter.info("  ├─► Target DSL: " + dslFile.toAbsolutePath());
+            CliPrinter.info("  ├─► Client ID:  " + tenantId);
+            CliPrinter.info("  ├─► Version:    " + version);
+            CliPrinter.info("  └─► Strictness: SINGLE_TENANT=" + strictMode + " (multiTenant=" + computeMultiTenantResult + ")");
 
             DiagnosticCollector diagnostics = new DiagnosticCollector();
             TenantContext tenant = new TenantContext(tenantId, TenantLifecycle.ACTIVE, Set.of("SALES", "INVENTORY"));
@@ -78,13 +102,9 @@ public class CompileCommand implements Callable<Integer> {
             context.put("sourceCode", source);
             context.put("outputDir", baseOutputDir);
 
-            // FIXED: If your CompilerOrchestrator class supports an overloaded compile signature 
-            // that accepts your initialized CompilationContext instance, pass it directly here:
-            // Path dbpkg = orchestrator.compile(context, dslFile, version, baseOutputDir, strictMode);
-            
-            // Default Fallback: Ensure the underlying orchestrator method is looking at the correct file location
+            // Pass execution metrics downstream to package builders
             Path dbpkg = orchestrator.compile(dslFile.toAbsolutePath(), tenantId, version, baseOutputDir, strictMode);
-            CliPrinter.success("Compilation complete: " + dbpkg.toAbsolutePath());
+            CliPrinter.success("Enterprise platform package artifact generated seamlessly at: " + dbpkg.toAbsolutePath());
 
             if (diagnostics.hasErrors()) {
                 diagnostics.getDiagnostics().forEach(System.err::println);
@@ -92,9 +112,10 @@ public class CompileCommand implements Callable<Integer> {
             }
             return 0;
         } catch (Exception e) {
-            CliPrinter.error("Compilation failed: " + e.getMessage());
+            CliPrinter.error("Substrate compilation crashed out: " + e.getMessage());
             e.printStackTrace();
             return 1;
         }
     }
 }
+

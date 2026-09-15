@@ -22,6 +22,7 @@ dependencies {
     implementation project(':runtime-orchestration')
     implementation project(':runtime-projection')
     implementation project(':compiler-dsl') // for ApiSchema
+    implementation project(':compiler-packaging')
 
     // DI
     implementation 'jakarta.inject:jakarta.inject-api:2.0.1'

@@ -1,0 +1,233 @@
+// ==========================================================
+// MODULE 1: PEOPLE MANAGEMENT = CRM
+// ==========================================================
+module crm enable {
+    entity Student {
+        id: String;
+        firstName: String;
+        lastName: String;
+        email: String;
+        phone: String;
+        dob: Date;
+        gender: String;
+        admissionNumber: String;
+        parentId: String; // FK to Guardian
+        createdAt: DateTime;
+        expose api [GET, POST, PUT];
+    }
+
+    entity Guardian {
+        id: String;
+        name: String;
+        email: String;
+        phone: String;
+        relationship: String; // Father, Mother, Sponsor
+        address: String;
+        expose api [GET, POST, PUT];
+    }
+
+    entity Staff {
+        id: String;
+        name: String;
+        email: String;
+        role: String; // Teacher, Admin, Bursar, Principal
+        department: String;
+        hireDate: Date;
+        expose api [GET, POST, PUT];
+    }
+
+    event StudentEnrolled {
+        payload: {
+            studentId: String,
+            admissionNumber: String,
+            guardianId: String
+        }
+    }
+}
+
+// ==========================================================
+// MODULE 2: ACADEMICS & BILLING = SALES
+// ==========================================================
+module academics depends on crm enable {
+    entity Course {
+        id: String;
+        code: String; // MATH101
+        name: String;
+        creditUnits: Int;
+        department: String;
+        expose api [GET, POST];
+    }
+
+    entity Class {
+        id: String;
+        name: String; // JSS1A, SS3B
+        classTeacherId: String; // FK to crm.Staff
+        session: String; // 2025/2026
+        term: String; // First, Second, Third
+        expose api [GET, POST, PUT];
+    }
+
+    entity Enrollment {
+        id: String;
+        studentId: String; // FK to crm.Student
+        classId: String; // FK to academics.Class
+        session: String;
+        term: String;
+        status: String; // ACTIVE, GRADUATED, WITHDRAWN
+        expose api [GET, POST];
+    }
+
+    entity FeeInvoice {
+        id: String;
+        studentId: String; // FK to crm.Student
+        term: String;
+        session: String;
+        amount: Decimal;
+        status: String; // PENDING, PAID, PARTIAL
+        expose api [GET, POST];
+    }
+
+    // EXPOSES: The initial trigger to start academic workflow
+    event EnrollmentConfirmed {
+        payload: {
+            enrollmentId: String,
+            studentId: String,
+            classId: String
+        }
+    }
+
+    workflow StudentTermCycle {
+        GenerateFeeInvoice;
+        RecordPayment;
+        TakeAttendance;
+        PublishResults;
+    }
+
+    // KPI mapping definition used in Phase 4 Step 5
+    kpi FeeCollectionRate: InvoicesPaid;
+}
+
+// ==========================================================
+// MODULE 3: PAYMENTS & SCHOLARSHIPS = FINANCE
+// ==========================================================
+module finance depends on academics enable {
+    entity Payment {
+        id: String;
+        invoiceId: String; // FK to academics.FeeInvoice
+        studentId: String; // FK to crm.Student
+        amount: Decimal;
+        method: String; // CASH, BANK, POS, ONLINE
+        paidAt: DateTime;
+        status: String; // SUCCESS, FAILED
+        expose api [GET, POST];
+    }
+
+    entity Scholarship {
+        id: String;
+        studentId: String;
+        type: String; // Academic, Sports
+        discountPercent: Decimal;
+        session: String;
+        expose api [GET, POST];
+    }
+
+    // EXPOSES: Final step event before result publication
+    event PaymentConfirmed {
+        payload: {
+            paymentId: String,
+            invoiceId: String,
+            studentId: String,
+            status: String
+        }
+    }
+}
+
+// ==========================================================
+// MODULE 4: LIBRARY & ASSETS = INVENTORY
+// ==========================================================
+module inventory depends on academics enable {
+    entity Book {
+        sku: String; // ISBN
+        title: String;
+        author: String;
+        qty: Int;
+        location: String; // Library Shelf A3
+        expose api [GET, PUT];
+    }
+
+    entity Asset {
+        id: String;
+        name: String; // Projector, Desk, Lab Equipment
+        tag: String;
+        qty: Int;
+        assignedTo: String; // ClassId or StaffId
+        expose api [GET, PUT];
+    }
+
+    entity BookLoan {
+        id: String;
+        bookSku: String;
+        studentId: String;
+        issuedAt: DateTime;
+        dueAt: DateTime;
+        status: String; // ISSUED, RETURNED, OVERDUE
+        expose api [GET, POST];
+    }
+
+    // EXPOSES: Allows Library to notify Finance for fines
+    event BookIssued {
+        payload: {
+            loanId: String,
+            bookSku: String,
+            studentId: String
+        }
+    }
+}
+
+// ==========================================================
+// MODULE 5: GRADING & ATTENDANCE = CLINICAL EQUIVALENT
+// ==========================================================
+module operations depends on academics enable {
+    entity Attendance {
+        id: String;
+        studentId: String;
+        classId: String;
+        date: Date;
+        status: String; // PRESENT, ABSENT, LATE
+        expose api [GET, POST];
+    }
+
+    entity Result {
+        id: String;
+        studentId: String;
+        courseId: String;
+        term: String;
+        session: String;
+        score: Decimal;
+        grade: String; // A, B, C
+        remarks: String;
+        expose api [GET, POST];
+    }
+
+    entity Timetable {
+        id: String;
+        classId: String;
+        courseId: String;
+        staffId: String;
+        day: String; // Monday
+        period: Int;
+        expose api [GET, POST];
+    }
+
+    event ResultsPublished {
+        payload: {
+            classId: String,
+            term: String,
+            session: String
+        }
+    }
+}
+
+module runtime enable {
+    event SystemBooted();
+}

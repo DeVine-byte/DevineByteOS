@@ -5,7 +5,79 @@
     "name" : "id",
     "type" : "UUID",
     "required" : true
-  } ]
+  }, {
+    "name" : "bloodGroup",
+    "type" : "STRING",
+    "required" : true
+  }, {
+    "name" : "createdAt",
+    "type" : "DATETIME",
+    "required" : true
+  }, {
+    "name" : "address",
+    "type" : "STRING",
+    "required" : true
+  }, {
+    "name" : "gender",
+    "type" : "STRING",
+    "required" : true
+  }, {
+    "name" : "phone",
+    "type" : "STRING",
+    "required" : true
+  }, {
+    "name" : "dob",
+    "type" : "DATETIME",
+    "required" : true
+  }, {
+    "name" : "name",
+    "type" : "STRING",
+    "required" : true
+  }, {
+    "name" : "id",
+    "type" : "STRING",
+    "required" : true
+  }, {
+    "name" : "email",
+    "type" : "STRING",
+    "required" : true
+  } ],
+  "additionalProperties" : false,
+  "properties" : {
+    "id" : {
+      "type" : "string"
+    },
+    "bloodGroup" : {
+      "type" : "string"
+    },
+    "createdAt" : {
+      "type" : "string",
+      "format" : "date-time"
+    },
+    "address" : {
+      "type" : "string"
+    },
+    "gender" : {
+      "type" : "string"
+    },
+    "phone" : {
+      "type" : "string"
+    },
+    "dob" : {
+      "type" : "string",
+      "format" : "date-time"
+    },
+    "name" : {
+      "type" : "string"
+    },
+    "email" : {
+      "type" : "string"
+    }
+  },
+  "type" : "object",
+  "$id" : "https://devinebyte.ioPatient.json",
+  "required" : [ "id", "bloodGroup", "createdAt", "address", "gender", "phone", "dob", "name", "id", "email" ],
+  "$schema" : "https://json-schema.org"
 }, {
   "name" : "Appointment",
   "key" : "id",
@@ -13,7 +85,64 @@
     "name" : "id",
     "type" : "UUID",
     "required" : true
-  } ]
+  }, {
+    "name" : "total",
+    "type" : "DECIMAL",
+    "required" : true
+  }, {
+    "name" : "patientId",
+    "type" : "STRING",
+    "required" : true
+  }, {
+    "name" : "doctorId",
+    "type" : "STRING",
+    "required" : true
+  }, {
+    "name" : "id",
+    "type" : "STRING",
+    "required" : true
+  }, {
+    "name" : "department",
+    "type" : "STRING",
+    "required" : true
+  }, {
+    "name" : "appointmentDate",
+    "type" : "DATETIME",
+    "required" : true
+  }, {
+    "name" : "status",
+    "type" : "STRING",
+    "required" : true
+  } ],
+  "additionalProperties" : false,
+  "properties" : {
+    "id" : {
+      "type" : "string"
+    },
+    "total" : {
+      "type" : "number"
+    },
+    "patientId" : {
+      "type" : "string"
+    },
+    "doctorId" : {
+      "type" : "string"
+    },
+    "department" : {
+      "type" : "string"
+    },
+    "appointmentDate" : {
+      "type" : "string",
+      "format" : "date-time"
+    },
+    "status" : {
+      "type" : "string"
+    }
+  },
+  "type" : "object",
+  "$id" : "https://devinebyte.ioAppointment.json",
+  "required" : [ "id", "total", "patientId", "doctorId", "id", "department", "appointmentDate", "status" ],
+  "$schema" : "https://json-schema.org"
 }, {
   "name" : "Invoice",
   "key" : "id",
@@ -21,7 +150,49 @@
     "name" : "id",
     "type" : "UUID",
     "required" : true
-  } ]
+  }, {
+    "name" : "amount",
+    "type" : "DECIMAL",
+    "required" : true
+  }, {
+    "name" : "patientId",
+    "type" : "STRING",
+    "required" : true
+  }, {
+    "name" : "appointmentId",
+    "type" : "STRING",
+    "required" : true
+  }, {
+    "name" : "id",
+    "type" : "STRING",
+    "required" : true
+  }, {
+    "name" : "status",
+    "type" : "STRING",
+    "required" : true
+  } ],
+  "additionalProperties" : false,
+  "properties" : {
+    "id" : {
+      "type" : "string"
+    },
+    "amount" : {
+      "type" : "number"
+    },
+    "patientId" : {
+      "type" : "string"
+    },
+    "appointmentId" : {
+      "type" : "string"
+    },
+    "status" : {
+      "type" : "string"
+    }
+  },
+  "type" : "object",
+  "$id" : "https://devinebyte.ioInvoice.json",
+  "required" : [ "id", "amount", "patientId", "appointmentId", "id", "status" ],
+  "$schema" : "https://json-schema.org"
 }, {
   "name" : "Stock",
   "key" : "id",
@@ -29,7 +200,61 @@
     "name" : "id",
     "type" : "UUID",
     "required" : true
-  } ]
+  }, {
+    "name" : "expiryDate",
+    "type" : "DATETIME",
+    "required" : true
+  }, {
+    "name" : "unit",
+    "type" : "STRING",
+    "required" : true
+  }, {
+    "name" : "qty",
+    "type" : "LONG",
+    "required" : true
+  }, {
+    "name" : "name",
+    "type" : "STRING",
+    "required" : true
+  }, {
+    "name" : "sku",
+    "type" : "STRING",
+    "required" : true
+  }, {
+    "name" : "warehouse",
+    "type" : "STRING",
+    "required" : true
+  } ],
+  "additionalProperties" : false,
+  "properties" : {
+    "id" : {
+      "type" : "string",
+      "format" : "uuid"
+    },
+    "expiryDate" : {
+      "type" : "string",
+      "format" : "date-time"
+    },
+    "unit" : {
+      "type" : "string"
+    },
+    "qty" : {
+      "type" : "integer"
+    },
+    "name" : {
+      "type" : "string"
+    },
+    "sku" : {
+      "type" : "string"
+    },
+    "warehouse" : {
+      "type" : "string"
+    }
+  },
+  "type" : "object",
+  "$id" : "https://devinebyte.ioStock.json",
+  "required" : [ "id", "expiryDate", "unit", "qty", "name", "sku", "warehouse" ],
+  "$schema" : "https://json-schema.org"
 }, {
   "name" : "Prescription",
   "key" : "id",
@@ -37,7 +262,56 @@
     "name" : "id",
     "type" : "UUID",
     "required" : true
-  } ]
+  }, {
+    "name" : "dosage",
+    "type" : "STRING",
+    "required" : true
+  }, {
+    "name" : "patientId",
+    "type" : "STRING",
+    "required" : true
+  }, {
+    "name" : "drugSku",
+    "type" : "STRING",
+    "required" : true
+  }, {
+    "name" : "appointmentId",
+    "type" : "STRING",
+    "required" : true
+  }, {
+    "name" : "id",
+    "type" : "STRING",
+    "required" : true
+  }, {
+    "name" : "status",
+    "type" : "STRING",
+    "required" : true
+  } ],
+  "additionalProperties" : false,
+  "properties" : {
+    "id" : {
+      "type" : "string"
+    },
+    "dosage" : {
+      "type" : "string"
+    },
+    "patientId" : {
+      "type" : "string"
+    },
+    "drugSku" : {
+      "type" : "string"
+    },
+    "appointmentId" : {
+      "type" : "string"
+    },
+    "status" : {
+      "type" : "string"
+    }
+  },
+  "type" : "object",
+  "$id" : "https://devinebyte.ioPrescription.json",
+  "required" : [ "id", "dosage", "patientId", "drugSku", "appointmentId", "id", "status" ],
+  "$schema" : "https://json-schema.org"
 }, {
   "name" : "Payment",
   "key" : "id",
@@ -45,7 +319,63 @@
     "name" : "id",
     "type" : "UUID",
     "required" : true
-  } ]
+  }, {
+    "name" : "amount",
+    "type" : "DECIMAL",
+    "required" : true
+  }, {
+    "name" : "method",
+    "type" : "STRING",
+    "required" : true
+  }, {
+    "name" : "patientId",
+    "type" : "STRING",
+    "required" : true
+  }, {
+    "name" : "appointmentId",
+    "type" : "STRING",
+    "required" : true
+  }, {
+    "name" : "invoiceId",
+    "type" : "STRING",
+    "required" : true
+  }, {
+    "name" : "id",
+    "type" : "STRING",
+    "required" : true
+  }, {
+    "name" : "status",
+    "type" : "STRING",
+    "required" : true
+  } ],
+  "additionalProperties" : false,
+  "properties" : {
+    "id" : {
+      "type" : "string"
+    },
+    "amount" : {
+      "type" : "number"
+    },
+    "method" : {
+      "type" : "string"
+    },
+    "patientId" : {
+      "type" : "string"
+    },
+    "appointmentId" : {
+      "type" : "string"
+    },
+    "invoiceId" : {
+      "type" : "string"
+    },
+    "status" : {
+      "type" : "string"
+    }
+  },
+  "type" : "object",
+  "$id" : "https://devinebyte.ioPayment.json",
+  "required" : [ "id", "amount", "method", "patientId", "appointmentId", "invoiceId", "id", "status" ],
+  "$schema" : "https://json-schema.org"
 }, {
   "name" : "InsuranceClaim",
   "key" : "id",
@@ -53,5 +383,141 @@
     "name" : "id",
     "type" : "UUID",
     "required" : true
-  } ]
+  }, {
+    "name" : "hmoCode",
+    "type" : "STRING",
+    "required" : true
+  }, {
+    "name" : "invoiceId",
+    "type" : "STRING",
+    "required" : true
+  }, {
+    "name" : "id",
+    "type" : "STRING",
+    "required" : true
+  }, {
+    "name" : "status",
+    "type" : "STRING",
+    "required" : true
+  } ],
+  "additionalProperties" : false,
+  "properties" : {
+    "id" : {
+      "type" : "string"
+    },
+    "hmoCode" : {
+      "type" : "string"
+    },
+    "invoiceId" : {
+      "type" : "string"
+    },
+    "status" : {
+      "type" : "string"
+    }
+  },
+  "type" : "object",
+  "$id" : "https://devinebyte.ioInsuranceClaim.json",
+  "required" : [ "id", "hmoCode", "invoiceId", "id", "status" ],
+  "$schema" : "https://json-schema.org"
+}, {
+  "name" : "MedicalRecord",
+  "key" : "id",
+  "fields" : [ {
+    "name" : "id",
+    "type" : "UUID",
+    "required" : true
+  }, {
+    "name" : "createdAt",
+    "type" : "DATETIME",
+    "required" : true
+  }, {
+    "name" : "notes",
+    "type" : "STRING",
+    "required" : true
+  }, {
+    "name" : "patientId",
+    "type" : "STRING",
+    "required" : true
+  }, {
+    "name" : "doctorId",
+    "type" : "STRING",
+    "required" : true
+  }, {
+    "name" : "appointmentId",
+    "type" : "STRING",
+    "required" : true
+  }, {
+    "name" : "diagnosis",
+    "type" : "STRING",
+    "required" : true
+  }, {
+    "name" : "id",
+    "type" : "STRING",
+    "required" : true
+  } ],
+  "additionalProperties" : false,
+  "properties" : {
+    "id" : {
+      "type" : "string"
+    },
+    "createdAt" : {
+      "type" : "string",
+      "format" : "date-time"
+    },
+    "notes" : {
+      "type" : "string"
+    },
+    "patientId" : {
+      "type" : "string"
+    },
+    "doctorId" : {
+      "type" : "string"
+    },
+    "appointmentId" : {
+      "type" : "string"
+    },
+    "diagnosis" : {
+      "type" : "string"
+    }
+  },
+  "type" : "object",
+  "$id" : "https://devinebyte.ioMedicalRecord.json",
+  "required" : [ "id", "createdAt", "notes", "patientId", "doctorId", "appointmentId", "diagnosis", "id" ],
+  "$schema" : "https://json-schema.org"
+}, {
+  "name" : "Bed",
+  "key" : "id",
+  "fields" : [ {
+    "name" : "id",
+    "type" : "UUID",
+    "required" : true
+  }, {
+    "name" : "id",
+    "type" : "STRING",
+    "required" : true
+  }, {
+    "name" : "ward",
+    "type" : "STRING",
+    "required" : true
+  }, {
+    "name" : "status",
+    "type" : "STRING",
+    "required" : true
+  } ],
+  "additionalProperties" : false,
+  "properties" : {
+    "id" : {
+      "type" : "string"
+    },
+    "ward" : {
+      "type" : "string"
+    },
+    "status" : {
+      "type" : "string"
+    }
+  },
+  "type" : "object",
+  "$id" : "https://devinebyte.ioBed.json",
+  "required" : [ "id", "id", "ward", "status" ],
+  "$schema" : "https://json-schema.org"
 } ]

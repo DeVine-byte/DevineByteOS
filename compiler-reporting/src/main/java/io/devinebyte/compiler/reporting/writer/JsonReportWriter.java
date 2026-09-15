@@ -32,10 +32,11 @@ public class JsonReportWriter {
 
         Path out = reportDir.resolve("tenant-" + ctx.tenant().tenantId() + "-report.json");
         String json = mapper.writeValueAsString(report);
-        System.out.println("[DEBUG REPORT JSON] " + json);
-        Files.writeString(out, json);
-
-        System.out.println("[REPORT] Wrote report to " + out.toAbsolutePath());
+/*        if (Boolean.TRUE.equals(context.get("debugMode"))) {
+            System.out.println("[DEBUG REPORT JSON] " + json);
+            Files.writeString(out, json);
+            System.out.println("[REPORT] Wrote report to " + out.toAbsolutePath());
+        }*/
         return out;
     }
 }

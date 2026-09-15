@@ -19,8 +19,13 @@ import io.devinebyte.runtime.workflow.engine.WorkflowExecutor;
 import io.devinebyte.runtime.event.handler.HandlerRegistry;
 import io.devinebyte.runtime.event.handler.NotificationCenterHandler;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 public class RuntimeLauncher {
 
@@ -34,22 +39,21 @@ public class RuntimeLauncher {
         return sharedHttpAdapter;
     }
 
-    public static void launch(Path dbpkg, String tenantId, boolean skipVerify) throws Exception {
-        runInternal(dbpkg, tenantId, skipVerify);
+    public static void launch(Path dbpkg, String tenantId) throws Exception {
+        runInternal(dbpkg, tenantId);
     }
 
     public static void main(String[] args) throws Exception {
-        boolean skipVerify = java.util.Arrays.asList(args).contains("--skip-verify");
         String dbpkg = null, tenantId = null;
         for (int i = 0; i < args.length; i++) {
             if ("--dbpkg".equals(args[i]) && i + 1 < args.length) dbpkg = args[i + 1];
             if ("--tenant".equals(args[i]) && i + 1 < args.length) tenantId = args[i + 1];
         }
-        if (dbpkg == null || tenantId == null) throw new IllegalArgumentException("Usage: run --dbpkg <path> --tenant <id> [--skip-verify]");
-        runInternal(Path.of(dbpkg), tenantId, skipVerify);
+        if (dbpkg == null || tenantId == null) throw new IllegalArgumentException("Usage: run --dbpkg <path> --tenant <id>");
+        runInternal(Path.of(dbpkg), tenantId);
     }
 
-    private static void runInternal(Path dbpkg, String tenantId, boolean skipVerify) throws Exception {
+    private static void runInternal(Path dbpkg, String tenantId) throws Exception {
         ObjectMapper mapper = new ObjectMapper().findAndRegisterModules();
         ConfigurationManager config = new ConfigurationManager(mapper);
 
@@ -67,14 +71,16 @@ public class RuntimeLauncher {
         WorkflowEngine workflowEngine = new WorkflowEngine(null, executor, kpiEngine);
 
         // ==========================================================
-        // FIXED: RE-ROUTE HOOK REGISTRATION VIA THE HANDLER REGISTRY
+        // DYNAMIC: RE-ROUTE HOOK REGISTRATION DOMAIN-BLIND STRATEGY
         // ==========================================================
         HandlerRegistry handlerRegistry = new HandlerRegistry();
         
-        // Dynamically register our asynchronous notification centers matching the lifecycle events matrix
-        handlerRegistry.register(new NotificationCenterHandler("AppointmentCreated"));
-        handlerRegistry.register(new NotificationCenterHandler("AppointmentUpdated"));
-        handlerRegistry.register(new NotificationCenterHandler("PaymentConfirmed"));
+        // Dynamically discover what events this tenant has configured notifications for
+        List<String> dynamicTriggers = discoverEventTriggersForTenant(tenantId, mapper);
+        
+        for (String eventType : dynamicTriggers) {
+            handlerRegistry.register(new NotificationCenterHandler(eventType));
+        }
 
         TenantRuntimeFactory factory = new TenantRuntimeFactory(config, mapper, loader, registry, runtimeRegistry, workflowEngine);
         RuntimeBootstrapper bootstrapper = new RuntimeBootstrapper(verifier, manifestReader, loader, registry, workflowEngine);
@@ -82,7 +88,8 @@ public class RuntimeLauncher {
         TenantRegistry tenantRegistry = new TenantRegistry();
         TenantRuntimeManager manager = new TenantRuntimeManager(bootstrapper, factory, tenantRegistry);
 
-        TenantRuntimeHandle handle = manager.bootTenant(dbpkg, tenantId, skipVerify);
+        // FIXED: Invoking the clean 2-argument verification signature pattern
+        TenantRuntimeHandle handle = manager.bootTenant(dbpkg, tenantId);
         TenantRuntime runtime = handle.runtime();
         runtime.boot();
 
@@ -101,6 +108,44 @@ public class RuntimeLauncher {
 
         System.out.println("[DBRT] Tenant " + tenantId + " online. Press Ctrl+C to stop");
         Thread.currentThread().join();
+    }
+
+    /**
+     * Replicates NotificationCenterHandler's multi-path scanner strategy out-of-band.
+     * Extracts active triggers from the tenant notification profiles to keep infrastructure domain-blind.
+     */
+    private static List<String> discoverEventTriggersForTenant(String tenantId, ObjectMapper mapper) {
+        List<String> triggers = new ArrayList<>();
+        String relTemplates = "data/tenants/" + tenantId + "/notification_templates.json";
+
+        File templateFile = new File(relTemplates);
+        if (!templateFile.exists()) templateFile = new File("../" + relTemplates);
+        if (!templateFile.exists()) templateFile = new File("../../" + relTemplates);
+        if (!templateFile.exists()) templateFile = new File("/data/data/com.termux/files/home/DevineByteOS/" + relTemplates);
+
+        if (!templateFile.exists()) {
+            System.out.println("[DBRT LAUNCHER] Baseline profile scan completed. No local out-of-band notification layouts defined.");
+            return triggers;
+        }
+
+        try {
+            JsonNode root = mapper.readTree(Files.readAllBytes(templateFile.toPath()));
+            JsonNode templates = root.get("templates");
+            if (templates != null && templates.isArray()) {
+                for (JsonNode node : templates) {
+                    JsonNode triggerNode = node.get("eventTrigger");
+                    if (triggerNode != null) {
+                        String eventType = triggerNode.asText();
+                        if (!triggers.contains(eventType)) {
+                            triggers.add(eventType);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("[DBRT LAUNCHER WARN] Error scanning template configurations dynamically: " + e.getMessage());
+        }
+        return triggers;
     }
 }
 

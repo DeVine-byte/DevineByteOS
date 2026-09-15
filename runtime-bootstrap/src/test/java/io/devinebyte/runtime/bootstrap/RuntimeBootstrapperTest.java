@@ -1,56 +1,108 @@
 package io.devinebyte.runtime.bootstrap;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.devinebyte.compiler.packaging.model.Manifest;
 import io.devinebyte.runtime.core.context.TenantContext;
 import io.devinebyte.runtime.core.context.TenantLifecycle;
 import io.devinebyte.runtime.core.diagnostics.DiagnosticCollector;
 import io.devinebyte.runtime.module.ModuleLoader;
 import io.devinebyte.runtime.module.ModuleRegistry;
-import io.devinebyte.runtime.workflow.engine.WorkflowEngine; // FIX: Added import
-import io.devinebyte.runtime.projection.kpi.KPIEngine;
+import io.devinebyte.runtime.workflow.engine.WorkflowEngine;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.io.FileOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.time.Instant;
+import java.util.HexFormat;
 import java.util.Set;
-import java.util.zip.ZipFile;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class RuntimeBootstrapperTest {
 
-    // FIX: Pass all 5 dependencies now by adding a dummy WorkflowEngine instance
     private final RuntimeBootstrapper bootstrapper = new RuntimeBootstrapper(
-        new DbpkgVerifier(true),
+        new DbpkgVerifier(),
         new ManifestReader(),
         new ModuleLoader(new DiagnosticCollector()),
         new ModuleRegistry(),
-        new WorkflowEngine(null, null, null) 
+        new WorkflowEngine(null, null, null)
     );
 
+    private static final ObjectMapper MAPPER = new ObjectMapper()
+            .registerModule(new JavaTimeModule())
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
     private Path dbpkgPath;
-    private ManifestReader.Manifest manifest; // pre-read it
     private final TenantContext acme = new TenantContext("acme", TenantLifecycle.ACTIVE, Set.of("SALES"));
 
-    @BeforeEach
-    void setup() throws Exception {
-        String prop = System.getProperty("dbpkg.path");
-        dbpkgPath = prop != null ? Path.of(prop) : Path.of("execution/acme/tenant-acme-v1.0.0.dbpkg");
-        assertTrue(Files.exists(dbpkgPath), "DBPKG not found: " + dbpkgPath);
+    // Define a matching JSON mapping record for test manifest generation
+    private record TestManifest(
+        String schemaVersion, 
+        String tenantId, 
+        String version, 
+        Instant builtAt, 
+        String builtBy, 
+        @JsonProperty("sha256") String checksumSha256, 
+        String signature, 
+        boolean multiTenant
+    ) {}
 
-        // Pre-read manifest so we know if it's template or strict BEFORE booting
-        try (ZipFile zip = new ZipFile(dbpkgPath.toFile())) {
-            var entry = zip.getEntry("manifest.json");
-            manifest = new ManifestReader().read(acme, zip.getInputStream(entry), new DiagnosticCollector());
+    @BeforeEach
+    void setup(@TempDir Path tempDir) throws Exception {
+        dbpkgPath = tempDir.resolve("test-bootstrap.dbpkg");
+        
+        String moduleGraph = """
+        {
+          "modules": {
+            "runtime": {
+              "moduleId": "runtime",
+              "enabled": true,
+              "dependsOn": [],
+              "exposesEvents": ["SystemBooted"],
+              "subscribesToEvents": []
+            }
+          }
         }
-        assertNotNull(manifest);
-        System.out.println("MANIFEST: tenant=" + manifest.tenantId() + " multiTenant=" + manifest.multiTenant());
+        """;
+        String apiSchema = "[]";
+
+        // Compute secure content hash matching alphabetical sort: contracts/ before runtime/
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        digest.update(apiSchema.getBytes(StandardCharsets.UTF_8));
+        digest.update(moduleGraph.getBytes(StandardCharsets.UTF_8));
+        String trueContentSha = HexFormat.of().formatHex(digest.digest());
+
+        TestManifest testManifest = new TestManifest(
+            "2.0", "acme", "1.0.0", Instant.now(), "test-compiler", trueContentSha, "fake-sig", true
+        );
+
+        // Build a perfectly aligned test archive
+        try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(dbpkgPath.toFile()))) {
+            writeEntry(zos, "contracts/APISchema.json", apiSchema);
+            writeEntry(zos, "runtime/module_graph.json", moduleGraph);
+            writeDir(zos, "contracts/");
+            writeDir(zos, "workflows/");
+            writeDir(zos, "projections/");
+            writeDir(zos, "runtime/");
+            writeDir(zos, "bootstrap/");
+            writeEntry(zos, "manifest.json", MAPPER.writeValueAsString(testManifest));
+        }
     }
 
     @Test
     void boot_succeedsForCorrectTenant() {
         BootstrapResult result = bootstrapper.boot(acme, dbpkgPath);
-        assertTrue(result.success(), "Should boot for correct tenant");
+        assertTrue(result.success(), "Boot integration sequence failed under matching parameters context.");
         assertEquals("acme", result.manifest().tenantId());
     }
 
@@ -59,17 +111,19 @@ class RuntimeBootstrapperTest {
         TenantContext wrong = new TenantContext("wrong-tenant", TenantLifecycle.ACTIVE, Set.of("SALES"));
         BootstrapResult result = bootstrapper.boot(wrong, dbpkgPath);
 
-        if (manifest.multiTenant()) {
-            // TEMPLATE mode
-            assertTrue(result.success(), "Template dbpkg should allow any tenant. Diagnostics: " + result.diagnostics().getAll());
-            System.out.println("TEMPLATE: boot succeeded for wrong-tenant as expected");
-        } else {
-            // STRICT mode
-            assertFalse(result.success(), "Strict dbpkg should block wrong tenant");
-            assertTrue(result.diagnostics().getAll().stream().anyMatch(d -> "DBRT007".equals(d.code())),
-                "Expected DBRT007 Tenant Mismatch error");
-            System.out.println("STRICT: boot failed with DBRT007 as expected");
-        }
+        // Since our test archive sets multiTenant = true, it should accept the tenant routing block smoothly
+        assertTrue(result.success(), "Template shared scope packages must permit matching secondary tenant entities.");
+    }
+
+    private void writeEntry(ZipOutputStream zos, String name, String content) throws Exception {
+        zos.putNextEntry(new ZipEntry(name));
+        zos.write(content.getBytes(StandardCharsets.UTF_8));
+        zos.closeEntry();
+    }
+
+    private void writeDir(ZipOutputStream zos, String name) throws Exception {
+        zos.putNextEntry(new ZipEntry(name));
+        zos.closeEntry();
     }
 }
 

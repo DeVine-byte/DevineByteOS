@@ -13,17 +13,7 @@ java {
 
 application {
     mainClass = 'io.devinebyte.compiler.cli.CompilerCli'
-    applicationName = 'devinebyte'
-}
-
-// ADD THIS
-run {
-    // Uses the root project directory to safely locate the samples folder
-    args 'compile', 
-         '-d', "${rootProject.projectDir}/samples/acme.dbdsl", 
-         '-t', 'acme', 
-         '-v', '1.0.0', 
-         '-o', "${rootProject.projectDir}/execution"
+    applicationName = 'dbos-compiler'
 }
 
 repositories {
@@ -53,6 +43,15 @@ dependencies {
     annotationProcessor 'io.micronaut:micronaut-inject-java:4.5.0'
 }
 
+run {
+    args 'compile',
+         '-d', "${rootProject.projectDir}/samples/acme.dbdsl",
+         '-t', 'acme',
+         '-v', '1.0.0',
+         '-o', "${rootProject.projectDir}/execution"
+}
+
 tasks.named('test') {
     useJUnitPlatform()
 }
+
