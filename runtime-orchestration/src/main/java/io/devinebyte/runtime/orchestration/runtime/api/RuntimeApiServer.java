@@ -19,7 +19,7 @@ public record RuntimeApiServer(
 
     public Object handle(TenantContext ctx, String principal, String method, String path, Object body, DiagnosticCollector diag) {
         String lowerPath = path != null ? path.toLowerCase().trim() : "";
-        
+
         // Universal bypass verification rule updates
         boolean isPortalRoute = lowerPath.contains("/portal");
         boolean isDashboardRoute = lowerPath.contains("/dashboard") || lowerPath.contains("/kpis");
@@ -28,20 +28,20 @@ public record RuntimeApiServer(
             throw new SecurityException("Contract violation: " + method + " " + path);
         }
 
-        // ==========================================================
-        // FIXED: DYNAMIC PORTAL SCHEMA GATEWAY DISPATCH (STEP 6)
-        // ==========================================================
+        // ====================================================================
+        // FIXED: INDUSTRY-AGNOSTIC DYNAMIC PORTAL SCHEMA GATEWAY DISPATCH
+        // ====================================================================
         if (method.equalsIgnoreCase("GET") && isPortalRoute) {
-            System.out.println("[API ROUTER] GET " + path + " -> Evaluating dynamic role-based structural view layer");
+            System.out.println("[API ROUTER] GET " + path + " -> Evaluating dynamic multi-industry portal framework");
+
+            // Extract the specific portal identifier straight out of the URI token string (e.g., /portal/student_portal)
+            String targetPortal = extractPortalKeyFromPath(lowerPath);
             
-            // Extract parameters safely from dynamic headers or fallbacks for simulation clarity
-            String userRole = "PATIENT"; // Mock defaults
-            String targetPortal = "patient_portal";
+            // Resolve the current user's security role assignment dynamically from context identity mapping
+            String userRole = security.resolveRoleForPrincipal(ctx, principal); 
 
-            if (lowerPath.contains("/doctor")) { userRole = "DOCTOR"; targetPortal = "doctor_portal"; }
-            else if (lowerPath.contains("/nurse")) { userRole = "NURSE"; targetPortal = "nurse_portal"; }
-            else if (lowerPath.contains("/executive")) { userRole = "ADMINISTRATOR"; targetPortal = "executive_portal"; }
-
+            System.out.println("[API ROUTER] Routing Tenant: " + ctx.getTenantId() + " | Portal: " + targetPortal + " | Role: " + userRole);
+            
             return new MultiPortalRoutingEngine().resolvePortalSession(ctx, userRole, targetPortal);
         }
 
@@ -73,5 +73,17 @@ public record RuntimeApiServer(
 
         return workflowEngine.start(ctx, command, bodyNode, commandOrQuery);
     }
-}
 
+    /**
+     * Helper to safely extract portal keys directly out of the URI structure.
+     * Maps path inputs containing "/portal/student_portal" directly to "student_portal".
+     */
+    private String extractPortalKeyFromPath(String lowerPath) {
+        if (!lowerPath.contains("/portal/")) {
+            return "default_portal";
+        }
+        int index = lowerPath.indexOf("/portal/") + "/portal/".length();
+        String segment = lowerPath.substring(index).split("/")[0].trim();
+        return segment.isEmpty() ? "default_portal" : segment;
+    }
+}
